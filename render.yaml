@@ -16,7 +16,7 @@ services:
           type: web
           envVarKey: RENDER_EXTERNAL_URL
       - key: APP_DEBUG
-        value: false
+        value: true
       - key: APP_KEY
         sync: false
       - key: DB_CONNECTION
