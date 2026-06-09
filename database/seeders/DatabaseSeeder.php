@@ -15,9 +15,11 @@ class DatabaseSeeder extends Seeder
     {
         // Create a test user for login (password is "password" by default in Laravel Breeze)
         if (!User::where('email', 'test@example.com')->exists()) {
-            User::factory()->create([
+            User::create([
                 'name' => 'Varsha Manager',
                 'email' => 'test@example.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'email_verified_at' => now(),
             ]);
         }
     }
