@@ -26,11 +26,21 @@
     <div class="col-lg-10">
         
         <div class="row g-4 align-items-center mb-4">
-            <div class="col-sm-8">
+            <div class="col-md-6">
                 <h2 class="h3 font-outfit text-white mb-1">Evaluation Details</h2>
-                <p class="text-secondary small mb-0">Record generated on {{ $report->report_date->format('F d, Y') }}</p>
+                <p class="text-secondary small mb-0">Record generated on {{ $report->report_date->format('F d, Y') }} at {{ $report->created_at->format('h:i:s A') }}</p>
             </div>
-            <div class="col-sm-4 text-sm-end">
+            <div class="col-md-6 text-md-end d-flex flex-wrap gap-2 justify-content-md-end align-items-center">
+                @if($prevReport)
+                    <a href="{{ route('manager.report-detail', $prevReport->id) }}" class="btn btn-sm btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center" style="border: 1px solid var(--border-color) !important;">
+                        &larr; Prev Date ({{ $prevReport->report_date->format('M d') }})
+                    </a>
+                @endif
+                @if($nextReport)
+                    <a href="{{ route('manager.report-detail', $nextReport->id) }}" class="btn btn-sm btn-outline-primary rounded-3 px-3 d-inline-flex align-items-center" style="border: 1px solid var(--border-color) !important;">
+                        Next Date ({{ $nextReport->report_date->format('M d') }}) &rarr;
+                    </a>
+                @endif
                 <a href="{{ route('manager.reports') }}" class="btn btn-sm btn-outline-secondary rounded-3 px-3">
                     Back to History
                 </a>
@@ -135,6 +145,49 @@
             @else
                 <p class="text-secondary small italic mb-0">No risks logged.</p>
             @endif
+        </div>
+
+        <!-- Tasks for this specific date -->
+        <div class="card glass-card p-4 mb-4">
+            <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center">
+                <span class="d-inline-block bg-info rounded-circle me-2 shadow-lg" style="width: 10px; height: 10px; background-color: #38bdf8 !important;"></span>
+                Tasks Allocated on this Date
+            </h4>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #334155;">
+                    <thead class="text-secondary" style="font-size: 11px;">
+                        <tr>
+                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">#</th>
+                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Task Title</th>
+                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Assigned Developer</th>
+                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($tasks as $task)
+                            <tr>
+                                <td class="py-3 text-secondary">{{ $loop->iteration }}</td>
+                                <td class="py-3 font-semibold text-slate-100">{{ $task->title }}</td>
+                                <td class="py-3 text-slate-300">{{ $task->teamMember?->name ?? 'Unassigned' }}</td>
+                                <td class="py-3">
+                                    @if($task->status === 'completed')
+                                        <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Completed</span>
+                                    @elseif($task->status === 'in_progress')
+                                        <span class="badge rounded-pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 px-2.5 py-1" style="font-size: 10px;">In Progress</span>
+                                    @else
+                                        <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Pending</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-secondary italic small">No tasks allocated for this date.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Narrative AI Text Review -->

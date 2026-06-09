@@ -15,6 +15,7 @@ class GitCommit extends Model
         'team_member_id',
         'commit_hash',
         'message',
+        'repository_name',
         'committed_at',
     ];
 

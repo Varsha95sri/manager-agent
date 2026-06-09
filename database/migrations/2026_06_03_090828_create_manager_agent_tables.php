@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('role');
+            $table->string('github_id')->nullable();
             $table->timestamps();
         });
 
@@ -34,6 +35,7 @@ return new class extends Migration
             $table->foreignId('team_member_id')->constrained('team_members')->onDelete('cascade');
             $table->string('commit_hash');
             $table->string('message');
+            $table->string('repository_name')->nullable();
             $table->dateTime('committed_at');
             $table->timestamps();
         });

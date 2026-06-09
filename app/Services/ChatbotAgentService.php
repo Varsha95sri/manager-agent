@@ -27,10 +27,11 @@ class ChatbotAgentService
             // 2. Call Claude API with the context
             return $this->queryClaude($context, $question);
         } catch (\Throwable $e) {
-            Log::error("ChatbotAgentService Error: " . $e->getMessage());
+            $msg = $e->getMessage();
+            Log::error("ChatbotAgentService Error: " . $msg);
 
-            // 3. Fallback to a smart local rule-based response if API is unreachable
-            return $this->generateLocalResponse($question);
+            // 3. Fallback to a smart local rule-based response with the specific error message
+            return $this->generateLocalResponse($question, $msg);
         }
     }
 
@@ -54,7 +55,7 @@ class ChatbotAgentService
         $completedTasks = $tasks->where('status', 'completed')->count();
         $inProgressTasks = $tasks->where('status', 'in_progress')->count();
         $pendingTasks = $tasks->where('status', 'pending')->count();
-        $overdueTasksCount = $tasks->where('status', '!=', 'completed')->filter(fn($t) => Carbon::parse($t->due_date)->isPast())->count();
+        $overdueTasksCount = $tasks->where('status', '!=', 'completed')->filter(fn($t) => Carbon::parse($t->due_date)->lt(Carbon::today()))->count();
         
         $tasksText = "Total Tasks: {$tasksCount}\n- Completed: {$completedTasks}\n- In Progress: {$inProgressTasks}\n- Pending: {$pendingTasks}\n- Overdue (Uncompleted past due date): {$overdueTasksCount}\n";
 
@@ -115,7 +116,7 @@ class ChatbotAgentService
      */
     protected function queryClaude(string $context, string $question): string
     {
-        $apiKey = config('services.anthropic.key');
+        $apiKey = env('ANTHROPIC_API_KEY') ?: config('services.anthropic.key');
 
         if (empty($apiKey) || $apiKey === 'your_key_here') {
             throw new \Exception("Anthropic API key is not configured.");
@@ -127,20 +128,22 @@ class ChatbotAgentService
             . "If the database snapshot does not contain enough information to answer, state that honestly.\n\n"
             . "Question: " . $question;
 
-        $response = Http::withHeaders([
-            'x-api-key' => $apiKey,
-            'anthropic-version' => '2023-06-01',
-            'Content-Type' => 'application/json',
-        ])->post('https://api.anthropic.com/v1/messages', [
-            'model' => 'claude-sonnet-4-20250514',
-            'max_tokens' => 1000,
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
+        $response = Http::timeout(30)
+            ->withoutVerifying()
+            ->withHeaders([
+                'x-api-key' => $apiKey,
+                'anthropic-version' => '2023-06-01',
+                'Content-Type' => 'application/json',
+            ])->post('https://api.anthropic.com/v1/messages', [
+                'model' => 'claude-sonnet-4-20250514',
+                'max_tokens' => 1000,
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => $prompt,
+                    ],
                 ],
-            ],
-        ]);
+            ]);
 
         if ($response->failed()) {
             throw new \Exception("Claude API call failed: " . $response->body());
@@ -153,7 +156,7 @@ class ChatbotAgentService
     /**
      * Local fallback response when Claude is offline.
      */
-    protected function generateLocalResponse(string $question): string
+    protected function generateLocalResponse(string $question, ?string $errorMessage = null): string
     {
         $q = strtolower($question);
         $todayStr = Carbon::today()->toDateString();
@@ -163,6 +166,17 @@ class ChatbotAgentService
         $tasksCount = Task::count();
         $completedTasks = Task::where('status', 'completed')->count();
         $absentees = AttendanceLog::with('teamMember')->whereDate('date', $todayStr)->where('status', 'absent')->get();
+
+        $offlineReason = "the Claude API integration is not configured or reachable";
+        if ($errorMessage) {
+            if (str_contains($errorMessage, 'credit balance is too low') || str_contains($errorMessage, 'credit_balance')) {
+                $offlineReason = "your Anthropic Claude API account credit balance is too low/exhausted";
+            } elseif (str_contains($errorMessage, 'SSL certificate problem') || str_contains($errorMessage, 'local issuer certificate')) {
+                $offlineReason = "a local SSL/cURL certificate configuration error on your machine";
+            } else {
+                $offlineReason = "an API error: " . substr($errorMessage, 0, 100);
+            }
+        }
 
         if (str_contains($q, 'member') || str_contains($q, 'team') || str_contains($q, 'who')) {
             $list = TeamMember::pluck('name')->toArray();
@@ -181,8 +195,8 @@ class ChatbotAgentService
             return "Today, the following member(s) are absent: " . implode(', ', $names) . ".";
         }
 
-        return "I am currently operating in offline mode because the Claude API integration is not configured or reachable. "
+        return "I am currently operating in offline mode because of {$offlineReason}. "
             . "However, according to my database logs, we have {$membersCount} team members and {$tasksCount} tasks registered. "
-            . "Please set up your Anthropic API Key in the `.env` file to unlock full conversational intelligence!";
+            . "Please resolve this issue to unlock full conversational intelligence!";
     }
 }

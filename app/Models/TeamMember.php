@@ -15,6 +15,7 @@ class TeamMember extends Model
         'name',
         'email',
         'role',
+        'github_id',
     ];
 
     public function tasks(): HasMany

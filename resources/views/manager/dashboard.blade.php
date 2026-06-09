@@ -54,24 +54,33 @@
             <p class="text-secondary small mb-0 mt-auto">Daily evaluated average</p>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card glass-card p-4 h-100">
+    <div class="col-sm-6 col-lg-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#membersModal">
+        <div class="card glass-card p-4 h-100 hover-card">
             <span class="text-uppercase text-secondary small font-weight-bold">Total Members</span>
-            <h3 class="h2 font-outfit mt-2 mb-1 text-white">{{ $totalMembers }}</h3>
+            <h3 class="h2 font-outfit mt-2 mb-1 text-white d-flex justify-content-between align-items-center">
+                <span>{{ $totalMembers }}</span>
+                <span class="text-xs text-primary font-weight-normal font-sans" style="font-size: 10px;">View Table &rarr;</span>
+            </h3>
             <p class="text-secondary small mb-0 mt-auto">Active resources registered</p>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card glass-card p-4 h-100">
+    <div class="col-sm-6 col-lg-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#tasksModal">
+        <div class="card glass-card p-4 h-100 hover-card">
             <span class="text-uppercase text-secondary small font-weight-bold">Total Tasks</span>
-            <h3 class="h2 font-outfit mt-2 mb-1 text-white">{{ $totalTasks }}</h3>
+            <h3 class="h2 font-outfit mt-2 mb-1 text-white d-flex justify-content-between align-items-center">
+                <span>{{ $totalTasks }}</span>
+                <span class="text-xs text-primary font-weight-normal font-sans" style="font-size: 10px;">View List &rarr;</span>
+            </h3>
             <p class="text-secondary small mb-0 mt-auto">Assigned workflow items</p>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card glass-card p-4 h-100">
-            <span class="text-uppercase text-secondary small font-weight-bold">Git Commits Today</span>
-            <h3 class="h2 font-outfit mt-2 mb-1 text-white">{{ $totalCommits }}</h3>
+    <div class="col-sm-6 col-lg-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#commitsModal">
+        <div class="card glass-card p-4 h-100 hover-card">
+            <span class="text-uppercase text-secondary small font-weight-bold">Total Commits</span>
+            <h3 class="h2 font-outfit mt-2 mb-1 text-white d-flex justify-content-between align-items-center">
+                <span>{{ $allCommits->count() }}</span>
+                <span class="text-xs text-primary font-weight-normal font-sans" style="font-size: 10px;">View Log &rarr;</span>
+            </h3>
             <p class="text-secondary small mb-0 mt-auto">Daily repository updates</p>
         </div>
     </div>
@@ -257,7 +266,16 @@
                         }
                     @endphp
                     <tr>
-                        <td class="py-3 font-semibold text-slate-100">{{ $report->report_date->format('M d, Y') }}</td>
+                        <td class="py-3 font-semibold text-slate-100">
+                            <div>{{ $report->report_date->format('M d, Y') }}</div>
+                            <div class="text-secondary small font-normal mt-0.5" style="font-size: 10px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="text-secondary me-1 align-middle" viewBox="0 0 16 16">
+                                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                </svg>
+                                <span class="align-middle">{{ $report->created_at->format('h:i A') }}</span>
+                            </div>
+                        </td>
                         <td class="py-3 font-bold {{ $textClass }}">
                             {{ $histPct }}%
                             <div class="progress d-none d-sm-inline-flex ms-2 align-self-center" style="width: 60px; height: 5px; background-color: #334155;">
@@ -282,6 +300,385 @@
     </div>
 </div>
 
+<!-- Custom Styles for Hover Effects -->
+@section('styles')
+<style>
+    .hover-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .hover-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.4), 0 4px 10px -4px rgba(168, 85, 247, 0.1);
+        border-color: rgba(168, 85, 247, 0.4) !important;
+    }
+    .btn-xs {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        border-radius: 0.25rem;
+    }
+</style>
+@endsection
+
+<!-- Team Members Modal -->
+<div class="modal fade" id="membersModal" tabindex="-1" aria-labelledby="membersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
+            <div class="modal-header border-bottom border-slate-800 p-4">
+                <h5 class="modal-title font-outfit text-white" id="membersModalLabel">Team Members Registry</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Add Member Collapse Form -->
+                <button type="button" class="btn btn-sm btn-primary mb-3" data-bs-toggle="collapse" data-bs-target="#addMemberCollapse" aria-expanded="false" aria-controls="addMemberCollapse">
+                    + Add Team Member
+                </button>
+                <div class="collapse mb-3" id="addMemberCollapse">
+                    <div class="card p-3" style="background-color: #1e293b; border: 1px solid #334155;">
+                        <form action="{{ route('manager.store-team-member') }}" method="POST">
+                            @csrf
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <input type="text" name="name" class="form-control form-control-sm" placeholder="Name" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" name="role" class="form-control form-control-sm" placeholder="Role (e.g., Backend Dev)" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="Email" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" name="github_id" class="form-control form-control-sm" placeholder="GitHub Username">
+                                </div>
+                                <div class="col-12 text-end mt-2">
+                                    <button type="submit" class="btn btn-sm btn-success">Save Member</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
+                        <thead class="text-secondary" style="font-size: 11px;">
+                            <tr>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">#</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Name</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Role</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Email</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">GitHub ID</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($allMembers as $member)
+                                <tr id="member-row-{{ $member->id }}">
+                                    <td class="py-3 text-secondary">{{ $loop->iteration }}</td>
+                                    <td class="py-3">
+                                        <span class="view-mode font-semibold text-slate-100">{{ $member->name }}</span>
+                                        <input type="text" name="name" form="edit-member-form-{{ $member->id }}" value="{{ $member->name }}" class="form-control form-control-sm edit-mode d-none" required>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="view-mode text-slate-300">{{ $member->role }}</span>
+                                        <input type="text" name="role" form="edit-member-form-{{ $member->id }}" value="{{ $member->role }}" class="form-control form-control-sm edit-mode d-none" required>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="view-mode text-slate-400">{{ $member->email }}</span>
+                                        <input type="email" name="email" form="edit-member-form-{{ $member->id }}" value="{{ $member->email }}" class="form-control form-control-sm edit-mode d-none" required>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="view-mode font-mono text-purple-400">{{ $member->github_id ?? 'N/A' }}</span>
+                                        <input type="text" name="github_id" form="edit-member-form-{{ $member->id }}" value="{{ $member->github_id }}" class="form-control form-control-sm edit-mode d-none">
+                                    </td>
+                                    <td class="py-3 text-end">
+                                        <form id="edit-member-form-{{ $member->id }}" action="{{ route('manager.update-team-member', $member->id) }}" method="POST" class="d-none">
+                                            @csrf
+                                            @method('PUT')
+                                        </form>
+                                        <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $member->id }}, 'member')">Edit</button>
+                                        <button type="submit" form="edit-member-form-{{ $member->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none ms-1" onclick="toggleEditMode({{ $member->id }}, 'member')">Cancel</button>
+                                        
+                                        <form action="{{ route('manager.destroy-team-member', $member->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this member?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-xs btn-outline-danger view-mode">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-secondary italic">No team members registered.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-slate-800 p-4">
+                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Total Tasks Modal -->
+<div class="modal fade" id="tasksModal" tabindex="-1" aria-labelledby="tasksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
+            <div class="modal-header border-bottom border-slate-800 p-4">
+                <h5 class="modal-title font-outfit text-white" id="tasksModalLabel">Workflow Tasks Ledger</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Add Task Collapse Form -->
+                <button type="button" class="btn btn-sm btn-primary mb-3" data-bs-toggle="collapse" data-bs-target="#addTaskCollapse" aria-expanded="false" aria-controls="addTaskCollapse">
+                    + Add New Task
+                </button>
+                <div class="collapse mb-3" id="addTaskCollapse">
+                    <div class="card p-3" style="background-color: #1e293b; border: 1px solid #334155;">
+                        <form action="{{ route('manager.store-task') }}" method="POST">
+                            @csrf
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <input type="text" name="title" class="form-control form-control-sm" placeholder="Task Title" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <select name="team_member_id" class="form-select form-select-sm" required>
+                                        <option value="" disabled selected>Assign Employee</option>
+                                        @foreach($allMembers as $m)
+                                            <option value="{{ $m->id }}">{{ $m->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select name="status" class="form-select form-select-sm" required>
+                                        <option value="pending">Pending</option>
+                                        <option value="in_progress">In Progress</option>
+                                        <option value="completed">Completed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="date" name="due_date" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-12 text-end mt-2">
+                                    <button type="submit" class="btn btn-sm btn-success">Save Task</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
+                        <thead class="text-secondary" style="font-size: 11px;">
+                            <tr>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">#</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Task Title</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Assigned Employee</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Status</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Due Date</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($allTasks as $task)
+                                <tr id="task-row-{{ $task->id }}">
+                                    <td class="py-3 text-secondary">{{ $loop->iteration }}</td>
+                                    <td class="py-3">
+                                        <span class="view-mode font-semibold text-slate-100">{{ $task->title }}</span>
+                                        <input type="text" name="title" form="edit-task-form-{{ $task->id }}" value="{{ $task->title }}" class="form-control form-control-sm edit-mode d-none" required>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="view-mode text-slate-300">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-indigo-500 bg-opacity-10 text-indigo-400 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 22px; height: 22px; font-size: 10px; background-color: rgba(99, 102, 241, 0.1) !important;">
+                                                    {{ substr($task->teamMember?->name ?? '?', 0, 1) }}
+                                                </div>
+                                                <span>{{ $task->teamMember?->name ?? 'Unassigned' }}</span>
+                                            </div>
+                                        </span>
+                                        <select name="team_member_id" form="edit-task-form-{{ $task->id }}" class="form-select form-select-sm edit-mode d-none" required>
+                                            @foreach($allMembers as $m)
+                                                <option value="{{ $m->id }}" {{ $task->team_member_id == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="view-mode">
+                                            @if($task->status === 'completed')
+                                                <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Completed</span>
+                                            @elseif($task->status === 'in_progress')
+                                                <span class="badge rounded-pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 px-2.5 py-1" style="font-size: 10px;">In Progress</span>
+                                            @else
+                                                <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Pending</span>
+                                            @endif
+                                        </span>
+                                        <select name="status" form="edit-task-form-{{ $task->id }}" class="form-select form-select-sm edit-mode d-none" required>
+                                            <option value="pending" {{ $task->status == 'pending' ? 'selected' : '' }}>Pending</option>
+                                            <option value="in_progress" {{ $task->status == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                                            <option value="completed" {{ $task->status == 'completed' ? 'selected' : '' }}>Completed</option>
+                                        </select>
+                                    </td>
+                                    <td class="py-3 text-slate-400">
+                                        <span class="view-mode">{{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}</span>
+                                        <input type="date" name="due_date" form="edit-task-form-{{ $task->id }}" value="{{ \Carbon\Carbon::parse($task->due_date)->format('Y-m-d') }}" class="form-control form-control-sm edit-mode d-none" required>
+                                    </td>
+                                    <td class="py-3 text-end">
+                                        <form id="edit-task-form-{{ $task->id }}" action="{{ route('manager.update-task', $task->id) }}" method="POST" class="d-none">
+                                            @csrf
+                                            @method('PUT')
+                                        </form>
+                                        <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $task->id }}, 'task')">Edit</button>
+                                        <button type="submit" form="edit-task-form-{{ $task->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none ms-1" onclick="toggleEditMode({{ $task->id }}, 'task')">Cancel</button>
+                                        
+                                        <form action="{{ route('manager.destroy-task', $task->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this task?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-xs btn-outline-danger view-mode">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-secondary italic">No tasks logged in system.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-slate-800 p-4">
+                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Git Commits Modal -->
+<div class="modal fade" id="commitsModal" tabindex="-1" aria-labelledby="commitsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
+            <div class="modal-header border-bottom border-slate-800 p-4">
+                <h5 class="modal-title font-outfit text-white" id="commitsModalLabel">Version Control Commit Log</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Add Commit Collapse Form -->
+                <button type="button" class="btn btn-sm btn-primary mb-3" data-bs-toggle="collapse" data-bs-target="#addCommitCollapse" aria-expanded="false" aria-controls="addCommitCollapse">
+                    + Add New Commit
+                </button>
+                <div class="collapse mb-3" id="addCommitCollapse">
+                    <div class="card p-3" style="background-color: #1e293b; border: 1px solid #334155;">
+                        <form action="{{ route('manager.store-commit') }}" method="POST">
+                            @csrf
+                            <div class="row g-2">
+                                <div class="col-md-2">
+                                    <input type="text" name="commit_hash" class="form-control form-control-sm" placeholder="Hash (e.g. d51a672)" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" name="repository_name" class="form-control form-control-sm" placeholder="Repository Name" value="manager-agent" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <select name="team_member_id" class="form-select form-select-sm" required>
+                                        <option value="" disabled selected>Developer</option>
+                                        @foreach($allMembers as $m)
+                                            <option value="{{ $m->id }}">{{ $m->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="text" name="message" class="form-control form-control-sm" placeholder="Commit Message" required>
+                                </div>
+                                <div class="col-md-4 mt-2">
+                                    <input type="datetime-local" name="committed_at" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-md-8 text-end mt-2">
+                                    <button type="submit" class="btn btn-sm btn-success">Save Commit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
+                        <thead class="text-secondary" style="font-size: 11px;">
+                            <tr>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">#</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Commit Hash</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Repository Name</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Developer</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">GitHub ID</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Message</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Committed At</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($allCommits as $commit)
+                                <tr id="commit-row-{{ $commit->id }}">
+                                    <td class="py-3 text-secondary">{{ $loop->iteration }}</td>
+                                    <td class="py-3 font-mono text-primary" style="font-size: 13px;">
+                                        <span class="view-mode">{{ $commit->commit_hash }}</span>
+                                        <input type="text" name="commit_hash" form="edit-commit-form-{{ $commit->id }}" value="{{ $commit->commit_hash }}" class="form-control form-control-sm edit-mode d-none" required>
+                                    </td>
+                                    <td class="py-3 text-slate-300 font-semibold">
+                                        <span class="view-mode">{{ $commit->repository_name ?? 'manager-agent' }}</span>
+                                        <input type="text" name="repository_name" form="edit-commit-form-{{ $commit->id }}" value="{{ $commit->repository_name ?? 'manager-agent' }}" class="form-control form-control-sm edit-mode d-none" required>
+                                    </td>
+                                    <td class="py-3 text-slate-300">
+                                        <span class="view-mode">{{ $commit->teamMember?->name ?? 'Unknown' }}</span>
+                                        <select name="team_member_id" form="edit-commit-form-{{ $commit->id }}" class="form-select form-select-sm edit-mode d-none" required>
+                                            @foreach($allMembers as $m)
+                                                <option value="{{ $m->id }}" {{ $commit->team_member_id == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td class="py-3 font-mono text-purple-400" style="font-size: 12px;">
+                                        <span class="view-mode">{{ $commit->teamMember?->github_id ?? 'N/A' }}</span>
+                                        <span class="edit-mode d-none text-secondary">Linked to Member</span>
+                                    </td>
+                                    <td class="py-3 text-slate-100" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        <span class="view-mode">{{ $commit->message }}</span>
+                                        <input type="text" name="message" form="edit-commit-form-{{ $commit->id }}" value="{{ $commit->message }}" class="form-control form-control-sm edit-mode d-none" required>
+                                    </td>
+                                    <td class="py-3 text-slate-400" style="font-size: 12px;">
+                                        <span class="view-mode">{{ $commit->committed_at->format('M d, Y h:i A') }}</span>
+                                        <input type="datetime-local" name="committed_at" form="edit-commit-form-{{ $commit->id }}" value="{{ $commit->committed_at->format('Y-m-d\TH:i') }}" class="form-control form-control-sm edit-mode d-none" required>
+                                    </td>
+                                    <td class="py-3 text-end">
+                                        <form id="edit-commit-form-{{ $commit->id }}" action="{{ route('manager.update-commit', $commit->id) }}" method="POST" class="d-none">
+                                            @csrf
+                                            @method('PUT')
+                                        </form>
+                                        <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $commit->id }}, 'commit')">Edit</button>
+                                        <button type="submit" form="edit-commit-form-{{ $commit->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
+                                        <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none ms-1" onclick="toggleEditMode({{ $commit->id }}, 'commit')">Cancel</button>
+                                        
+                                        <form action="{{ route('manager.destroy-commit', $commit->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this commit?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-xs btn-outline-danger view-mode">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-secondary italic">No commits recorded in log.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-slate-800 p-4">
+                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('scripts')
@@ -290,6 +687,14 @@
         btn.disabled = true;
         document.getElementById('generate-text').innerText = "Analyzing team data...";
         document.getElementById('generate-form').submit();
+    }
+
+    // Toggle view/edit mode for inline table fields
+    function toggleEditMode(rowId, type) {
+        const row = document.getElementById(`${type}-row-${rowId}`);
+        if (!row) return;
+        row.querySelectorAll('.view-mode').forEach(el => el.classList.toggle('d-none'));
+        row.querySelectorAll('.edit-mode').forEach(el => el.classList.toggle('d-none'));
     }
 </script>
 @endsection

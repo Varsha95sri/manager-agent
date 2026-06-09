@@ -9,28 +9,57 @@
     <div class="col-lg-10">
         
         <div class="row g-4 align-items-center mb-4">
-            <div class="col-md-6">
+            <div class="col-lg-4 col-md-12">
                 <h2 class="h3 font-outfit text-white mb-1">Performance Archive</h2>
                 <p class="text-secondary small mb-0">Browse and query all historical daily team analytics evaluations.</p>
             </div>
             
-            <!-- Search bar form -->
-            <div class="col-md-6">
-                <form method="GET" action="{{ route('manager.reports') }}" class="d-flex">
-                    <div class="input-group">
+            <!-- Search & Filter form -->
+            <div class="col-lg-8 col-md-12">
+                <form method="GET" action="{{ route('manager.reports') }}" class="row g-2 align-items-end justify-content-lg-end">
+                    <!-- Keyword search -->
+                    <div class="col-sm-4">
+                        <label class="text-secondary small mb-1 d-block" style="font-size: 11px;">Search Keyword</label>
                         <input
                             type="text"
                             name="search"
-                            class="form-control border-slate-700 bg-slate-900 text-white placeholder-secondary rounded-start-3"
-                            placeholder="Search by date or keyword..."
+                            class="form-control border-slate-700 bg-slate-900 text-white placeholder-secondary rounded-3"
+                            placeholder="Keyword or date..."
                             value="{{ request('search') }}"
                         >
-                        <button class="btn btn-primary px-3" type="submit">
-                            Search
+                    </div>
+                    <!-- Calendar Date -->
+                    <div class="col-sm-3">
+                        <label class="text-secondary small mb-1 d-block" style="font-size: 11px;">Report Date</label>
+                        <input
+                            type="date"
+                            name="filter_date"
+                            class="form-control border-slate-700 bg-slate-900 text-white placeholder-secondary rounded-3"
+                            value="{{ request('filter_date') }}"
+                            style="color-scheme: dark;"
+                        >
+                    </div>
+                    <!-- Calendar DateTime-local -->
+                    <div class="col-sm-3">
+                        <label class="text-secondary small mb-1 d-block" style="font-size: 11px;">Exact Date & Time</label>
+                        <input
+                            type="datetime-local"
+                            name="filter_datetime"
+                            class="form-control border-slate-700 bg-slate-900 text-white placeholder-secondary rounded-3"
+                            value="{{ request('filter_datetime') }}"
+                            style="color-scheme: dark;"
+                        >
+                    </div>
+                    <!-- Actions -->
+                    <div class="col-sm-2 d-flex gap-2 justify-content-end">
+                        <button class="btn btn-primary px-3 rounded-3 flex-grow-1" type="submit">
+                            Filter
                         </button>
-                        @if(request('search'))
-                            <a href="{{ route('manager.reports') }}" class="btn btn-outline-danger px-3 d-flex align-items-center justify-content-center">
-                                Clear
+                        @if(request('search') || request('filter_date') || request('filter_datetime'))
+                            <a href="{{ route('manager.reports') }}" class="btn btn-outline-danger px-2 rounded-3 d-flex align-items-center justify-content-center" title="Clear Filters">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                                </svg>
                             </a>
                         @endif
                     </div>
@@ -69,7 +98,21 @@
                                 }
                             @endphp
                             <tr>
-                                <td class="py-3 font-semibold text-slate-100">{{ $report->report_date->format('F d, Y') }}</td>
+                                <td class="py-3 font-semibold text-slate-100">
+                                    <div class="d-flex align-items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="text-primary me-2" viewBox="0 0 16 16">
+                                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                                        </svg>
+                                        <span>{{ $report->report_date->format('F d, Y') }}</span>
+                                    </div>
+                                    <div class="text-secondary small font-normal mt-1 ps-4">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="text-secondary me-1 align-middle" viewBox="0 0 16 16">
+                                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                        </svg>
+                                        <span class="align-middle">Generated: {{ $report->created_at->format('h:i:s A') }}</span>
+                                    </div>
+                                </td>
                                 <td class="py-3 font-bold {{ $textClass }}">
                                     {{ $histPct }}%
                                     <div class="progress d-none d-md-inline-flex ms-2 align-self-center" style="width: 60px; height: 5px; background-color: #334155;">
@@ -91,8 +134,8 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="text-center py-5 text-secondary italic small">
-                                    @if(request('search'))
-                                        No performance reports found matching your keyword.
+                                    @if(request('search') || request('filter_date') || request('filter_datetime'))
+                                        No performance reports found matching your criteria.
                                     @else
                                         No historical performance reports logged yet.
                                     @endif

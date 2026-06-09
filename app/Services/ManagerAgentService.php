@@ -46,7 +46,9 @@ class ManagerAgentService
                 'id' => $commit->id,
                 'team_member_id' => $commit->team_member_id,
                 'member_name' => $commit->teamMember?->name ?? 'Unknown',
+                'github_id' => $commit->teamMember?->github_id ?? 'N/A',
                 'commit_hash' => $commit->commit_hash,
+                'repository_name' => $commit->repository_name ?? 'N/A',
                 'message' => $commit->message,
                 'committed_at' => $commit->committed_at->toDateTimeString(),
             ])
@@ -93,39 +95,77 @@ class ManagerAgentService
      */
     public function analyzeWithClaude(array $tasks, array $commits, array $attendance, array $meetings): array
     {
-        $apiKey = config('services.anthropic.key');
+        $apiKey = env('ANTHROPIC_API_KEY') ?: config('services.anthropic.key');
 
         if (empty($apiKey) || $apiKey === 'your_key_here') {
-            throw new \Exception("Anthropic API Key is not configured in services config.");
+            throw new \Exception("Anthropic API Key is not configured.");
         }
 
-        $tasksJson = json_encode($tasks);
-        $commitsJson = json_encode($commits);
-        $attendanceJson = json_encode($attendance);
-        $meetingsJson = json_encode($meetings);
+        // Fetch team members list for context
+        $teamMembers = TeamMember::all()->map(fn($m) => [
+            'id' => $m->id,
+            'name' => $m->name,
+            'role' => $m->role,
+            'email' => $m->email,
+        ])->toArray();
 
-        $prompt = "You are a Manager Agent. Analyze this team data and return ONLY valid JSON (no markdown, no explanation):\n"
-            . "TASKS: {$tasksJson}\n"
-            . "GIT COMMITS: {$commitsJson}\n"
-            . "ATTENDANCE: {$attendanceJson}\n"
-            . "MEETING NOTES: {$meetingsJson}\n"
-            . "Return JSON format:\n"
-            . "{ \"team_productivity\": 84, \"top_performers\": [\"Rahul\",\"Arjun\"], \"attention_required\": [\"Shipra\"], \"risks\": [\"API delayed 2 days\"], \"full_report\": \"detailed text...\" }";
+        // Fetch historical performance reports for context (e.g., trends)
+        $historicalReports = PerformanceReport::latest()
+            ->limit(3)
+            ->get()
+            ->map(fn($r) => [
+                'report_date' => $r->report_date,
+                'team_productivity' => $r->team_productivity,
+                'top_performers' => $r->top_performers,
+                'attention_required' => $r->attention_required,
+                'risks' => $r->risks,
+            ])
+            ->toArray();
 
-        $response = Http::withHeaders([
-            'x-api-key' => $apiKey,
-            'anthropic-version' => '2023-06-01',
-            'Content-Type' => 'application/json',
-        ])->post('https://api.anthropic.com/v1/messages', [
-            'model' => 'claude-sonnet-4-20250514',
-            'max_tokens' => 1000,
-            'messages' => [
-                [
-                    'role' => 'user',
-                    'content' => $prompt,
+        $dataContext = [
+            'team_members' => $teamMembers,
+            'historical_performance_reports' => $historicalReports,
+            'today_git_commits' => $commits,
+            'today_tasks' => $tasks,
+            'today_attendance' => $attendance,
+            'today_meeting_notes' => $meetings,
+        ];
+
+        $dataJson = json_encode($dataContext, JSON_PRETTY_PRINT);
+
+        $prompt = "Analyze the following team activities context and generate a daily report matching the schema exactly:\n\n"
+            . "<context>\n{$dataJson}\n</context>";
+
+        $systemPrompt = "You are the Manager Agent, a production-grade AI system designed to analyze daily team activities, git commits, attendance logs, tasks, meeting notes, and historical performance reports.\n"
+            . "Your goal is to act as an objective, strategic manager. Evaluate the daily team metrics and produce a comprehensive, professional, and structured report.\n"
+            . "You must output ONLY a valid JSON object matching the requested schema. Do not output any Markdown wrapping, code block markers, or additional text. Ensure all JSON fields are populated correctly.\n\n"
+            . "Requested JSON Schema:\n"
+            . "{\n"
+            . "  \"team_productivity\": (integer between 0 and 100, representing overall team productivity for the day),\n"
+            . "  \"top_performers\": (array of strings, names of the team members who showed exceptional contribution today),\n"
+            . "  \"attention_required\": (array of strings, listing members or issues needing direct managerial intervention, e.g. \"Shipra (Absent)\", \"Rahul (Overdue task: optimize queries)\"),\n"
+            . "  \"risks\": (array of strings, detailing any project risks, blockers, delayed timelines, or resource shortages),\n"
+            . "  \"full_report\": (string, a detailed markdown-formatted executive report containing sections: Executive Summary, Key Achievements, Activity Details, and Recommendations. Write in a formal, professional management tone)\n"
+            . "}";
+
+        // Send API request to Claude (Anthropic Messages API) using Laravel Http client
+        $response = Http::timeout(30)
+            ->withoutVerifying()
+            ->withHeaders([
+                'x-api-key' => $apiKey,
+                'anthropic-version' => '2023-06-01',
+                'Content-Type' => 'application/json',
+            ])->post('https://api.anthropic.com/v1/messages', [
+                'model' => 'claude-sonnet-4-20250514',
+                'max_tokens' => 1500,
+                'system' => $systemPrompt,
+                'messages' => [
+                    [
+                        'role' => 'user',
+                        'content' => $prompt,
+                    ],
                 ],
-            ],
-        ]);
+            ]);
 
         if ($response->failed()) {
             throw new \Exception("Anthropic API call failed with status " . $response->status() . ": " . $response->body());
@@ -134,7 +174,7 @@ class ManagerAgentService
         $responseData = $response->json();
         $responseText = $responseData['content'][0]['text'] ?? '';
 
-        // Handle possible JSON wrapper in Claude's output (e.g. ```json ... ```)
+        // Handle possible JSON wrappers like ```json ... ```
         $cleanText = trim($responseText);
         if (str_starts_with($cleanText, '```json')) {
             $cleanText = substr($cleanText, 7);
@@ -148,6 +188,14 @@ class ManagerAgentService
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new \Exception("Failed to decode JSON from Claude response. JSON Error: " . json_last_error_msg() . ". Raw text: " . $responseText);
+        }
+
+        // Validate required schema elements
+        $requiredKeys = ['team_productivity', 'top_performers', 'attention_required', 'risks', 'full_report'];
+        foreach ($requiredKeys as $key) {
+            if (!array_key_exists($key, $decoded)) {
+                throw new \Exception("Missing required key '{$key}' in Claude JSON response.");
+            }
         }
 
         return $decoded;
@@ -227,7 +275,7 @@ class ManagerAgentService
         arsort($performersMap);
         $topPerformers = array_slice(array_keys($performersMap), 0, 2);
         if (empty($topPerformers)) {
-            $topPerformers = ['Rahul', 'Arjun']; // Default seed members
+            $topPerformers = []; // No dummy default performers
         }
 
         // 3. Attention required based on absentees, lates, or pending tasks
@@ -240,7 +288,7 @@ class ManagerAgentService
             }
         }
         foreach ($tasks as $task) {
-            if ($task['status'] === 'pending' && Carbon::parse($task['due_date'])->isPast()) {
+            if ($task['status'] === 'pending' && Carbon::parse($task['due_date'])->lt(Carbon::today())) {
                 $desc = $task['member_name'] . ' (Overdue task: ' . $task['title'] . ')';
                 if (!in_match_name($attentionList, $task['member_name'])) {
                     $attentionList[] = $desc;
@@ -248,7 +296,7 @@ class ManagerAgentService
             }
         }
         if (empty($attentionList)) {
-            $attentionList = ['Shipra (QA has multiple pending validation tasks)'];
+            $attentionList = []; // No dummy attention items
         }
 
         // 4. Risks list
@@ -256,7 +304,7 @@ class ManagerAgentService
         if ($absentCount > 1) {
             $risks[] = "Multiple team members absent ({$absentCount} members). Potential timeline impact.";
         }
-        $overdueCount = collect($tasks)->where('status', '!=', 'completed')->filter(fn($t) => Carbon::parse($t['due_date'])->isPast())->count();
+        $overdueCount = collect($tasks)->where('status', '!=', 'completed')->filter(fn($t) => Carbon::parse($t['due_date'])->lt(Carbon::today()))->count();
         if ($overdueCount > 0) {
             $risks[] = "{$overdueCount} tasks are currently overdue. Milestones might be delayed.";
         }

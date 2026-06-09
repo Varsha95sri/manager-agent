@@ -78,12 +78,21 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Designated Role</label>
-                        <input type="text" name="role" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('role') is-invalid @enderror" placeholder="e.g. Backend Dev, Designer, DevOps" value="{{ old('role') }}" required>
-                        @error('role')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Designated Role</label>
+                            <input type="text" name="role" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('role') is-invalid @enderror" placeholder="e.g. Backend Dev, Designer, DevOps" value="{{ old('role') }}" required>
+                            @error('role')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">GitHub Username / ID</label>
+                            <input type="text" name="github_id" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('github_id') is-invalid @enderror" placeholder="e.g. rahul-dev" value="{{ old('github_id') }}">
+                            @error('github_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </div>
                     <div class="text-end">
                         <button type="submit" class="btn accent-btn px-4 py-2.5">Add Team Member</button>
@@ -147,7 +156,7 @@
                     @csrf
                     <h3 class="h4 font-outfit text-white mb-4 pb-2 border-bottom border-slate-800">Log Git Commit</h3>
                     <div class="row g-4 mb-4">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Author Member</label>
                             <select name="team_member_id" class="form-select border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('team_member_id') is-invalid @enderror" required>
                                 <option value="">Select a member...</option>
@@ -159,10 +168,17 @@
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Commit Hash</label>
                             <input type="text" name="commit_hash" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('commit_hash') is-invalid @enderror" placeholder="e.g. 7f1a20c" value="{{ old('commit_hash') }}" required>
                             @error('commit_hash')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Repository Name</label>
+                            <input type="text" name="repository_name" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('repository_name') is-invalid @enderror" placeholder="e.g. manager-agent" value="{{ old('repository_name', 'manager-agent') }}" required>
+                            @error('repository_name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

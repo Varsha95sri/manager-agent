@@ -40,12 +40,20 @@ class ManagerAgentController extends Controller
         $latestReport = PerformanceReport::latest()->first();
         $reports = PerformanceReport::latest()->take(7)->get();
 
+        // Data for dashboard modals
+        $allMembers = TeamMember::all();
+        $allTasks = Task::with('teamMember')->get();
+        $allCommits = GitCommit::with('teamMember')->get();
+
         return view('manager.dashboard', compact(
             'totalMembers',
             'totalTasks',
             'totalCommits',
             'latestReport',
-            'reports'
+            'reports',
+            'allMembers',
+            'allTasks',
+            'allCommits'
         ));
     }
 
@@ -71,8 +79,24 @@ class ManagerAgentController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $query->where('report_date', 'like', "%{$search}%")
+            $query->where(function ($q) use ($search) {
+                $q->where('report_date', 'like', "%{$search}%")
                   ->orWhere('full_report', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('filter_date')) {
+            $filterDate = $request->input('filter_date');
+            $query->whereDate('report_date', $filterDate);
+        }
+
+        if ($request->filled('filter_datetime')) {
+            $filterDatetime = $request->input('filter_datetime');
+            $parsedDt = Carbon::parse($filterDatetime);
+            $query->whereBetween('created_at', [
+                $parsedDt->copy()->startOfMinute(),
+                $parsedDt->copy()->endOfMinute()
+            ]);
         }
 
         $reports = $query->latest()->paginate(10)->withQueryString();
@@ -86,7 +110,21 @@ class ManagerAgentController extends Controller
     public function detail($id): View
     {
         $report = PerformanceReport::findOrFail($id);
-        return view('manager.report-detail', compact('report'));
+        
+        $prevReport = PerformanceReport::where('report_date', '<', $report->report_date)
+            ->orderBy('report_date', 'desc')
+            ->first();
+            
+        $nextReport = PerformanceReport::where('report_date', '>', $report->report_date)
+            ->orderBy('report_date', 'asc')
+            ->first();
+
+        // Get tasks for this report's date to display as task details
+        $tasks = Task::with('teamMember')
+            ->whereDate('due_date', $report->report_date)
+            ->get();
+
+        return view('manager.report-detail', compact('report', 'prevReport', 'nextReport', 'tasks'));
     }
 
     /**
@@ -107,6 +145,7 @@ class ManagerAgentController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:team_members,email',
             'role' => 'required|string|max:255',
+            'github_id' => 'nullable|string|max:255',
         ]);
 
         TeamMember::create($validated);
@@ -139,6 +178,7 @@ class ManagerAgentController extends Controller
         $validated = $request->validate([
             'team_member_id' => 'required|exists:team_members,id',
             'commit_hash' => 'required|string|max:255',
+            'repository_name' => 'required|string|max:255',
             'message' => 'required|string|max:255',
             'committed_at' => 'required|date',
         ]);
@@ -179,5 +219,93 @@ class ManagerAgentController extends Controller
         MeetingNote::create($validated);
 
         return redirect()->back()->with('success', 'Meeting note saved successfully!')->with('active_tab', 'meetings');
+    }
+
+    /**
+     * Update team member.
+     */
+    public function updateTeamMember(Request $request, $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:team_members,email,' . $id,
+            'role' => 'required|string|max:255',
+            'github_id' => 'nullable|string|max:255',
+        ]);
+
+        $member = TeamMember::findOrFail($id);
+        $member->update($validated);
+
+        return redirect()->back()->with('success', 'Team member updated successfully!');
+    }
+
+    /**
+     * Delete team member.
+     */
+    public function destroyTeamMember($id): RedirectResponse
+    {
+        $member = TeamMember::findOrFail($id);
+        $member->delete();
+
+        return redirect()->back()->with('success', 'Team member deleted successfully!');
+    }
+
+    /**
+     * Update task.
+     */
+    public function updateTask(Request $request, $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'team_member_id' => 'required|exists:team_members,id',
+            'title' => 'required|string|max:255',
+            'status' => 'required|in:pending,in_progress,completed',
+            'due_date' => 'required|date',
+        ]);
+
+        $task = Task::findOrFail($id);
+        $task->update($validated);
+
+        return redirect()->back()->with('success', 'Task updated successfully!');
+    }
+
+    /**
+     * Delete task.
+     */
+    public function destroyTask($id): RedirectResponse
+    {
+        $task = Task::findOrFail($id);
+        $task->delete();
+
+        return redirect()->back()->with('success', 'Task deleted successfully!');
+    }
+
+    /**
+     * Update git commit.
+     */
+    public function updateCommit(Request $request, $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'team_member_id' => 'required|exists:team_members,id',
+            'commit_hash' => 'required|string|max:255',
+            'repository_name' => 'required|string|max:255',
+            'message' => 'required|string|max:255',
+            'committed_at' => 'required|date',
+        ]);
+
+        $commit = GitCommit::findOrFail($id);
+        $commit->update($validated);
+
+        return redirect()->back()->with('success', 'Git commit updated successfully!');
+    }
+
+    /**
+     * Delete git commit.
+     */
+    public function destroyCommit($id): RedirectResponse
+    {
+        $commit = GitCommit::findOrFail($id);
+        $commit->delete();
+
+        return redirect()->back()->with('success', 'Git commit deleted successfully!');
     }
 }
