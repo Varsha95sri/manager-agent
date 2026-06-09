@@ -1,0 +1,14 @@
+/node_modules
+/vendor
+/public/storage
+/storage/*.key
+/storage/logs/*.log
+/database/*.sqlite
+.env
+.env.*
+.git
+.github
+/tests
+.phpunit.result.cache
+npm-debug.log
+yarn-error.log
