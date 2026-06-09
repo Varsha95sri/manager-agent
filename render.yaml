@@ -6,7 +6,6 @@ services:
     region: oregon
     branch: main
     dockerfilePath: Dockerfile
-  
     envVars:
       - key: APP_ENV
         value: production
@@ -17,10 +16,6 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_URL
-        fromDatabase:
-          name: manager-agent-db
-          property: connectionString
+        value: postgresql://user:password@host/dbname  # 👈 apna copied URL yahan daalo
       - key: ANTHROPIC_API_KEY
         sync: false
-
-
