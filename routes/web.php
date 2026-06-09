@@ -42,4 +42,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/manager-agent/chatbot/clear', [\App\Http\Controllers\ChatbotController::class, 'clear'])->name('manager.chatbot.clear');
 });
 
+Route::get('/view-logs', function () {
+    $path = storage_path('logs/laravel.log');
+    if (file_exists($path)) {
+        $content = file_get_contents($path);
+        // Return last 2000 characters
+        return '<pre>' . htmlspecialchars(substr($content, -5000)) . '</pre>';
+    }
+    return 'Log file not found';
+});
+
 require __DIR__.'/auth.php';
