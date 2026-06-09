@@ -33,7 +33,8 @@ COPY laravel-worker.conf /opt/docker/etc/supervisor.d/laravel-worker.conf
 
 # Set document root for Nginx to serve Laravel public folder
 ENV WEB_DOCUMENT_ROOT=/app/public
-
+# Dockerfile ke end mein CMD se pehle:
+RUN php artisan migrate --force || true
 # Set correct permissions for Laravel directories
 RUN chown -R application:application storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
