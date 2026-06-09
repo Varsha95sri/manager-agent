@@ -52,4 +52,16 @@ Route::get('/view-logs', function () {
     return 'Log file not found';
 });
 
+Route::get('/force-migrate-fresh', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', [
+            '--seed' => true,
+            '--force' => true
+        ]);
+        return '<h2>Database Rebuilt Successfully!</h2><pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+    } catch (\Throwable $e) {
+        return '<h2>Migration Failed!</h2><pre>' . $e->getMessage() . "\n\n" . $e->getTraceAsString() . '</pre>';
+    }
+});
+
 require __DIR__.'/auth.php';
