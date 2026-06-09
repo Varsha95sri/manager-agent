@@ -10,6 +10,11 @@ services:
     envVars:
       - key: APP_ENV
         value: production
+      - key: APP_URL
+        fromService:
+          name: manager-agent-web
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
       - key: APP_DEBUG
         value: false
       - key: APP_KEY
