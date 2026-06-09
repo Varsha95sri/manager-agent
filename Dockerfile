@@ -15,14 +15,7 @@ RUN npm run build
 FROM webdevops/php-nginx:8.3-alpine
 WORKDIR /app
 
-# Copy composer files
-COPY composer.json composer.lock ./
-
-# Install PHP dependencies
-ENV COMPOSER_ALLOW_SUPERUSER=1
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Copy the rest of the application
+# Copy the entire application code first
 COPY . .
 
 # Copy built frontend assets from Stage 1
@@ -31,10 +24,13 @@ COPY --from=frontend-builder /app/public/build ./public/build
 # Copy Supervisor configuration for background Laravel queue worker
 COPY laravel-worker.conf /opt/docker/etc/supervisor.d/laravel-worker.conf
 
+# Install PHP dependencies (now artisan and app files are present for auto-discovery)
+ENV COMPOSER_ALLOW_SUPERUSER=1
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
 # Set document root for Nginx to serve Laravel public folder
 ENV WEB_DOCUMENT_ROOT=/app/public
-# Dockerfile ke end mein CMD se pehle:
-RUN php artisan migrate --force || true
+
 # Set correct permissions for Laravel directories
 RUN chown -R application:application storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
