@@ -16,6 +16,6 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_URL
-        value: postgresql://user:password@host/dbname  # 👈 apna copied URL yahan daalo
+        value: postgresql://prahari:mlwVsyKaTs6mkUx8tx83kBVGGpj4cA1e@dpg-d8fb746q1p3s73dpqs1g-a/prahari_crtc
       - key: ANTHROPIC_API_KEY
         sync: false
