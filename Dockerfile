@@ -28,6 +28,11 @@ COPY laravel-worker.conf /opt/docker/etc/supervisor.d/laravel-worker.conf
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
+# Fix syslog-ng warning about obsolete stats_freq keyword
+RUN if [ -f /etc/syslog-ng/syslog-ng.conf ]; then \
+        sed -i 's/stats_freq(\([0-9]*\));/stats(freq(\1));/g' /etc/syslog-ng/syslog-ng.conf; \
+    fi
+
 # Set document root for Nginx to serve Laravel public folder
 ENV WEB_DOCUMENT_ROOT=/app/public
 
