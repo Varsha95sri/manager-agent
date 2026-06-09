@@ -46,8 +46,8 @@ Route::get('/view-logs', function () {
     $path = storage_path('logs/laravel.log');
     if (file_exists($path)) {
         $content = file_get_contents($path);
-        // Return last 2000 characters
-        return '<pre>' . htmlspecialchars(substr($content, -5000)) . '</pre>';
+        // Return last 40000 characters to ensure we capture the exception message
+        return '<pre>' . htmlspecialchars(substr($content, -40000)) . '</pre>';
     }
     return 'Log file not found';
 });
