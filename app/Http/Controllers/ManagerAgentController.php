@@ -27,34 +27,43 @@ class ManagerAgentController extends Controller
     /**
      * Display the manager dashboard.
      */
-    public function index(): View
+    public function index()
     {
-        $todayStr = Carbon::today()->toDateString();
-        
-        $totalMembers = TeamMember::count();
-        $totalTasks = Task::count();
-        
-        // Count git commits logged today
-        $totalCommits = GitCommit::whereDate('committed_at', $todayStr)->count();
-        
-        $latestReport = PerformanceReport::latest()->first();
-        $reports = PerformanceReport::latest()->take(7)->get();
+        try {
+            $todayStr = Carbon::today()->toDateString();
+            
+            $totalMembers = TeamMember::count();
+            $totalTasks = Task::count();
+            
+            // Count git commits logged today
+            $totalCommits = GitCommit::whereDate('committed_at', $todayStr)->count();
+            
+            $latestReport = PerformanceReport::latest()->first();
+            $reports = PerformanceReport::latest()->take(7)->get();
 
-        // Data for dashboard modals
-        $allMembers = TeamMember::all();
-        $allTasks = Task::with('teamMember')->get();
-        $allCommits = GitCommit::with('teamMember')->get();
+            // Data for dashboard modals
+            $allMembers = TeamMember::all();
+            $allTasks = Task::with('teamMember')->get();
+            $allCommits = GitCommit::with('teamMember')->get();
 
-        return view('manager.dashboard', compact(
-            'totalMembers',
-            'totalTasks',
-            'totalCommits',
-            'latestReport',
-            'reports',
-            'allMembers',
-            'allTasks',
-            'allCommits'
-        ));
+            return view('manager.dashboard', compact(
+                'totalMembers',
+                'totalTasks',
+                'totalCommits',
+                'latestReport',
+                'reports',
+                'allMembers',
+                'allTasks',
+                'allCommits'
+            ));
+        } catch (\Throwable $e) {
+            dd([
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
     }
 
     /**
