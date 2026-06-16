@@ -11,6 +11,7 @@ use App\Models\MeetingNote;
 use App\Models\PerformanceReport;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ProductivityDemoSeeder extends Seeder
 {
@@ -22,16 +23,16 @@ class ProductivityDemoSeeder extends Seeder
         $todayStr = Carbon::today()->toDateString();
 
         // 1. Clear all existing records cleanly to avoid duplicate/inconsistent data
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        DB::table('task_team_member')->truncate();
-        DB::table('meeting_note_team_member')->truncate();
-        Task::truncate();
-        GitCommit::truncate();
-        AttendanceLog::truncate();
-        MeetingNote::truncate();
-        PerformanceReport::truncate();
-        TeamMember::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        Schema::disableForeignKeyConstraints();
+        DB::table('task_team_member')->delete();
+        DB::table('meeting_note_team_member')->delete();
+        DB::table('tasks')->delete();
+        DB::table('git_commits')->delete();
+        DB::table('attendance_logs')->delete();
+        DB::table('meeting_notes')->delete();
+        DB::table('performance_reports')->delete();
+        DB::table('team_members')->delete();
+        Schema::enableForeignKeyConstraints();
 
         // 2. Define 20 team members with names, roles, and legacy fields
         $membersData = [
