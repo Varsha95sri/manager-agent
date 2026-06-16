@@ -367,7 +367,7 @@
         <!-- Footer -->
         <footer class="footer-section text-center bg-slate-950/20">
             <div class="container">
-                <p class="mb-0">&copy; {{ date('Y') }} Manager Agent. All rights reserved. Powered by Claude Sonnet.</p>
+                <p class="mb-0">&copy; {{ date('Y') }} Manager Agent. All rights reserved. Powered by AI.</p>
             </div>
         </footer>
 

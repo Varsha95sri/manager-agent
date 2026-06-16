@@ -16,11 +16,29 @@ class TeamMember extends Model
         'email',
         'role',
         'github_id',
+        'task_title',
+        'task_commit',
+        'attendance',
+        'meeting_date',
+        'meeting_title',
+        'task_assign_date',
+        'due_date',
+        'login_timing',
     ];
 
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function assignedTasks()
+    {
+        return $this->belongsToMany(Task::class, 'task_team_member');
+    }
+
+    public function meetingNotes()
+    {
+        return $this->belongsToMany(MeetingNote::class, 'meeting_note_team_member');
     }
 
     public function gitCommits(): HasMany

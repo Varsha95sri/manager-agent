@@ -106,14 +106,20 @@
                     @csrf
                     <h3 class="h4 font-outfit text-white mb-4 pb-2 border-bottom border-slate-800">Assign New Task</h3>
                     <div class="mb-4">
-                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Team Member</label>
-                        <select name="team_member_id" class="form-select border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('team_member_id') is-invalid @enderror" required>
-                            <option value="">Select a member...</option>
+                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Assign Team Member(s) / Group</label>
+                        <div class="developer-select-container border border-slate-700 bg-slate-900/60 rounded-3 p-2.5" style="max-height: 200px; overflow-y: auto;">
                             @foreach($teamMembers as $m)
-                                <option value="{{ $m->id }}" {{ old('team_member_id') == $m->id ? 'selected' : '' }}>{{ $m->name }} ({{ $m->role }})</option>
+                                <div class="developer-select-item d-flex align-items-center p-2 mb-1.5 rounded-3 border border-slate-800 bg-slate-950/30 cursor-pointer" onclick="toggleDeveloperSelect(event, 'chk-data-task-{{ $m->id }}')" style="transition: all 0.2s; cursor: pointer;">
+                                    <input class="form-check-input me-3 border-slate-600 bg-slate-800" type="checkbox" name="team_member_ids[]" value="{{ $m->id }}" id="chk-data-task-{{ $m->id }}" style="cursor: pointer;" {{ is_array(old('team_member_ids')) && in_array($m->id, old('team_member_ids')) ? 'checked' : '' }}>
+                                    <div class="min-w-0 flex-grow-1">
+                                        <div class="text-white font-outfit font-semibold mb-0.5" style="font-size: 12.5px; line-height: 1.2;">{{ $m->name }}</div>
+                                        <div class="text-slate-400 font-outfit" style="font-size: 10.5px;">{{ $m->role }}</div>
+                                    </div>
+                                </div>
                             @endforeach
-                        </select>
-                        @error('team_member_id')
+                        </div>
+                        <div class="text-slate-400 small mt-1.5" style="font-size: 10px;">Select one or more team members. Click to toggle selection.</div>
+                        @error('team_member_ids')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
@@ -259,20 +265,45 @@
                     @csrf
                     <h3 class="h4 font-outfit text-white mb-4 pb-2 border-bottom border-slate-800">Record Meeting Summary</h3>
                     <div class="row g-4 mb-4">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Meeting Title</label>
                             <input type="text" name="title" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('title') is-invalid @enderror" placeholder="e.g. Morning status check sync" value="{{ old('title') }}" required>
                             @error('title')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Meeting Date</label>
                             <input type="date" name="meeting_date" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('meeting_date') is-invalid @enderror" value="{{ old('meeting_date', date('Y-m-d')) }}" required>
                             @error('meeting_date')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Meeting Time</label>
+                            <input type="time" name="meeting_time" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('meeting_time') is-invalid @enderror" value="{{ old('meeting_time', date('H:i')) }}">
+                            @error('meeting_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Assign Group / Team Member Attendees</label>
+                        <div class="developer-select-container border border-slate-700 bg-slate-900/60 rounded-3 p-2.5" style="max-height: 200px; overflow-y: auto;">
+                            @foreach($teamMembers as $m)
+                                <div class="developer-select-item d-flex align-items-center p-2 mb-1.5 rounded-3 border border-slate-800 bg-slate-950/30 cursor-pointer" onclick="toggleDeveloperSelect(event, 'chk-data-meet-{{ $m->id }}')" style="transition: all 0.2s; cursor: pointer;">
+                                    <input class="form-check-input me-3 border-slate-600 bg-slate-800" type="checkbox" name="team_members[]" value="{{ $m->id }}" id="chk-data-meet-{{ $m->id }}" style="cursor: pointer;" {{ is_array(old('team_members')) && in_array($m->id, old('team_members')) ? 'checked' : '' }}>
+                                    <div class="min-w-0 flex-grow-1">
+                                        <div class="text-white font-outfit font-semibold mb-0.5" style="font-size: 12.5px; line-height: 1.2;">{{ $m->name }}</div>
+                                        <div class="text-slate-400 font-outfit" style="font-size: 10.5px;">{{ $m->role }}</div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="text-slate-400 small mt-1.5" style="font-size: 10px;">Select attendees for the meeting. Click to toggle selection. Leave empty for all-hands.</div>
+                        @error('team_members')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="mb-4">
                         <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Discussion Notes & Decisions</label>
@@ -290,4 +321,22 @@
 
     </div>
 </div>
+@endsection
+
+@section('styles')
+<style>
+    .developer-select-item {
+        border: 1px solid #1e293b !important;
+        transition: all 0.2s;
+    }
+    .developer-select-item:hover {
+        border-color: rgba(99, 102, 241, 0.4) !important;
+        background-color: rgba(99, 102, 241, 0.04) !important;
+    }
+    .developer-select-item:has(input:checked) {
+        border-color: #6366f1 !important;
+        background-color: rgba(99, 102, 241, 0.1) !important;
+        box-shadow: 0 0 8px rgba(99, 102, 241, 0.15);
+    }
+</style>
 @endsection

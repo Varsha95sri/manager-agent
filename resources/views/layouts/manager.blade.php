@@ -254,18 +254,136 @@
             border-color: var(--text-muted) !important;
         }
         .text-secondary {
-            color: #94a3b8 !important;
+            color: #cbd5e1 !important; /* Brightened from #94a3b8 */
         }
 
         /* Slate color utility fallbacks */
         .text-slate-100 { color: #f8fafc !important; }
-        .text-slate-200 { color: #e2e8f0 !important; }
+        .text-slate-200 { color: #f1f5f9 !important; }
         .text-slate-300 { color: #cbd5e1 !important; }
         .text-slate-400 { color: #94a3b8 !important; }
+        .text-slate-500 { color: #64748b !important; }
         .bg-slate-900 { background-color: #0b0f19 !important; }
         .bg-slate-950 { background-color: #020617 !important; }
         .border-slate-700 { border-color: #334155 !important; }
         .border-slate-800 { border-color: #1e293b !important; }
+
+        /* Premium Card styling enhancements */
+        .hover-card {
+            transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-card:hover {
+            transform: translateY(-4px) !important;
+            border-color: var(--accent-border-hover, rgba(168, 85, 247, 0.4)) !important;
+            box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.5), 0 4px 20px -2px var(--accent-glow, rgba(168, 85, 247, 0.15)) !important;
+        }
+
+        /* High-visibility Color Utility Fallbacks */
+        .text-emerald-300 { color: #6ee7b7 !important; }
+        .text-emerald-400 { color: #34d399 !important; }
+        .text-emerald-500 { color: #10b981 !important; }
+        .text-rose-300 { color: #fda4af !important; }
+        .text-rose-400 { color: #fb7185 !important; }
+        .text-rose-500 { color: #f43f5e !important; }
+
+        /* Floating AI Chatbot widget styles */
+        .floating-chat-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 9999;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a855f7, #6366f1);
+            border: none;
+            color: #ffffff;
+            box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            outline: none !important;
+        }
+        .floating-chat-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+        }
+        .floating-chat-window {
+            position: fixed;
+            bottom: 95px;
+            right: 25px;
+            z-index: 9999;
+            width: 380px;
+            max-width: calc(100vw - 50px);
+            height: 500px;
+            max-height: calc(100vh - 120px);
+            background-color: #0b0f19;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .floating-chat-header {
+            background: linear-gradient(135deg, #1e293b, #020617);
+            padding: 15px 20px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .floating-chat-body {
+            padding: 15px 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #0f172a;
+        }
+        .floating-chat-footer {
+            border-top: 1px solid #1e293b;
+            padding: 12px 15px;
+            background-color: #0b0f19;
+        }
+        
+        /* Message Bubbles */
+        .chat-message {
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
+        }
+        .chat-message.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+        .chat-message.assistant {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+        .message-bubble {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.45;
+            word-break: break-word;
+        }
+        .chat-message.user .message-bubble {
+            background-color: #a855f7;
+            color: #ffffff;
+            border-bottom-right-radius: 2px;
+        }
+        .chat-message.assistant .message-bubble {
+            background-color: #1e293b;
+            color: #f1f5f9;
+            border-bottom-left-radius: 2px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .message-time {
+            font-size: 9px;
+            color: #64748b;
+            margin-top: 4px;
+            padding: 0 4px;
+        }
     </style>
     @yield('styles')
 </head>
@@ -275,12 +393,9 @@
     <div class="sidebar" id="sidebar">
         <div class="sidebar-brand d-flex align-items-center">
             <div class="sidebar-brand-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="text-white" viewBox="0 0 16 16">
-                    <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.7 4 5.65 5.5 5.65h5c1.5 0 2.5 1.05 2.5 2.412v3.838a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 3 11.9V8.062Zm2.5-.912C4.338 7.15 3.5 7.9 3.5 9v1.5a.5.5 0 0 0 1 0v-1.5c0-.276.224-.5.5-.5h5c.276 0 .5.224.5.5v1.5a.5.5 0 0 0 1 0v-1.5c0-1.1-.838-1.85-2-1.85h-5Z"/>
-                    <path d="M8 2a3 3 0 0 0-3 3 .5.5 0 0 0 1 0 2 2 0 1 1 4 0 .5.5 0 0 0 1 0 3 3 0 0 0-3-3Z"/>
-                </svg>
+                <span class="text-white font-bold font-outfit" style="font-size: 12px; font-weight: 800;">PM</span>
             </div>
-            <span>Manager Agent</span>
+            <span>AI Manager <span style="color: #c084fc;">✨</span></span>
         </div>
 
         <ul class="sidebar-nav">
@@ -293,11 +408,27 @@
                 </a>
             </li>
             <li class="sidebar-nav-item">
-                <a href="{{ route('manager.chatbot') }}" class="sidebar-nav-link {{ request()->routeIs('manager.chatbot') ? 'active' : '' }}">
+                <a href="{{ route('manager.employees.index') }}" class="sidebar-nav-link {{ request()->routeIs('manager.employees.index') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    AI Chatbot
+                    Employees
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="{{ route('manager.task-entry') }}" class="sidebar-nav-link {{ request()->routeIs('manager.task-entry') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    Daily Tasks
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="{{ route('manager.attendance-registry') }}" class="sidebar-nav-link {{ request()->routeIs('manager.attendance-registry') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Daily Attendance
                 </a>
             </li>
             <li class="sidebar-nav-item">
@@ -314,6 +445,23 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     Reports History
+                </a>
+            </li>
+
+            <li class="sidebar-nav-item">
+                <a href="{{ route('developer.index') }}" class="sidebar-nav-link {{ request()->routeIs('developer.index') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Developer Tools
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="{{ route('profile.edit') }}" class="sidebar-nav-link {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Profile
                 </a>
             </li>
             <li class="sidebar-nav-item mt-4 pt-4 border-top border-slate-800">
@@ -343,10 +491,31 @@
                 <h4 class="m-0 font-outfit text-slate-100">@yield('page_title', 'Dashboard')</h4>
             </div>
             
-            <div class="d-flex align-items-center space-x-3">
-                <div class="text-end me-3 d-none d-sm-block">
-                    <div class="text-xs text-muted font-bold text-uppercase">Manager Interface</div>
-                    <div class="text-sm font-semibold text-slate-200">{{ Auth::user()?->name ?? 'Varsha Manager' }}</div>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Notification Bell with count -->
+                <div class="position-relative me-2" style="cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-slate-400 hover:text-white" viewBox="0 0 16 16">
+                        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
+                    </svg>
+                    <span class="position-absolute badge rounded-circle bg-primary" style="font-size: 7px; padding: 2px 4px; top: -5px; right: -5px; background: linear-gradient(135deg, #a855f7, #6366f1) !important;">
+                        3
+                    </span>
+                </div>
+
+                <!-- Username and sub-role -->
+                <div class="text-end d-none d-sm-block">
+                    <div class="text-sm font-semibold text-slate-200 d-flex align-items-center justify-content-end gap-1">
+                        <span>{{ Auth::user()?->name ?? 'Varsha Srivastava' }}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="text-slate-400 ms-1" viewBox="0 0 16 16" style="margin-top: 2px;">
+                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </div>
+                    <div class="text-secondary small mt-0.5" style="font-size: 10px; font-weight: 500;">Project Manager</div>
+                </div>
+
+                <!-- Circular Avatar -->
+                <div class="position-relative">
+                    <img src="{{ asset('avatar.png') }}" alt="Profile" class="rounded-circle border border-primary border-opacity-50" style="width: 38px; height: 38px; object-fit: cover; border-width: 2px !important; box-shadow: 0 0 8px rgba(168, 85, 247, 0.3);">
                 </div>
             </div>
         </header>
@@ -384,7 +553,7 @@
 
         <!-- Footer -->
         <footer class="py-4 border-top border-slate-800 text-center text-xs text-secondary bg-slate-950/20">
-            &copy; {{ date('Y') }} Manager Agent. Powered by Claude Sonnet.
+            &copy; {{ date('Y') }} Manager Agent. Powered by AI.
         </footer>
     </div>
 
@@ -402,6 +571,238 @@
                 });
             }
         });
+    </script>
+
+    <!-- Floating AI Chatbot Action Button (Circle Widget) -->
+    <button id="floatingChatBtn" class="floating-chat-btn" onclick="toggleFloatingChat()" title="Ask AI Chatbot">
+        <!-- Chat Bubble Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15z"/>
+        </svg>
+    </button>
+
+    <!-- Floating Chat Window -->
+    <div id="floatingChatWindow" class="floating-chat-window d-none">
+        <div class="floating-chat-header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="m-0 text-white font-outfit font-bold" style="font-size: 15px;">AI Chat Assistant</h5>
+                <span class="text-success font-semibold uppercase tracking-wider" style="font-size: 9px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                    <span class="d-inline-block bg-success rounded-circle" style="width: 6px; height: 6px;"></span>
+                    Online & Active
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn p-0 text-slate-400 hover:text-red-500 bg-transparent border-0 shadow-none" onclick="clearFloatingChatHistory()" title="Clear History">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                </button>
+                <button type="button" class="btn p-0 text-slate-400 hover:text-white bg-transparent border-0 shadow-none" onclick="toggleFloatingChat()" title="Close chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Body -->
+        <div class="floating-chat-body" id="floatingChatBody">
+            <div class="chat-message assistant mb-3">
+                <div class="message-bubble">
+                    Hello! I am your AI Manager Agent assistant. Ask me anything about employee records, daily attendance logs, productivity analytics, or task details!
+                </div>
+                <div class="message-time">Now</div>
+            </div>
+
+            @foreach(session('chat_history', []) as $msg)
+                <div class="chat-message {{ $msg['role'] === 'user' ? 'user' : 'assistant' }} mb-3">
+                    <div class="message-bubble">
+                        {{ $msg['text'] }}
+                    </div>
+                    <div class="message-time">{{ $msg['time'] ?? 'Now' }}</div>
+                </div>
+            @endforeach
+        </div>
+
+        <!-- Input Footer form -->
+        <div class="floating-chat-footer">
+            <form id="floatingChatForm" onsubmit="submitFloatingChat(event)" class="d-flex gap-2 align-items-center">
+                <input type="text" id="floatingChatInput" class="form-control form-control-sm text-white border-slate-700 bg-slate-950 px-3 py-2 rounded-3" style="font-size: 13px; background-color: #020617 !important;" placeholder="Ask manager agent..." required autocomplete="off">
+                <button type="submit" class="btn btn-primary btn-sm rounded-3 py-2 px-3 shadow" style="background: linear-gradient(135deg, #a855f7, #6366f1); border: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Floating Chatbot Script -->
+    <script>
+        // Toggle widget open/close
+        function toggleFloatingChat() {
+            const chatWindow = document.getElementById('floatingChatWindow');
+            if (chatWindow.classList.contains('d-none')) {
+                chatWindow.classList.remove('d-none');
+                scrollChatToBottom();
+                document.getElementById('floatingChatInput').focus();
+            } else {
+                chatWindow.classList.add('d-none');
+            }
+        }
+
+        // Scroll chat to bottom
+        function scrollChatToBottom() {
+            const chatBody = document.getElementById('floatingChatBody');
+            if (chatBody) {
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+        }
+
+        // Submit chat prompt via Fetch AJAX
+        function submitFloatingChat(event) {
+            event.preventDefault();
+            const inputField = document.getElementById('floatingChatInput');
+            const question = inputField.value.trim();
+            if (!question) return;
+
+            // Clear input
+            inputField.value = '';
+
+            // Append user message to body
+            const chatBody = document.getElementById('floatingChatBody');
+            const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = 'chat-message user mb-3';
+            userMsgDiv.innerHTML = `
+                <div class="message-bubble">${escapeHtml(question)}</div>
+                <div class="message-time">${nowTime}</div>
+            `;
+            chatBody.appendChild(userMsgDiv);
+            scrollChatToBottom();
+
+            // Append loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'chat-message assistant mb-3';
+            loadingDiv.id = 'chat-loading-indicator';
+            loadingDiv.innerHTML = `
+                <div class="message-bubble italic text-slate-400">
+                    <span class="spinner-grow spinner-grow-sm text-primary align-middle me-1" role="status" style="width: 8px; height: 8px;"></span>
+                    Typing response...
+                </div>
+            `;
+            chatBody.appendChild(loadingDiv);
+            scrollChatToBottom();
+
+            // Send network request
+            fetch("{{ route('manager.chatbot.ask') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ question: question })
+            })
+            .then(res => res.json())
+            .then(data => {
+                // Remove loading indicator
+                const loader = document.getElementById('chat-loading-indicator');
+                if (loader) loader.remove();
+
+                if (data.success) {
+                    // Append assistant message
+                    const assistantMsgDiv = document.createElement('div');
+                    assistantMsgDiv.className = 'chat-message assistant mb-3';
+                    assistantMsgDiv.innerHTML = `
+                        <div class="message-bubble">${data.assistant.text}</div>
+                        <div class="message-time">${data.assistant.time}</div>
+                    `;
+                    chatBody.appendChild(assistantMsgDiv);
+                } else {
+                    showErrorBubble('Oops, failed to fetch AI response.');
+                }
+                scrollChatToBottom();
+            })
+            .catch(err => {
+                const loader = document.getElementById('chat-loading-indicator');
+                if (loader) loader.remove();
+                showErrorBubble('Fetch Exception: Unable to reach chatbot service.');
+                scrollChatToBottom();
+            });
+        }
+
+        // Show error message
+        function showErrorBubble(msg) {
+            const chatBody = document.getElementById('floatingChatBody');
+            const errDiv = document.createElement('div');
+            errDiv.className = 'chat-message assistant mb-3';
+            errDiv.innerHTML = `
+                <div class="message-bubble text-danger font-semibold">${msg}</div>
+                <div class="message-time">Now</div>
+            `;
+            chatBody.appendChild(errDiv);
+        }
+
+        // Escape helper
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Clear history via AJAX
+        function clearFloatingChatHistory() {
+            if (!confirm('Are you sure you want to clear the conversation logs?')) return;
+
+            fetch("{{ route('manager.chatbot.clear') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Reset body to default message
+                    const chatBody = document.getElementById('floatingChatBody');
+                    chatBody.innerHTML = `
+                        <div class="chat-message assistant mb-3">
+                            <div class="message-bubble">
+                                Hello! I am your AI Manager Agent assistant. Ask me anything about employee records, daily attendance logs, productivity analytics, or task details!
+                            </div>
+                            <div class="message-time">Now</div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // Auto-scroll on load
+        document.addEventListener('DOMContentLoaded', () => {
+            scrollChatToBottom();
+        });
+
+        // Global checkable developer list selection toggle helper
+        function toggleDeveloperSelect(event, checkboxId) {
+            if (event.target.tagName.toLowerCase() === 'input') {
+                return;
+            }
+            const checkbox = document.getElementById(checkboxId);
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        }
     </script>
     @yield('scripts')
 </body>

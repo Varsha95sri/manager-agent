@@ -108,7 +108,7 @@ export default function AuthenticatedLayout({ children }) {
 
             {/* Footer */}
             <footer class="mt-auto py-6 border-t border-slate-900 bg-slate-950/40 text-center text-xs text-slate-600">
-                &copy; {new Date().getFullYear()} Manager Agent. Powered by Claude Sonnet.
+                &copy; {new Date().getFullYear()} Manager Agent. Powered by AI.
             </footer>
         </div>
     );

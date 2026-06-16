@@ -18,6 +18,17 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('role');
             $table->string('github_id')->nullable();
+            
+            // New columns for consolidated Employee CRUD
+            $table->string('task_title')->nullable();
+            $table->string('task_commit')->nullable();
+            $table->string('attendance')->nullable();
+            $table->date('meeting_date')->nullable();
+            $table->string('meeting_title')->nullable();
+            $table->date('task_assign_date')->nullable();
+            $table->date('due_date')->nullable();
+            $table->string('login_timing')->nullable();
+            
             $table->timestamps();
         });
 

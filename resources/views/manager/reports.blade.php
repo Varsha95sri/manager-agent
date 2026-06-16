@@ -67,6 +67,36 @@
             </div>
         </div>
 
+    <!-- Individual Employee AI Audits Card -->
+    <div class="card glass-card p-4 mb-4 animate-fade-in-up">
+        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="me-2 text-primary">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Individual Employee AI Audits
+        </h4>
+        <p class="text-secondary small mb-4">Generate and view real-time AI-synthesized daily performance reports for individual team members.</p>
+        
+        <div class="row g-3">
+            @foreach($allMembers as $member)
+                <div class="col-md-6 col-lg-4">
+                    <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 d-flex justify-content-between align-items-center hover-card" style="transition: all 0.2s;">
+                        <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
+                            <h6 class="text-white font-outfit font-semibold mb-0.5 text-truncate">{{ $member->name }}</h6>
+                            <span class="text-secondary small text-truncate d-block">{{ $member->role }}</span>
+                        </div>
+                        <button class="btn btn-sm btn-primary py-1.5 px-3 rounded-3 shrink-0" onclick="showEmployeeReport({{ $member->id }}, '{{ addslashes($member->name) }}')">
+                            AI Report
+                        </button>
+                    </div>
+                </div>
+            @endforeach
+            @if($allMembers->isEmpty())
+                <div class="col-12 text-center text-secondary py-3 italic small">No team members registered to audit.</div>
+            @endif
+        </div>
+    </div>
+
         <div class="card glass-card p-4 shadow-2xl">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #334155;">
@@ -156,4 +186,110 @@
 
     </div>
 </div>
+
+<!-- Employee AI Report Modal -->
+<div class="modal fade" id="employeeReportModal" tabindex="-1" aria-labelledby="employeeReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content text-white shadow-2xl" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
+            <div class="modal-header border-bottom border-slate-800 p-4">
+                <div>
+                    <h5 class="modal-title font-outfit text-white mb-0.5" id="employeeReportModalLabel">Employee Evening AI Audit</h5>
+                    <span id="employee-report-meta" class="text-secondary small">Generating report...</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" style="background-color: #0f172a; min-height: 250px;">
+                <div id="employee-report-spinner" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-secondary mt-3 mb-0">Analyzing today's activity log...</p>
+                </div>
+                <div id="employee-report-content" class="text-slate-300 small d-none" style="line-height: 1.625;">
+                    <!-- Rendered markdown content goes here -->
+                </div>
+            </div>
+            <div class="modal-footer border-top border-slate-800 p-4">
+                <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@section('styles')
+<style>
+    .hover-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .hover-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.4), 0 4px 10px -4px rgba(168, 85, 247, 0.1);
+        border-color: rgba(168, 85, 247, 0.4) !important;
+    }
+</style>
+@endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    // Show AI report for employee
+    function showEmployeeReport(memberId, memberName) {
+        const modalEl = document.getElementById('employeeReportModal');
+        const modal = new bootstrap.Modal(modalEl);
+        
+        const metaEl = document.getElementById('employee-report-meta');
+        const spinnerEl = document.getElementById('employee-report-spinner');
+        const contentEl = document.getElementById('employee-report-content');
+        
+        metaEl.innerText = `${memberName} — Preparing report...`;
+        spinnerEl.classList.remove('d-none');
+        contentEl.classList.add('d-none');
+        contentEl.innerHTML = '';
+        
+        modal.show();
+        
+        const targetUrl = `{{ url('/manager-agent/employee-report') }}/${memberId}`;
+        
+        fetch(targetUrl, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            return response.json().then(data => {
+                throw new Error(data.message || 'Failed to fetch employee report.');
+            });
+        })
+        .then(data => {
+            metaEl.innerText = `${data.name} (${data.role}) — Report for ${data.date}`;
+            spinnerEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+            
+            // Render using marked library
+            if (typeof marked !== 'undefined') {
+                contentEl.innerHTML = marked.parse(data.report);
+            } else {
+                contentEl.innerHTML = data.report.replace(/\n/g, '<br>');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching employee report:', error);
+            metaEl.innerText = `${memberName} — Generation Failed`;
+            spinnerEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+            contentEl.innerHTML = `
+                <div class="alert alert-danger border-0 p-3 text-white" style="background-color: rgba(244, 63, 94, 0.15); border-left: 4px solid #f43f5e !important;">
+                    <strong>Error:</strong> ${error.message}
+                </div>
+            `;
+        });
+    }
+</script>
 @endsection

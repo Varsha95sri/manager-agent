@@ -23,10 +23,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/manager-agent/task', [\App\Http\Controllers\ManagerAgentController::class, 'storeTask'])->name('manager.store-task');
     Route::put('/manager-agent/task/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'updateTask'])->name('manager.update-task');
     Route::delete('/manager-agent/task/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'destroyTask'])->name('manager.destroy-task');
+    Route::get('/manager-agent/tasks', [\App\Http\Controllers\ManagerAgentController::class, 'taskEntry'])->name('manager.task-entry');
     Route::post('/manager-agent/commit', [\App\Http\Controllers\ManagerAgentController::class, 'storeCommit'])->name('manager.store-commit');
     Route::put('/manager-agent/commit/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'updateCommit'])->name('manager.update-commit');
     Route::delete('/manager-agent/commit/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'destroyCommit'])->name('manager.destroy-commit');
+    Route::get('/manager-agent/attendance', [\App\Http\Controllers\ManagerAgentController::class, 'attendanceRegistry'])->name('manager.attendance-registry');
     Route::post('/manager-agent/attendance', [\App\Http\Controllers\ManagerAgentController::class, 'storeAttendance'])->name('manager.store-attendance');
+    Route::put('/manager-agent/attendance/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'updateAttendance'])->name('manager.update-attendance');
+    Route::delete('/manager-agent/attendance/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'destroyAttendance'])->name('manager.destroy-attendance');
     Route::post('/manager-agent/meeting', [\App\Http\Controllers\ManagerAgentController::class, 'storeMeeting'])->name('manager.store-meeting');
     Route::post('/manager-agent/team-member', [\App\Http\Controllers\ManagerAgentController::class, 'storeTeamMember'])->name('manager.store-team-member');
     Route::put('/manager-agent/team-member/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'updateTeamMember'])->name('manager.update-team-member');
@@ -35,11 +39,37 @@ Route::middleware('auth')->group(function () {
     // Reports History & Details Routes
     Route::get('/manager-agent/reports', [\App\Http\Controllers\ManagerAgentController::class, 'reports'])->name('manager.reports');
     Route::get('/manager-agent/reports/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'detail'])->name('manager.report-detail');
+    Route::get('/manager-agent/employee-report/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'employeeReport'])->name('manager.employee-report');
 
     // AI Chatbot Routes
     Route::get('/manager-agent/chatbot', [\App\Http\Controllers\ChatbotController::class, 'index'])->name('manager.chatbot');
     Route::post('/manager-agent/chatbot/ask', [\App\Http\Controllers\ChatbotController::class, 'ask'])->name('manager.chatbot.ask');
     Route::post('/manager-agent/chatbot/clear', [\App\Http\Controllers\ChatbotController::class, 'clear'])->name('manager.chatbot.clear');
+
+    // Developer Tools Web Routes
+    Route::get('/manager-agent/developer', [\App\Http\Controllers\DeveloperWebController::class, 'index'])->name('developer.index');
+    Route::post('/manager-agent/developer/keys', [\App\Http\Controllers\DeveloperWebController::class, 'store'])->name('developer.keys.store');
+    Route::delete('/manager-agent/developer/keys/{id}', [\App\Http\Controllers\DeveloperWebController::class, 'destroy'])->name('developer.keys.destroy');
+    Route::post('/manager-agent/developer/third-party', [\App\Http\Controllers\DeveloperWebController::class, 'storeThirdParty'])->name('developer.third-party.store');
+    Route::put('/manager-agent/developer/third-party/{id}', [\App\Http\Controllers\DeveloperWebController::class, 'updateThirdParty'])->name('developer.third-party.update');
+    Route::post('/manager-agent/developer/third-party/{id}/toggle', [\App\Http\Controllers\DeveloperWebController::class, 'toggleThirdParty'])->name('developer.third-party.toggle');
+    Route::delete('/manager-agent/developer/third-party/{id}', [\App\Http\Controllers\DeveloperWebController::class, 'destroyThirdParty'])->name('developer.third-party.destroy');
+
+    // Employee CRUD & Import/Export Routes
+    Route::get('/manager-agent/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])->name('manager.employees.index');
+    Route::post('/manager-agent/employees', [\App\Http\Controllers\EmployeeController::class, 'store'])->name('manager.employees.store');
+    Route::put('/manager-agent/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'update'])->name('manager.employees.update');
+    Route::delete('/manager-agent/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'destroy'])->name('manager.employees.destroy');
+    Route::get('/manager-agent/employees-export', [\App\Http\Controllers\EmployeeController::class, 'export'])->name('manager.employees.export');
+    Route::post('/manager-agent/employees-import', [\App\Http\Controllers\EmployeeController::class, 'import'])->name('manager.employees.import');
+
+    // Tasks CSV Export/Import Routes
+    Route::get('/manager-agent/tasks-export', [\App\Http\Controllers\ManagerAgentController::class, 'exportTasks'])->name('manager.tasks.export');
+    Route::post('/manager-agent/tasks-import', [\App\Http\Controllers\ManagerAgentController::class, 'importTasks'])->name('manager.tasks.import');
+
+    // Attendance CSV Export/Import Routes
+    Route::get('/manager-agent/attendance-export', [\App\Http\Controllers\ManagerAgentController::class, 'exportAttendance'])->name('manager.attendance.export');
+    Route::post('/manager-agent/attendance-import', [\App\Http\Controllers\ManagerAgentController::class, 'importAttendance'])->name('manager.attendance.import');
 });
 
 Route::get('/view-logs', function () {

@@ -199,11 +199,23 @@
                 Complete AI Narrative Review
             </h4>
             
-            <div class="text-slate-300 small whitespace-pre-wrap mt-3" style="line-height: 1.625;">
+            <div id="narrative-content" class="text-slate-300 small mt-3" style="line-height: 1.625;" data-raw-text="{{ $report->full_report }}">
                 {!! nl2br(e($report->full_report)) !!}
             </div>
         </div>
 
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const narrativeContent = document.getElementById('narrative-content');
+        if (narrativeContent && typeof marked !== 'undefined') {
+            narrativeContent.innerHTML = marked.parse(narrativeContent.getAttribute('data-raw-text'));
+        }
+    });
+</script>
 @endsection

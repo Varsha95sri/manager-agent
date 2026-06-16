@@ -30,8 +30,11 @@ class ChatbotController extends Controller
     /**
      * Post a question to the AI chatbot.
      */
-    public function ask(Request $request): RedirectResponse
+    public function ask(Request $request)
     {
+        @set_time_limit(180);
+        @ini_set('max_execution_time', '180');
+
         $request->validate([
             'question' => 'required|string|max:1000',
         ]);
@@ -43,19 +46,29 @@ class ChatbotController extends Controller
 
         // Fetch existing history and append current exchange
         $chatHistory = session('chat_history', []);
-        $chatHistory[] = [
+        $userMsg = [
             'role' => 'user',
             'text' => $question,
             'time' => now()->format('h:i A'),
         ];
-        $chatHistory[] = [
+        $assistantMsg = [
             'role' => 'assistant',
             'text' => $answer,
             'time' => now()->format('h:i A'),
         ];
+        $chatHistory[] = $userMsg;
+        $chatHistory[] = $assistantMsg;
 
         // Store back to session
         session(['chat_history' => $chatHistory]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'user' => $userMsg,
+                'assistant' => $assistantMsg,
+            ]);
+        }
 
         return redirect()->route('manager.chatbot');
     }
@@ -63,9 +76,17 @@ class ChatbotController extends Controller
     /**
      * Clear the chatbot conversation history.
      */
-    public function clear(): RedirectResponse
+    public function clear(Request $request)
     {
         session()->forget('chat_history');
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Conversation history cleared successfully!'
+            ]);
+        }
+
         return redirect()->route('manager.chatbot')->with('success', 'Conversation history cleared successfully!');
     }
 }

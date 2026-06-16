@@ -14,5 +14,11 @@ class MeetingNote extends Model
         'title',
         'notes',
         'meeting_date',
+        'meeting_time',
     ];
+
+    public function teamMembers()
+    {
+        return $this->belongsToMany(TeamMember::class, 'meeting_note_team_member');
+    }
 }

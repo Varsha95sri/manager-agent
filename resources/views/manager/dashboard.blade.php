@@ -10,18 +10,24 @@
     $offset = 314.16 - ($pct / 100) * 314.16;
 
     if ($pct >= 80) {
-        $colorText = 'text-success';
-        $colorStroke = 'stroke-success';
+        $colorText = 'text-emerald-400';
+        $colorStroke = 'stroke-emerald-400';
         $statusLabel = '🟢 Strong Team Momentum';
     } elseif ($pct >= 60) {
         $colorText = 'text-warning';
         $colorStroke = 'stroke-warning';
         $statusLabel = '🟡 Moderate Output';
     } else {
-        $colorText = 'text-danger';
-        $colorStroke = 'stroke-danger';
+        $colorText = 'text-rose-400';
+        $colorStroke = 'stroke-rose-400';
         $statusLabel = '🔴 Alert: High Blockers Found';
     }
+
+    // Task and meeting stats
+    $totalTasksCount = $allTasks->count();
+    $completedTasksCount = $allTasks->where('status', 'completed')->count();
+    $pendingTasksCount = $allTasks->where('status', 'pending')->count();
+    $totalMeetingsCount = \App\Models\MeetingNote::count();
 @endphp
 
 <div class="row g-4 align-items-center mb-4">
@@ -32,11 +38,13 @@
     <div class="col-md-4 text-md-end">
         <form method="POST" action="{{ route('manager.generate') }}" id="generate-form">
             @csrf
-            <button type="submit" class="btn accent-btn d-inline-flex align-items-center" onclick="setGeneratingState(this)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-                </svg>
+            <button type="submit" class="btn accent-btn d-inline-flex align-items-center" onclick="generateReport(event, this)">
+                <span id="generate-icon-container" class="me-2 d-inline-flex align-items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                    </svg>
+                </span>
                 <span id="generate-text">Generate Evening Report</span>
             </button>
         </form>
@@ -44,44 +52,128 @@
 </div>
 
 <!-- Metrics Cards Row -->
-<div class="row g-4 mb-4">
-    <div class="col-sm-6 col-lg-3">
-        <div class="card glass-card p-4 h-100">
-            <span class="text-uppercase text-secondary small font-weight-bold">Team Productivity</span>
-            <h3 class="h2 font-outfit mt-2 mb-1 {{ $latestReport ? $colorText : 'text-secondary' }}">
-                {{ $latestReport ? $pct . '%' : 'N/A' }}
-            </h3>
-            <p class="text-secondary small mb-0 mt-auto">Daily evaluated average</p>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+    <!-- Card 1: Team Productivity -->
+    <div class="col">
+        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(99, 102, 241, 0.5); --accent-glow: rgba(99, 102, 241, 0.25); border-left: 4px solid #6366f1 !important;">
+            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.2);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-indigo-400" viewBox="0 0 16 16">
+                    <path d="M11 2a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                    <path d="M14 14V12a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v2h12z"/>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-grow-1">
+                <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em; display: block;">Team Productivity</span>
+                <h3 class="h2 font-outfit mt-1 mb-0 {{ $latestReport ? $colorText : 'text-secondary' }} font-weight-bold">
+                    {{ $latestReport ? $pct . '%' : 'N/A' }}
+                </h3>
+                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Daily evaluated average</span>
+            </div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#membersModal">
-        <div class="card glass-card p-4 h-100 hover-card">
-            <span class="text-uppercase text-secondary small font-weight-bold">Total Members</span>
-            <h3 class="h2 font-outfit mt-2 mb-1 text-white d-flex justify-content-between align-items-center">
-                <span>{{ $totalMembers }}</span>
-                <span class="text-xs text-primary font-weight-normal font-sans" style="font-size: 10px;">View Table &rarr;</span>
-            </h3>
-            <p class="text-secondary small mb-0 mt-auto">Active resources registered</p>
+
+    <!-- Card 2: Total Members -->
+    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#membersModal">
+        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(6, 182, 212, 0.5); --accent-glow: rgba(6, 182, 212, 0.25); border-left: 4px solid #06b6d4 !important;">
+            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(6, 182, 212, 0.12); border: 1px solid rgba(6, 182, 212, 0.2);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-cyan-400" viewBox="0 0 16 16">
+                    <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8Zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022ZM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816ZM8.228 11h-1.21a2 2 0 0 1 0-.008c-.001-.246.154-.986.714-1.62.42-.477 1.187-.978 2.502-.978.07 0 .141.001.211.003-.502.5-.838 1.171-.97 1.898-.103.568-.18 1.127-.247 1.705ZM6 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em;">Total Members</span>
+                    <span class="text-xs font-semibold" style="font-size: 10px; color: #06b6d4; opacity: 0.95;">View Table &rarr;</span>
+                </div>
+                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold">
+                    {{ $totalMembers }}
+                </h3>
+                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Active resources registered</span>
+            </div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#tasksModal">
-        <div class="card glass-card p-4 h-100 hover-card">
-            <span class="text-uppercase text-secondary small font-weight-bold">Total Tasks</span>
-            <h3 class="h2 font-outfit mt-2 mb-1 text-white d-flex justify-content-between align-items-center">
-                <span>{{ $totalTasks }}</span>
-                <span class="text-xs text-primary font-weight-normal font-sans" style="font-size: 10px;">View List &rarr;</span>
-            </h3>
-            <p class="text-secondary small mb-0 mt-auto">Assigned workflow items</p>
+
+    <!-- Card 3: Total Tasks -->
+    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#tasksModal">
+        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(168, 85, 247, 0.5); --accent-glow: rgba(168, 85, 247, 0.25); border-left: 4px solid #a855f7 !important;">
+            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(168, 85, 247, 0.12); border: 1px solid rgba(168, 85, 247, 0.2);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-purple-400" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em;">Total Tasks</span>
+                    <span class="text-xs font-semibold" style="font-size: 10px; color: #c084fc; opacity: 0.95;">View List &rarr;</span>
+                </div>
+                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold">
+                    {{ $totalTasks }}
+                </h3>
+                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Assigned workflow items</span>
+            </div>
         </div>
     </div>
-    <div class="col-sm-6 col-lg-3" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#commitsModal">
-        <div class="card glass-card p-4 h-100 hover-card">
-            <span class="text-uppercase text-secondary small font-weight-bold">Total Commits</span>
-            <h3 class="h2 font-outfit mt-2 mb-1 text-white d-flex justify-content-between align-items-center">
-                <span>{{ $allCommits->count() }}</span>
-                <span class="text-xs text-primary font-weight-normal font-sans" style="font-size: 10px;">View Log &rarr;</span>
-            </h3>
-            <p class="text-secondary small mb-0 mt-auto">Daily repository updates</p>
+
+    <!-- Card 4: Complete / Pending Tasks -->
+    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#tasksModal">
+        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(16, 185, 129, 0.5); --accent-glow: rgba(16, 185, 129, 0.25); border-left: 4px solid #10b981 !important;">
+            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.2);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-emerald-400" viewBox="0 0 16 16">
+                    <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-5.446z"/>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em;">Complete / Pending</span>
+                    <span class="text-xs font-semibold" style="font-size: 10px; color: #34d399; opacity: 0.95;">Status &rarr;</span>
+                </div>
+                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold d-flex align-items-baseline gap-1">
+                    <span class="text-emerald-400">{{ $completedTasksCount }}</span>
+                    <span class="text-secondary" style="font-size: 16px;">/</span>
+                    <span class="text-warning" style="font-size: 20px;">{{ $pendingTasksCount }}</span>
+                </h3>
+                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Completed vs Pending Tasks</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 5: Total Commits -->
+    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#commitsModal">
+        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(59, 130, 246, 0.5); --accent-glow: rgba(59, 130, 246, 0.25); border-left: 4px solid #3b82f6 !important;">
+            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.2);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-blue-400" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M6 3.5A1.5 1.5 0 0 1 7.5 2h1A1.5 1.5 0 0 1 10 3.5v1A1.5 1.5 0 0 1 8.5 6h-1A1.5 1.5 0 0 1 6 4.5v-1zM8.5 5a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1zM14 7.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 7.5v-1A1.5 1.5 0 0 1 3.5 5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 1 0-1h1a.5.5 0 0 1 1.5 1.5v1z"/>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em;">Total Commits</span>
+                    <span class="text-xs font-semibold" style="font-size: 10px; color: #60a5fa; opacity: 0.95;">View Log &rarr;</span>
+                </div>
+                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold">
+                    {{ $allCommits->count() }}
+                </h3>
+                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Daily repository updates</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 6: Meetings -->
+    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#meetingsModal">
+        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(244, 63, 94, 0.5); --accent-glow: rgba(244, 63, 94, 0.25); border-left: 4px solid #f43f5e !important;">
+            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.2);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-rose-400" viewBox="0 0 16 16">
+                    <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
+                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                </svg>
+            </div>
+            <div class="min-w-0 flex-grow-1">
+                <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em; display: block;">Meetings</span>
+                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold">
+                    {{ $totalMeetingsCount }}
+                </h3>
+                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Daily logged meeting notes</span>
+            </div>
         </div>
     </div>
 </div>
@@ -212,7 +304,7 @@
         </div>
         
         <div class="collapse show" id="narrativeCollapse">
-            <div class="mt-4 text-slate-300 small whitespace-pre-wrap max-h-96 overflow-y-auto pr-2" style="line-height: 1.625;">
+            <div id="narrative-content" class="mt-4 text-slate-300 small max-h-96 overflow-y-auto pr-2" style="line-height: 1.625;" data-raw-text="{{ $latestReport->full_report }}">
                 {!! nl2br(e($latestReport->full_report)) !!}
             </div>
         </div>
@@ -229,6 +321,109 @@
         <p class="text-secondary small mx-auto mt-1 mb-4" style="max-width: 380px;">Click the button in the upper right corner to fetch daily tasks, check-in logs, git commit indices, and generate the report.</p>
     </div>
 @endif
+
+    <!-- Individual Employee AI Audits Card -->
+    <div class="card glass-card p-4 mb-4">
+        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="me-2 text-primary">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Individual Employee AI Audits
+        </h4>
+        <p class="text-secondary small mb-4">Generate and view real-time AI-synthesized daily performance reports for individual team members.</p>
+        
+        <div class="row g-3">
+            @foreach($allMembers as $member)
+                <div class="col-md-6 col-lg-4">
+                    <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 d-flex justify-content-between align-items-center hover-card" style="transition: all 0.2s;">
+                        <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
+                            <h6 class="text-white font-outfit font-semibold mb-0.5 text-truncate">{{ $member->name }}</h6>
+                            <span class="text-secondary small text-truncate d-block">{{ $member->role }}</span>
+                        </div>
+                        <button class="btn btn-sm btn-primary py-1.5 px-3 rounded-3 shrink-0" onclick="showEmployeeReport({{ $member->id }}, '{{ addslashes($member->name) }}')">
+                            AI Report
+                        </button>
+                    </div>
+                </div>
+            @endforeach
+            @if($allMembers->isEmpty())
+                <div class="col-12 text-center text-secondary py-3 italic small">No team members registered to audit.</div>
+            @endif
+        </div>
+    </div>
+
+    @php
+        $groupTasks = [];
+        foreach ($allTasks as $task) {
+            $members = $task->teamMembers;
+            if ($members->count() > 1) {
+                $sortedMembers = $members->sortBy('id');
+                $memberIds = $sortedMembers->pluck('id')->join(',');
+                $memberNames = $sortedMembers->pluck('name')->join(' & ');
+                
+                if (!isset($groupTasks[$memberIds])) {
+                    $groupTasks[$memberIds] = [
+                        'names' => $memberNames,
+                        'tasks' => collect(),
+                        'roles' => $sortedMembers->pluck('role')->unique()->join(', ')
+                    ];
+                }
+                $groupTasks[$memberIds]['tasks']->push($task);
+            }
+        }
+    @endphp
+
+    <!-- Group Productivity Analytics Card -->
+    <div class="card glass-card p-4 mb-4" style="border-left: 4px solid var(--accent-color) !important;">
+        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="me-2 text-accent">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm6 3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+            </svg>
+            Group Productivity Analytics
+        </h4>
+        <p class="text-secondary small mb-4">Real-time productivity index and checklist completions calculated for developer groups and teams.</p>
+        
+        <div class="row g-3">
+            @forelse($groupTasks as $gId => $gData)
+                @php
+                    $gTasks = $gData['tasks'];
+                    $gTotal = $gTasks->count();
+                    $gCompleted = $gTasks->where('status', 'completed')->count();
+                    $gPct = $gTotal > 0 ? (int)(($gCompleted / $gTotal) * 100) : 100;
+                    
+                    if ($gPct >= 80) {
+                        $progressColor = 'bg-success';
+                        $textColor = 'text-emerald-400';
+                    } elseif ($gPct >= 60) {
+                        $progressColor = 'bg-warning';
+                        $textColor = 'text-warning';
+                    } else {
+                        $progressColor = 'bg-danger';
+                        $textColor = 'text-rose-400';
+                    }
+                @endphp
+                <div class="col-md-6 col-lg-4">
+                    <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 hover-card" style="transition: all 0.2s; --accent-border-hover: rgba(168, 85, 247, 0.4); --accent-glow: rgba(168, 85, 247, 0.1);">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
+                                <h6 class="text-white font-outfit font-semibold mb-0.5 text-truncate" title="{{ $gData['names'] }}">{{ $gData['names'] }}</h6>
+                                <span class="text-slate-400 small text-truncate d-block" style="font-size: 11px;">{{ $gData['roles'] }}</span>
+                            </div>
+                            <span class="font-outfit font-bold {{ $textColor }}" style="font-size: 16px;">{{ $gPct }}%</span>
+                        </div>
+                        <div class="progress mb-2" style="height: 6px; background-color: #1e293b;">
+                            <div class="progress-bar {{ $progressColor }}" role="progressbar" style="width: {{ $gPct }}%" aria-valuenow="{{ $gPct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-secondary" style="font-size: 10px;">
+                            <span>Tasks: {{ $gCompleted }} / {{ $gTotal }} completed</span>
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="col-12 text-center text-slate-400 py-3 italic small">No group tasks logged yet. Assign a task to multiple developers to start tracking team group productivity.</div>
+            @endforelse
+        </div>
+    </div>
 
 <!-- History Table -->
 <div class="card glass-card p-4">
@@ -315,6 +510,9 @@
         padding: 0.25rem 0.5rem;
         font-size: 0.75rem;
         border-radius: 0.25rem;
+    }
+    .hover-slate-800:hover {
+        background-color: rgba(255, 255, 255, 0.06);
     }
 </style>
 @endsection
@@ -438,17 +636,28 @@
                     <div class="card p-3" style="background-color: #1e293b; border: 1px solid #334155;">
                         <form action="{{ route('manager.store-task') }}" method="POST">
                             @csrf
-                            <div class="row g-2">
-                                <div class="col-md-4">
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-3">
                                     <input type="text" name="title" class="form-control form-control-sm" placeholder="Task Title" required>
                                 </div>
                                 <div class="col-md-3">
-                                    <select name="team_member_id" class="form-select form-select-sm" required>
-                                        <option value="" disabled selected>Assign Employee</option>
-                                        @foreach($allMembers as $m)
-                                            <option value="{{ $m->id }}">{{ $m->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <div class="dropdown" style="min-width: 140px;">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100 text-start text-white text-truncate" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="border: 1px solid #334155; font-size: 11px; padding: 0.25rem 0.5rem;">
+                                            Select Assignee(s)...
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-dark p-2 border-slate-700 shadow-xl" style="background-color: #0f172a; max-height: 200px; overflow-y: auto; z-index: 1050;">
+                                            @foreach($allMembers as $m)
+                                                <li class="px-2 py-1 hover-slate-800 rounded">
+                                                    <div class="form-check d-flex align-items-center gap-2 mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="team_member_ids[]" value="{{ $m->id }}" id="chk-dash-add-{{ $m->id }}" style="cursor: pointer;">
+                                                        <label class="form-check-label text-slate-200 small cursor-pointer" for="chk-dash-add-{{ $m->id }}">
+                                                            {{ $m->name }}
+                                                        </label>
+                                                    </div>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
                                 </div>
                                 <div class="col-md-2">
                                     <select name="status" class="form-select form-select-sm" required>
@@ -457,11 +666,11 @@
                                         <option value="completed">Completed</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <input type="date" name="due_date" class="form-control form-control-sm" required>
                                 </div>
-                                <div class="col-12 text-end mt-2">
-                                    <button type="submit" class="btn btn-sm btn-success">Save Task</button>
+                                <div class="col-md-2 text-end">
+                                    <button type="submit" class="btn btn-sm btn-success w-100">Save Task</button>
                                 </div>
                             </div>
                         </form>
@@ -474,7 +683,7 @@
                             <tr>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">#</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Task Title</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Assigned Employee</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Assigned Employee(s)</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Status</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Due Date</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
@@ -490,18 +699,37 @@
                                     </td>
                                     <td class="py-3">
                                         <span class="view-mode text-slate-300">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-indigo-500 bg-opacity-10 text-indigo-400 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 22px; height: 22px; font-size: 10px; background-color: rgba(99, 102, 241, 0.1) !important;">
-                                                    {{ substr($task->teamMember?->name ?? '?', 0, 1) }}
-                                                </div>
-                                                <span>{{ $task->teamMember?->name ?? 'Unassigned' }}</span>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @forelse($task->teamMembers as $tm)
+                                                    <span class="badge bg-indigo-500 bg-opacity-10 text-indigo-400 border border-indigo-500 border-opacity-20 px-2 py-0.5" style="font-size: 10px;">{{ $tm->name }}</span>
+                                                @empty
+                                                    <span class="badge bg-indigo-500 bg-opacity-10 text-indigo-400 border border-indigo-500 border-opacity-20 px-2 py-0.5" style="font-size: 10px;">{{ $task->teamMember?->name ?? 'Unassigned' }}</span>
+                                                @endforelse
                                             </div>
                                         </span>
-                                        <select name="team_member_id" form="edit-task-form-{{ $task->id }}" class="form-select form-select-sm edit-mode d-none" required>
-                                            @foreach($allMembers as $m)
-                                                <option value="{{ $m->id }}" {{ $task->team_member_id == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <div class="dropdown edit-mode d-none" style="min-width: 140px;">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100 text-start text-white text-truncate" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="border: 1px solid #334155; font-size: 11px; padding: 0.25rem 0.5rem;">
+                                                Select Group...
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-dark p-2 border-slate-700 shadow-xl" style="background-color: #0f172a; max-height: 200px; overflow-y: auto; z-index: 1050;">
+                                                @php
+                                                    $assignedIds = $task->teamMembers->pluck('id')->toArray();
+                                                    if (empty($assignedIds) && $task->team_member_id) {
+                                                        $assignedIds = [$task->team_member_id];
+                                                    }
+                                                @endphp
+                                                @foreach($allMembers as $m)
+                                                    <li class="px-2 py-1 hover-slate-800 rounded">
+                                                        <div class="form-check d-flex align-items-center gap-2 mb-0">
+                                                            <input class="form-check-input" type="checkbox" name="team_member_ids[]" form="edit-task-form-{{ $task->id }}" value="{{ $m->id }}" id="chk-dash-edit-{{ $task->id }}-{{ $m->id }}" {{ in_array($m->id, $assignedIds) ? 'checked' : '' }} style="cursor: pointer;">
+                                                            <label class="form-check-label text-slate-200 small cursor-pointer" for="chk-dash-edit-{{ $task->id }}-{{ $m->id }}">
+                                                                {{ $m->name }}
+                                                            </label>
+                                                        </div>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
                                     </td>
                                     <td class="py-3">
                                         <span class="view-mode">
@@ -679,14 +907,139 @@
     </div>
 </div>
 
+<!-- Meetings Modal -->
+<div class="modal fade" id="meetingsModal" tabindex="-1" aria-labelledby="meetingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
+            <div class="modal-header border-bottom border-slate-800 p-4">
+                <h5 class="modal-title font-outfit text-white" id="meetingsModalLabel">Scheduled Meetings Ledger</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
+                        <thead class="text-secondary" style="font-size: 11px;">
+                            <tr>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">#</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Meeting Title</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Date</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Time</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Group / Team Members</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($allMeetings as $meeting)
+                                <tr>
+                                    <td class="py-3 text-secondary">{{ $loop->iteration }}</td>
+                                    <td class="py-3 font-semibold text-slate-100">{{ $meeting->title }}</td>
+                                    <td class="py-3 text-slate-300">{{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y') }}</td>
+                                    <td class="py-3 text-slate-300">{{ $meeting->meeting_time ? \Carbon\Carbon::parse($meeting->meeting_time)->format('h:i A') : '—' }}</td>
+                                    <td class="py-3">
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @forelse($meeting->teamMembers as $m)
+                                                <span class="badge bg-indigo-500 bg-opacity-10 text-indigo-400 border border-indigo-500 border-opacity-20 px-2 py-1" style="font-size: 10px;">{{ $m->name }}</span>
+                                            @empty
+                                                <span class="text-secondary small italic">All Members / General</span>
+                                            @endforelse
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-secondary italic">No meetings scheduled in log.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-slate-800 p-4">
+                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee AI Report Modal -->
+<div class="modal fade" id="employeeReportModal" tabindex="-1" aria-labelledby="employeeReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content text-white shadow-2xl" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
+            <div class="modal-header border-bottom border-slate-800 p-4">
+                <div>
+                    <h5 class="modal-title font-outfit text-white mb-0.5" id="employeeReportModalLabel">Employee Evening AI Audit</h5>
+                    <span id="employee-report-meta" class="text-secondary small">Generating report...</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" style="background-color: #0f172a; min-height: 250px;">
+                <div id="employee-report-spinner" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-secondary mt-3 mb-0">Analyzing today's activity log...</p>
+                </div>
+                <div id="employee-report-content" class="text-slate-300 small d-none" style="line-height: 1.625;">
+                    <!-- Rendered markdown content goes here -->
+                </div>
+            </div>
+            <div class="modal-footer border-top border-slate-800 p-4">
+                <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('scripts')
 <script>
-    function setGeneratingState(btn) {
+    function generateReport(event, btn) {
+        event.preventDefault();
         btn.disabled = true;
-        document.getElementById('generate-text').innerText = "Analyzing team data...";
-        document.getElementById('generate-form').submit();
+
+        const textSpan = document.getElementById('generate-text');
+        const iconContainer = document.getElementById('generate-icon-container');
+
+        textSpan.innerText = "Analyzing team data...";
+        iconContainer.innerHTML = `
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        `;
+
+        const form = document.getElementById('generate-form');
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            return response.json().then(data => {
+                throw new Error(data.message || 'Server error occurred.');
+            });
+        })
+        .then(data => {
+            // Successfully generated report, reload the page
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Error generating report:', error);
+            alert('Failed to generate report: ' + error.message);
+            btn.disabled = false;
+            textSpan.innerText = "Generate Evening Report";
+            iconContainer.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                </svg>
+            `;
+        });
     }
 
     // Toggle view/edit mode for inline table fields
@@ -695,6 +1048,73 @@
         if (!row) return;
         row.querySelectorAll('.view-mode').forEach(el => el.classList.toggle('d-none'));
         row.querySelectorAll('.edit-mode').forEach(el => el.classList.toggle('d-none'));
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const narrativeContent = document.getElementById('narrative-content');
+        if (narrativeContent && typeof marked !== 'undefined') {
+            narrativeContent.innerHTML = marked.parse(narrativeContent.getAttribute('data-raw-text'));
+        }
+    });
+
+    // Show AI report for employee
+    function showEmployeeReport(memberId, memberName) {
+        const modalEl = document.getElementById('employeeReportModal');
+        const modal = new bootstrap.Modal(modalEl);
+        
+        const metaEl = document.getElementById('employee-report-meta');
+        const spinnerEl = document.getElementById('employee-report-spinner');
+        const contentEl = document.getElementById('employee-report-content');
+        
+        metaEl.innerText = `${memberName} — Preparing report...`;
+        spinnerEl.classList.remove('d-none');
+        contentEl.classList.add('d-none');
+        contentEl.innerHTML = '';
+        
+        modal.show();
+        
+        const targetUrl = `{{ url('/manager-agent/employee-report') }}/${memberId}`;
+        
+        fetch(targetUrl, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            return response.json().then(data => {
+                throw new Error(data.message || 'Failed to fetch employee report.');
+            });
+        })
+        .then(data => {
+            metaEl.innerText = `${data.name} (${data.role}) — Report for ${data.date}`;
+            spinnerEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+            
+            // Render using marked library
+            if (typeof marked !== 'undefined') {
+                contentEl.innerHTML = marked.parse(data.report);
+            } else {
+                contentEl.innerHTML = data.report.replace(/\n/g, '<br>');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching employee report:', error);
+            metaEl.innerText = `${memberName} — Generation Failed`;
+            spinnerEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+            contentEl.innerHTML = `
+                <div class="alert alert-danger border-0 p-3 text-white" style="background-color: rgba(244, 63, 94, 0.15); border-left: 4px solid #f43f5e !important;">
+                    <strong>Error:</strong> ${error.message}
+                </div>
+            `;
+        });
     }
 </script>
 @endsection

@@ -91,16 +91,10 @@ class ManagerAgentService
     }
 
     /**
-     * Send all data to Claude API.
+     * Send all data to LLM API (Ollama).
      */
-    public function analyzeWithClaude(array $tasks, array $commits, array $attendance, array $meetings): array
+    public function analyzeWithLLM(array $tasks, array $commits, array $attendance, array $meetings): array
     {
-        $apiKey = env('ANTHROPIC_API_KEY') ?: config('services.anthropic.key');
-
-        if (empty($apiKey) || $apiKey === 'your_key_here') {
-            throw new \Exception("Anthropic API Key is not configured.");
-        }
-
         // Fetch team members list for context
         $teamMembers = TeamMember::all()->map(fn($m) => [
             'id' => $m->id,
@@ -133,10 +127,7 @@ class ManagerAgentService
 
         $dataJson = json_encode($dataContext, JSON_PRETTY_PRINT);
 
-        $prompt = "Analyze the following team activities context and generate a daily report matching the schema exactly:\n\n"
-            . "<context>\n{$dataJson}\n</context>";
-
-        $systemPrompt = "You are the Manager Agent, a production-grade AI system designed to analyze daily team activities, git commits, attendance logs, tasks, meeting notes, and historical performance reports.\n"
+        $prompt = "You are the Manager Agent, a production-grade AI system designed to analyze daily team activities, git commits, attendance logs, tasks, meeting notes, and historical performance reports.\n"
             . "Your goal is to act as an objective, strategic manager. Evaluate the daily team metrics and produce a comprehensive, professional, and structured report.\n"
             . "You must output ONLY a valid JSON object matching the requested schema. Do not output any Markdown wrapping, code block markers, or additional text. Ensure all JSON fields are populated correctly.\n\n"
             . "Requested JSON Schema:\n"
@@ -145,34 +136,12 @@ class ManagerAgentService
             . "  \"top_performers\": (array of strings, names of the team members who showed exceptional contribution today),\n"
             . "  \"attention_required\": (array of strings, listing members or issues needing direct managerial intervention, e.g. \"Shipra (Absent)\", \"Rahul (Overdue task: optimize queries)\"),\n"
             . "  \"risks\": (array of strings, detailing any project risks, blockers, delayed timelines, or resource shortages),\n"
-            . "  \"full_report\": (string, a detailed markdown-formatted executive report containing sections: Executive Summary, Key Achievements, Activity Details, and Recommendations. Write in a formal, professional management tone)\n"
-            . "}";
+            . "  \"full_report\": (string, a concise and detailed markdown-formatted executive report containing sections: Executive Summary, Key Achievements, Team Member Status Breakdown (MANDATORY: list every team member by name and summarize their individual commits, attendance, and tasks next to their name), Activity Details, and Recommendations. Write in a formal, professional management tone. Keep sections concise and focused, using bullet points and summaries instead of long paragraphs to optimize response times)\n"
+            . "}\n\n"
+            . "Analyze the following team activities context and generate a daily report matching the schema exactly:\n\n"
+            . "Context:\n{$dataJson}";
 
-        // Send API request to Claude (Anthropic Messages API) using Laravel Http client
-        $response = Http::timeout(30)
-            ->withoutVerifying()
-            ->withHeaders([
-                'x-api-key' => $apiKey,
-                'anthropic-version' => '2023-06-01',
-                'Content-Type' => 'application/json',
-            ])->post('https://api.anthropic.com/v1/messages', [
-                'model' => 'claude-sonnet-4-20250514',
-                'max_tokens' => 1500,
-                'system' => $systemPrompt,
-                'messages' => [
-                    [
-                        'role' => 'user',
-                        'content' => $prompt,
-                    ],
-                ],
-            ]);
-
-        if ($response->failed()) {
-            throw new \Exception("Anthropic API call failed with status " . $response->status() . ": " . $response->body());
-        }
-
-        $responseData = $response->json();
-        $responseText = $responseData['content'][0]['text'] ?? '';
+        $responseText = $this->callLLM($prompt, true);
 
         // Handle possible JSON wrappers like ```json ... ```
         $cleanText = trim($responseText);
@@ -187,14 +156,14 @@ class ManagerAgentService
         $decoded = json_decode($cleanText, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \Exception("Failed to decode JSON from Claude response. JSON Error: " . json_last_error_msg() . ". Raw text: " . $responseText);
+            throw new \Exception("Failed to decode JSON from LLM response. JSON Error: " . json_last_error_msg() . ". Raw text: " . $responseText);
         }
 
         // Validate required schema elements
         $requiredKeys = ['team_productivity', 'top_performers', 'attention_required', 'risks', 'full_report'];
         foreach ($requiredKeys as $key) {
             if (!array_key_exists($key, $decoded)) {
-                throw new \Exception("Missing required key '{$key}' in Claude JSON response.");
+                throw new \Exception("Missing required key '{$key}' in LLM JSON response.");
             }
         }
 
@@ -202,10 +171,173 @@ class ManagerAgentService
     }
 
     /**
+     * Route the query to the active configured LLM or fallback to local Ollama.
+     */
+    protected function callLLM(string $prompt, bool $requireJson = false): string
+    {
+        @set_time_limit(60);
+
+        $userId = auth()->id() ?? (\App\Models\User::first()?->id ?? 1);
+        $activeKey = \App\Models\ThirdPartyApiKey::where('user_id', $userId)
+            ->where('is_active', true)
+            ->first();
+
+        if ($activeKey) {
+            $service = $activeKey->service_name;
+            $apiKey = $activeKey->api_key;
+            $model = $activeKey->model_name;
+            $url = $activeKey->api_url;
+
+            if ($service === 'anthropic') {
+                $endpoint = $url ?: 'https://api.anthropic.com/v1/messages';
+                $response = Http::timeout(30)->withHeaders([
+                    'x-api-key' => $apiKey,
+                    'anthropic-version' => '2023-06-01',
+                    'content-type' => 'application/json',
+                ])->post($endpoint, [
+                    'model' => $model ?: 'claude-3-5-sonnet-20241022',
+                    'max_tokens' => 1524,
+                    'messages' => [
+                        ['role' => 'user', 'content' => $prompt]
+                    ]
+                ]);
+
+                if ($response->failed()) {
+                    throw new \Exception("Anthropic API call failed: " . $response->body());
+                }
+
+                return $response->json('content.0.text') ?? 'Unable to parse Anthropic response.';
+            }
+
+            if ($service === 'openai') {
+                $endpoint = $url ?: 'https://api.openai.com/v1/chat/completions';
+                $params = [
+                    'model' => $model ?: 'gpt-4o',
+                    'messages' => [
+                        ['role' => 'user', 'content' => $prompt]
+                    ]
+                ];
+                if ($requireJson) {
+                    $params['response_format'] = ['type' => 'json_object'];
+                }
+                $response = Http::timeout(30)->withHeaders([
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post($endpoint, $params);
+
+                if ($response->failed()) {
+                    throw new \Exception("OpenAI API call failed: " . $response->body());
+                }
+
+                return $response->json('choices.0.message.content') ?? 'Unable to parse OpenAI response.';
+            }
+
+            if ($service === 'gemini') {
+                $modelName = $model ?: 'gemini-1.5-flash';
+                $endpoint = $url ?: "https://generativelanguage.googleapis.com/v1beta/models/{$modelName}:generateContent?key={$apiKey}";
+                $response = Http::timeout(30)->post($endpoint, [
+                    'contents' => [
+                        ['parts' => [['text' => $prompt]]]
+                    ]
+                ]);
+
+                if ($response->failed()) {
+                    throw new \Exception("Gemini API call failed: " . $response->body());
+                }
+
+                return $response->json('candidates.0.content.parts.0.text') ?? 'Unable to parse Gemini response.';
+            }
+
+            if ($service === 'ollama') {
+                $baseUrl = $url ?: env('OLLAMA_URL', 'http://127.0.0.1:11434');
+                $endpoint = rtrim($baseUrl, '/') . '/api/chat';
+                $params = [
+                    'model' => $model ?: env('OLLAMA_MODEL', 'llama3.1:8b'),
+                    'messages' => [
+                        ['role' => 'user', 'content' => $prompt]
+                    ],
+                    'stream' => false,
+                    'options' => [
+                        'temperature' => 0.1,
+                        'num_predict' => 1024,
+                    ]
+                ];
+                if ($requireJson) {
+                    $params['format'] = 'json';
+                }
+                $response = Http::timeout(25)->post($endpoint, $params);
+
+                if ($response->failed()) {
+                    throw new \Exception("Ollama API call failed: " . $response->body());
+                }
+
+                $data = $response->json();
+                return $data['message']['content'] ?? 'Unable to parse Ollama response.';
+            }
+        }
+
+        // Default fallback to .env configuration if no active database key is set
+        $provider = env('LLM_PROVIDER', 'ollama');
+
+        if ($provider === 'ollama') {
+            $endpoint = rtrim(env('OLLAMA_URL', 'http://127.0.0.1:11434'), '/') . '/api/chat';
+            $params = [
+                'model' => env('OLLAMA_MODEL', 'llama3.1:8b'),
+                'messages' => [
+                    ['role' => 'user', 'content' => $prompt]
+                ],
+                'stream' => false,
+                'options' => [
+                    'temperature' => 0.1,
+                    'num_predict' => 1024,
+                ]
+            ];
+            if ($requireJson) {
+                $params['format'] = 'json';
+            }
+            $response = Http::timeout(25)->post($endpoint, $params);
+
+            if ($response->failed()) {
+                throw new \Exception("Ollama API call failed: " . $response->body());
+            }
+
+            $data = $response->json();
+            return $data['message']['content'] ?? 'Unable to parse Ollama response.';
+        }
+
+        // Support direct env configuration for Anthropic if provider is set to anthropic
+        if ($provider === 'anthropic' && env('ANTHROPIC_API_KEY')) {
+            $endpoint = 'https://api.anthropic.com/v1/messages';
+            $response = Http::timeout(30)->withHeaders([
+                'x-api-key' => env('ANTHROPIC_API_KEY'),
+                'anthropic-version' => '2023-06-01',
+                'content-type' => 'application/json',
+            ])->post($endpoint, [
+                'model' => 'claude-3-5-sonnet-20241022',
+                'max_tokens' => 1524,
+                'messages' => [
+                    ['role' => 'user', 'content' => $prompt]
+                ]
+            ]);
+
+            if ($response->failed()) {
+                throw new \Exception("Anthropic API call failed: " . $response->body());
+            }
+
+            return $response->json('content.0.text') ?? 'Unable to parse Anthropic response.';
+        }
+
+        throw new \Exception("No active LLM configuration found.");
+    }
+
+    /**
      * Generate daily report, save, and return.
      */
     public function generateDailyReport(?string $date = null): array
     {
+        @set_time_limit(180);
+        @ini_set('max_execution_time', '180');
+
         $targetDate = $date ?: Carbon::today()->toDateString();
 
         // 1. Fetch all data for the given date
@@ -215,8 +347,8 @@ class ManagerAgentService
         $meetings = $this->readMeetingNotes($targetDate);
 
         try {
-            // 2. Call Claude API to analyze
-            $reportData = $this->analyzeWithClaude($tasks, $commits, $attendance, $meetings);
+            // 2. Call LLM API (Ollama) to analyze
+            $reportData = $this->analyzeWithLLM($tasks, $commits, $attendance, $meetings);
         } catch (\Throwable $e) {
             // Log the error
             Log::error("ManagerAgentService report generation error: " . $e->getMessage());
@@ -351,6 +483,104 @@ class ManagerAgentService
             'risks' => $risks,
             'full_report' => $fullReport,
         ];
+    }
+
+    /**
+     * Generate an AI-powered evening performance report for a specific employee.
+     */
+    public function generateEmployeeReport(TeamMember $member, string $date): string
+    {
+        // 1. Fetch data for this specific member
+        $tasks = Task::where('team_member_id', $member->id)
+            ->whereDate('due_date', $date)
+            ->get()
+            ->map(fn($t) => ['title' => $t->title, 'status' => $t->status, 'due_date' => $t->due_date])
+            ->toArray();
+
+        $commits = GitCommit::where('team_member_id', $member->id)
+            ->whereDate('committed_at', $date)
+            ->get()
+            ->map(fn($c) => ['message' => $c->message, 'hash' => $c->commit_hash, 'repo' => $c->repository_name])
+            ->toArray();
+
+        $attendance = AttendanceLog::where('team_member_id', $member->id)
+            ->whereDate('date', $date)
+            ->first();
+
+        $attendanceStatus = $attendance ? $attendance->status : 'no record';
+        $checkInTime = $attendance && $attendance->check_in ? $attendance->check_in : 'N/A';
+
+        $dataContext = [
+            'employee' => [
+                'name' => $member->name,
+                'role' => $member->role,
+                'email' => $member->email
+            ],
+            'date' => $date,
+            'today_attendance' => [
+                'status' => $attendanceStatus,
+                'check_in' => $checkInTime
+            ],
+            'today_tasks' => $tasks,
+            'today_commits' => $commits,
+        ];
+
+        $dataJson = json_encode($dataContext, JSON_PRETTY_PRINT);
+
+        $prompt = "You are the Manager Agent, a strategic engineering manager. Analyze the daily activities of team member {$member->name} (Role: {$member->role}) for date {$date} and produce a concise, professional evening performance report.\n\n"
+            . "Context:\n{$dataJson}\n\n"
+            . "Generate the report in clean Markdown format containing exactly these sections:\n"
+            . "### 📊 Summary of Today's Work\n"
+            . "(Summarize completed and pending tasks, commits and general activity)\n"
+            . "### ⚡ Productivity & Momentum Review\n"
+            . "(Evaluate code contribution, check-in status, and work pace compared to expectations)\n"
+            . "### 🚀 Actionable Recommendations\n"
+            . "(Provide 1-2 professional suggestions or next steps for tomorrow, including any blockers or attention items)\n\n"
+            . "Keep the report brief, professional, and clear. Output ONLY the markdown report text.";
+
+        try {
+            return $this->callLLM($prompt);
+        } catch (\Throwable $e) {
+            Log::error("Failed to generate employee report for {$member->name}: " . $e->getMessage());
+            
+            // Generate robust fallback text
+            $formattedDate = Carbon::parse($date)->format('F j, Y');
+            $completedCount = collect($tasks)->where('status', 'completed')->count();
+            $totalCount = count($tasks);
+            $commitsCount = count($commits);
+
+            $output = "### 📊 Summary of Today's Work\n";
+            $output .= "Today on **{$formattedDate}**, **{$member->name}** completed **{$completedCount} / {$totalCount} assigned tasks** ";
+            $output .= "and pushed **{$commitsCount} git commits** to version control.\n\n";
+
+            $output .= "### ⚡ Productivity & Momentum Review\n";
+            $output .= "- **Attendance Status**: Marked as **" . ucfirst($attendanceStatus) . "** (Check-in time: {$checkInTime}).\n";
+            if ($commitsCount > 0) {
+                $output .= "- **Code Contribution**: Pushed {$commitsCount} commits, demonstrating active development contribution today.\n";
+            } else {
+                $output .= "- **Code Contribution**: No git commits logged today.\n";
+            }
+            if ($totalCount > 0) {
+                $output .= "- **Task Progress**: Task completion rate is **" . (int)(($completedCount / $totalCount) * 100) . "%**.\n";
+            } else {
+                $output .= "- **Task Progress**: No workflow tasks scheduled for today.\n";
+            }
+
+            $output .= "\n### 🚀 Actionable Recommendations\n";
+            if ($attendanceStatus === 'absent') {
+                $output .= "1. Follow up with team members to catch up on today's missed syncs and updates.\n";
+            } elseif ($attendanceStatus === 'late') {
+                $output .= "1. Aim to sync earlier in the morning for standard standup alignment.\n";
+            }
+            if ($totalCount > $completedCount) {
+                $output .= "1. Prioritize completing remaining pending tasks: " . implode(', ', collect($tasks)->where('status', '!=', 'completed')->pluck('title')->toArray()) . " tomorrow morning.\n";
+            } else {
+                $output .= "1. Maintain the current consistent velocity. Ready to be assigned new tickets in the next sprint sync.\n";
+            }
+
+            $output .= "\n\n*Note: This report was compiled using local automated statistics due to Claude/Ollama API server integration fallback.*";
+            return $output;
+        }
     }
 }
 

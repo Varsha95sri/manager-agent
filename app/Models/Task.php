@@ -22,4 +22,9 @@ class Task extends Model
     {
         return $this->belongsTo(TeamMember::class);
     }
+
+    public function teamMembers()
+    {
+        return $this->belongsToMany(TeamMember::class, 'task_team_member');
+    }
 }

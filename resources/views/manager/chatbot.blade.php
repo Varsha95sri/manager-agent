@@ -97,7 +97,7 @@
                 <div class="chat-container" id="chatContainer">
                     @forelse($chatHistory as $msg)
                         <div class="chat-message {{ $msg['role'] === 'user' ? 'message-user' : 'message-assistant' }}">
-                            <div class="message-bubble">
+                            <div class="message-bubble markdown-content" data-raw-text="{{ $msg['text'] }}">
                                 {!! nl2br(e($msg['text'])) !!}
                             </div>
                             <div class="message-time">{{ $msg['time'] }}</div>
@@ -147,8 +147,17 @@
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Parse all markdown content
+        document.querySelectorAll('.markdown-content').forEach(el => {
+            const rawText = el.getAttribute('data-raw-text');
+            if (typeof marked !== 'undefined') {
+                el.innerHTML = marked.parse(rawText);
+            }
+        });
+
         const container = document.getElementById('chatContainer');
         if(container) {
             // Scroll to bottom on load
