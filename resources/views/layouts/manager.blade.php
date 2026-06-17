@@ -384,6 +384,29 @@
             margin-top: 4px;
             padding: 0 4px;
         }
+        
+        /* Custom Dropdown Styling */
+        .dropdown-menu-custom {
+            background-color: #0b0f19 !important;
+            border: 1px solid var(--border-color) !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6) !important;
+            border-radius: 12px !important;
+            padding: 0 !important;
+            overflow: hidden;
+            margin-top: 8px !important;
+        }
+        .dropdown-item-custom {
+            color: var(--text-muted) !important;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        .dropdown-item-custom:hover, .dropdown-item-custom:focus {
+            background-color: rgba(255, 255, 255, 0.04) !important;
+            color: var(--text-color) !important;
+        }
+        .hover-slate-800:hover {
+            background-color: rgba(255, 255, 255, 0.04) !important;
+        }
     </style>
     @yield('styles')
 </head>
@@ -480,6 +503,27 @@
 
     <!-- Wrapper content -->
     <div class="wrapper">
+        <!-- Fetch risks dynamically for notifications dropdown -->
+        @php
+            $latestReportsWithRisks = \App\Models\PerformanceReport::orderBy('report_date', 'desc')->take(5)->get();
+            $allRisks = [];
+            foreach ($latestReportsWithRisks as $report) {
+                if (!empty($report->risks) && is_array($report->risks)) {
+                    foreach ($report->risks as $risk) {
+                        if (stripos(trim($risk), 'none') === 0 && (strlen(trim($risk)) < 6 || stripos(trim($risk), 'none.') === 0)) {
+                            continue;
+                        }
+                        $allRisks[] = [
+                            'report_id' => $report->id,
+                            'date' => $report->report_date instanceof \Carbon\Carbon ? $report->report_date->format('M d, Y') : \Carbon\Carbon::parse($report->report_date)->format('M d, Y'),
+                            'risk' => $risk
+                        ];
+                    }
+                }
+            }
+            $riskCount = count($allRisks);
+        @endphp
+
         <!-- Top Navbar -->
         <header class="header-nav d-flex justify-content-between">
             <div class="d-flex align-items-center">
@@ -493,29 +537,105 @@
             
             <div class="d-flex align-items-center gap-3">
                 <!-- Notification Bell with count -->
-                <div class="position-relative me-2" style="cursor: pointer;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-slate-400 hover:text-white" viewBox="0 0 16 16">
-                        <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
-                    </svg>
-                    <span class="position-absolute badge rounded-circle bg-primary" style="font-size: 7px; padding: 2px 4px; top: -5px; right: -5px; background: linear-gradient(135deg, #a855f7, #6366f1) !important;">
-                        3
-                    </span>
-                </div>
-
-                <!-- Username and sub-role -->
-                <div class="text-end d-none d-sm-block">
-                    <div class="text-sm font-semibold text-slate-200 d-flex align-items-center justify-content-end gap-1">
-                        <span>{{ Auth::user()?->name ?? 'Varsha Srivastava' }}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="text-slate-400 ms-1" viewBox="0 0 16 16" style="margin-top: 2px;">
-                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                <div class="dropdown">
+                    <div class="position-relative me-2" style="cursor: pointer;" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-slate-400 hover:text-white" viewBox="0 0 16 16">
+                            <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
                         </svg>
+                        @if($riskCount > 0)
+                            <span class="position-absolute badge rounded-circle bg-primary" style="font-size: 7px; padding: 2px 4px; top: -5px; right: -5px; background: linear-gradient(135deg, #a855f7, #6366f1) !important;">
+                                {{ $riskCount }}
+                            </span>
+                        @endif
                     </div>
-                    <div class="text-secondary small mt-0.5" style="font-size: 10px; font-weight: 500;">Project Manager</div>
+                    <ul class="dropdown-menu dropdown-menu-end p-0 border-slate-700 shadow-xl dropdown-menu-custom" aria-labelledby="notificationDropdown" style="background-color: #0b0f19; min-width: 320px; border: 1px solid #1e293b; border-radius: 12px; max-height: 400px; overflow-y: auto;">
+                        <li class="p-3 border-bottom border-slate-800 d-flex justify-content-between align-items-center">
+                            <span class="font-outfit font-semibold text-white" style="font-size: 14px;">Identified Risks Notification</span>
+                            @if($riskCount > 0)
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 rounded-pill" style="font-size: 10px;">{{ $riskCount }} Alert{{ $riskCount > 1 ? 's' : '' }}</span>
+                            @endif
+                        </li>
+                        @forelse($allRisks as $riskItem)
+                            <li>
+                                <a href="{{ route('manager.report-detail', $riskItem['report_id']) }}" class="dropdown-item d-flex align-items-start gap-2.5 p-3 border-bottom border-slate-800 bg-transparent text-wrap text-slate-300 dropdown-item-custom hover-slate-800" style="transition: background-color 0.2s; white-space: normal;">
+                                    <div class="bg-warning rounded-circle mt-1.5 shadow-md shadow-warning-500/50" style="width: 8px; height: 8px; flex-shrink: 0;"></div>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1 text-slate-200 small" style="line-height: 1.4; font-size: 12px;">{{ $riskItem['risk'] }}</p>
+                                        <span class="text-secondary small font-normal" style="font-size: 10px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="text-secondary me-1 align-middle" viewBox="0 0 16 16">
+                                                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                            </svg>
+                                            {{ $riskItem['date'] }}
+                                        </span>
+                                    </div>
+                                </a>
+                            </li>
+                        @empty
+                            <li class="p-4 text-center text-slate-400 small italic">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-slate-500 mb-2" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                </svg>
+                                <div>No roadblocks or risks logged.</div>
+                            </li>
+                        @endforelse
+                    </ul>
                 </div>
 
-                <!-- Circular Avatar -->
-                <div class="position-relative">
-                    <img src="{{ asset('avatar.png') }}" alt="Profile" class="rounded-circle border border-primary border-opacity-50" style="width: 38px; height: 38px; object-fit: cover; border-width: 2px !important; box-shadow: 0 0 8px rgba(168, 85, 247, 0.3);">
+                <!-- User Profile Dropdown -->
+                <div class="dropdown">
+                    <div class="d-flex align-items-center gap-3" style="cursor: pointer;" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <!-- Username and sub-role -->
+                        <div class="text-end d-none d-sm-block">
+                            <div class="text-sm font-semibold text-slate-200 d-flex align-items-center justify-content-end gap-1">
+                                <span>{{ Auth::user()?->name ?? 'Varsha Srivastava' }}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="text-slate-400 ms-1" viewBox="0 0 16 16" style="margin-top: 2px;">
+                                    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                </svg>
+                            </div>
+                            <div class="text-secondary small mt-0.5" style="font-size: 10px; font-weight: 500;">Project Manager</div>
+                        </div>
+
+                        <!-- Circular Avatar -->
+                        <div class="position-relative">
+                            <img src="{{ asset('avatar.png') }}" alt="Profile" class="rounded-circle border border-primary border-opacity-50" style="width: 38px; height: 38px; object-fit: cover; border-width: 2px !important; box-shadow: 0 0 8px rgba(168, 85, 247, 0.3);">
+                        </div>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end p-0 border-slate-700 shadow-xl dropdown-menu-custom" aria-labelledby="profileDropdown" style="background-color: #0b0f19; min-width: 260px; border: 1px solid #1e293b; border-radius: 12px;">
+                        <li class="p-3 border-bottom border-slate-800">
+                            <h6 class="m-0 text-white font-outfit font-semibold" style="font-size: 14px;">Admin Details</h6>
+                            <div class="text-slate-400 small mt-2">
+                                <div class="d-flex justify-content-between mb-1.5">
+                                    <span class="text-secondary">Name:</span>
+                                    <span class="text-white font-semibold">{{ Auth::user()?->name ?? 'Varsha Srivastava' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-secondary">Email:</span>
+                                    <span class="text-white" style="font-size: 11px;">{{ Auth::user()?->email ?? 'admin@manageragent.com' }}</span>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <a href="{{ route('profile.edit') }}" class="dropdown-item d-flex align-items-center gap-2 py-2.5 px-3 dropdown-item-custom" style="background: transparent;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="text-slate-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Edit Profile
+                            </a>
+                        </li>
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}" id="header-logout-form" class="d-none">
+                                @csrf
+                            </form>
+                            <a href="#" onclick="event.preventDefault(); document.getElementById('header-logout-form').submit();" class="dropdown-item d-flex align-items-center gap-2 py-2.5 px-3 text-rose-400 dropdown-item-custom" style="background: transparent;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="text-rose-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Log Out
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </header>
