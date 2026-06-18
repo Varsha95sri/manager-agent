@@ -180,22 +180,35 @@ class PublicApiController extends Controller
      */
     public function createEmployee(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:team_members,email',
-            'role' => 'required|string|max:255',
-            'github_id' => 'nullable|string|max:255',
-            'login_timing' => 'nullable|string|max:255',
-            'attendance' => 'nullable|string|max:255',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:team_members,email',
+                'role' => 'required|string|max:255',
+                'github_id' => 'nullable|string|max:255',
+                'login_timing' => 'nullable|string|max:255',
+                'attendance' => 'nullable|string|max:255',
+            ]);
 
-        $employee = \App\Models\TeamMember::create($validated);
+            $employee = \App\Models\TeamMember::create($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Employee registered successfully inside the database.',
-            'employee' => $employee
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Employee registered successfully inside the database.',
+                'employee' => $employee
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to register employee: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -203,8 +216,15 @@ class PublicApiController extends Controller
      */
     public function getTasks(Request $request)
     {
-        $tasks = \App\Models\Task::with('teamMember')->latest()->get();
-        return response()->json($tasks);
+        try {
+            $tasks = \App\Models\Task::with('teamMember')->latest()->get();
+            return response()->json($tasks);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve tasks: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -212,20 +232,34 @@ class PublicApiController extends Controller
      */
     public function createTask(Request $request)
     {
-        $validated = $request->validate([
-            'team_member_id' => 'required|exists:team_members,id',
-            'title' => 'required|string|max:255',
-            'status' => 'required|in:pending,in_progress,completed',
-            'due_date' => 'required|date',
-        ]);
+        try {
+            $validated = $request->validate([
+                'team_member_id' => 'required|exists:team_members,id',
+                'title' => 'required|string|max:255',
+                'status' => 'required|in:pending,in_progress,completed',
+                'due_date' => 'required|date',
+            ]);
 
-        $task = \App\Models\Task::create($validated);
+            $task = \App\Models\Task::create($validated);
+            $task->teamMembers()->sync([$validated['team_member_id']]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Task created successfully.',
-            'task' => $task
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Task created successfully.',
+                'task' => $task
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create task: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -233,8 +267,15 @@ class PublicApiController extends Controller
      */
     public function getAttendance(Request $request)
     {
-        $logs = \App\Models\AttendanceLog::with('teamMember')->latest()->get();
-        return response()->json($logs);
+        try {
+            $logs = \App\Models\AttendanceLog::with('teamMember')->latest()->get();
+            return response()->json($logs);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve attendance logs: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -242,20 +283,33 @@ class PublicApiController extends Controller
      */
     public function recordAttendance(Request $request)
     {
-        $validated = $request->validate([
-            'team_member_id' => 'required|exists:team_members,id',
-            'date' => 'required|date',
-            'status' => 'required|in:present,absent,late',
-            'check_in' => 'nullable|string',
-        ]);
+        try {
+            $validated = $request->validate([
+                'team_member_id' => 'required|exists:team_members,id',
+                'date' => 'required|date',
+                'status' => 'required|in:present,absent,late',
+                'check_in' => 'nullable|string',
+            ]);
 
-        $log = \App\Models\AttendanceLog::create($validated);
+            $log = \App\Models\AttendanceLog::create($validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Attendance logged successfully.',
-            'log' => $log
-        ], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance logged successfully.',
+                'log' => $log
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record attendance: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -263,18 +317,25 @@ class PublicApiController extends Controller
      */
     public function getMetrics(Request $request)
     {
-        $totalMembers = \App\Models\TeamMember::count();
-        $totalTasks = \App\Models\Task::count();
-        $completedTasks = \App\Models\Task::where('status', 'completed')->count();
-        $completionRate = $totalTasks > 0 ? (int) round(($completedTasks / $totalTasks) * 100) : 0;
+        try {
+            $totalMembers = \App\Models\TeamMember::count();
+            $totalTasks = \App\Models\Task::count();
+            $completedTasks = \App\Models\Task::where('status', 'completed')->count();
+            $completionRate = $totalTasks > 0 ? (int) round(($completedTasks / $totalTasks) * 100) : 0;
 
-        return response()->json([
-            'total_employees' => $totalMembers,
-            'total_tasks' => $totalTasks,
-            'completed_tasks' => $completedTasks,
-            'task_completion_rate' => $completionRate . '%',
-            'status' => 'Healthy Development Pace'
-        ]);
+            return response()->json([
+                'total_employees' => $totalMembers,
+                'total_tasks' => $totalTasks,
+                'completed_tasks' => $completedTasks,
+                'task_completion_rate' => $completionRate . '%',
+                'status' => 'Healthy Development Pace'
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve metrics: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

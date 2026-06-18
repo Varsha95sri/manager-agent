@@ -592,15 +592,18 @@
                                             @csrf
                                             @method('PUT')
                                         </form>
-                                        <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $member->id }}, 'member')">Edit</button>
-                                        <button type="submit" form="edit-member-form-{{ $member->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none ms-1" onclick="toggleEditMode({{ $member->id }}, 'member')">Cancel</button>
-                                        
-                                        <form action="{{ route('manager.destroy-team-member', $member->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this member?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-xs btn-outline-danger view-mode">Delete</button>
-                                        </form>
+                                        <div class="d-inline-flex justify-content-end gap-1">
+                                            <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $member->id }}, 'member')">Edit</button>
+                                            
+                                            <form action="{{ route('manager.destroy-team-member', $member->id) }}" method="POST" class="d-inline view-mode" onsubmit="return confirm('Are you sure you want to delete this member?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-xs btn-outline-danger">Delete</button>
+                                            </form>
+                                            
+                                            <button type="submit" form="edit-member-form-{{ $member->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none" onclick="toggleEditMode({{ $member->id }}, 'member')">Cancel</button>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -756,15 +759,18 @@
                                             @csrf
                                             @method('PUT')
                                         </form>
-                                        <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $task->id }}, 'task')">Edit</button>
-                                        <button type="submit" form="edit-task-form-{{ $task->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none ms-1" onclick="toggleEditMode({{ $task->id }}, 'task')">Cancel</button>
-                                        
-                                        <form action="{{ route('manager.destroy-task', $task->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this task?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-xs btn-outline-danger view-mode">Delete</button>
-                                        </form>
+                                        <div class="d-inline-flex justify-content-end gap-1">
+                                            <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $task->id }}, 'task')">Edit</button>
+                                            
+                                            <form action="{{ route('manager.destroy-task', $task->id) }}" method="POST" class="d-inline view-mode" onsubmit="return confirm('Are you sure you want to delete this task?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-xs btn-outline-danger">Delete</button>
+                                            </form>
+                                            
+                                            <button type="submit" form="edit-task-form-{{ $task->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none" onclick="toggleEditMode({{ $task->id }}, 'task')">Cancel</button>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -880,15 +886,18 @@
                                             @csrf
                                             @method('PUT')
                                         </form>
-                                        <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $commit->id }}, 'commit')">Edit</button>
-                                        <button type="submit" form="edit-commit-form-{{ $commit->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
-                                        <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none ms-1" onclick="toggleEditMode({{ $commit->id }}, 'commit')">Cancel</button>
-                                        
-                                        <form action="{{ route('manager.destroy-commit', $commit->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this commit?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-xs btn-outline-danger view-mode">Delete</button>
-                                        </form>
+                                        <div class="d-inline-flex justify-content-end gap-1">
+                                            <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $commit->id }}, 'commit')">Edit</button>
+                                            
+                                            <form action="{{ route('manager.destroy-commit', $commit->id) }}" method="POST" class="d-inline view-mode" onsubmit="return confirm('Are you sure you want to delete this commit?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-xs btn-outline-danger">Delete</button>
+                                            </form>
+                                            
+                                            <button type="submit" form="edit-commit-form-{{ $commit->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none" onclick="toggleEditMode({{ $commit->id }}, 'commit')">Cancel</button>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -1075,7 +1084,9 @@
         
         modal.show();
         
-        const targetUrl = `{{ url('/manager-agent/employee-report') }}/${memberId}`;
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterDate = urlParams.get('date') || '';
+        const targetUrl = `{{ url('/manager-agent/employee-report') }}/${memberId}${filterDate ? '?date=' + filterDate : ''}`;
         
         fetch(targetUrl, {
             method: 'GET',

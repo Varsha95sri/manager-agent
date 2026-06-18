@@ -419,12 +419,16 @@ class ManagerAgentService
                 $attentionList[] = $att['member_name'] . ' (Late check-in)';
             }
         }
-        foreach ($tasks as $task) {
-            if ($task['status'] === 'pending' && Carbon::parse($task['due_date'])->lt(Carbon::today())) {
-                $desc = $task['member_name'] . ' (Overdue task: ' . $task['title'] . ')';
-                if (!in_match_name($attentionList, $task['member_name'])) {
-                    $attentionList[] = $desc;
-                }
+        $overdueTasks = Task::with('teamMember')
+            ->whereIn('status', ['pending', 'in_progress'])
+            ->whereDate('due_date', '<', $date)
+            ->get();
+
+        foreach ($overdueTasks as $task) {
+            $memberName = $task->teamMember?->name ?? 'Unknown';
+            $desc = $memberName . ' (Overdue task: ' . $task->title . ')';
+            if (!in_match_name($attentionList, $memberName)) {
+                $attentionList[] = $desc;
             }
         }
         if (empty($attentionList)) {
@@ -436,7 +440,9 @@ class ManagerAgentService
         if ($absentCount > 1) {
             $risks[] = "Multiple team members absent ({$absentCount} members). Potential timeline impact.";
         }
-        $overdueCount = collect($tasks)->where('status', '!=', 'completed')->filter(fn($t) => Carbon::parse($t['due_date'])->lt(Carbon::today()))->count();
+        $overdueCount = Task::whereIn('status', ['pending', 'in_progress'])
+            ->whereDate('due_date', '<', $date)
+            ->count();
         if ($overdueCount > 0) {
             $risks[] = "{$overdueCount} tasks are currently overdue. Milestones might be delayed.";
         }
@@ -491,7 +497,12 @@ class ManagerAgentService
     public function generateEmployeeReport(TeamMember $member, string $date): string
     {
         // 1. Fetch data for this specific member
-        $tasks = Task::where('team_member_id', $member->id)
+        $tasks = Task::where(function($query) use ($member) {
+                $query->where('team_member_id', $member->id)
+                      ->orWhereHas('teamMembers', function($q) use ($member) {
+                          $q->where('team_member_id', $member->id);
+                      });
+            })
             ->whereDate('due_date', $date)
             ->get()
             ->map(fn($t) => ['title' => $t->title, 'status' => $t->status, 'due_date' => $t->due_date])

@@ -770,14 +770,14 @@
                 respStatus.innerText = `Status: ${res.status} ${res.statusText}`;
                 respTime.innerText = `Latency: ${duration} ms`;
                 
-                // Read response
-                return res.json().catch(() => res.text());
+                return res.text();
             })
-            .then(data => {
-                if (typeof data === 'object') {
-                    respBody.innerText = JSON.stringify(data, null, 2);
-                } else {
-                    respBody.innerText = data;
+            .then(text => {
+                try {
+                    const json = JSON.parse(text);
+                    respBody.innerText = JSON.stringify(json, null, 2);
+                } catch (e) {
+                    respBody.innerText = text;
                 }
             })
             .catch(err => {

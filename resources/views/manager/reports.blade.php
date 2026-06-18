@@ -250,7 +250,9 @@
         
         modal.show();
         
-        const targetUrl = `{{ url('/manager-agent/employee-report') }}/${memberId}`;
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterDate = urlParams.get('filter_date') || '';
+        const targetUrl = `{{ url('/manager-agent/employee-report') }}/${memberId}${filterDate ? '?date=' + filterDate : ''}`;
         
         fetch(targetUrl, {
             method: 'GET',

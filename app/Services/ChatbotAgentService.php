@@ -24,14 +24,30 @@ class ChatbotAgentService
         $context = $this->buildDatabaseContext();
 
         try {
+            // Build the prompt for logging
+            $prompt = "You are a Manager Assistant AI. You have access to this real-time database snapshot:\n\n"
+                . $context . "\n\n"
+                . "Use this information to answer the manager's question accurately. Keep answers professional, insightful, and concise.\n"
+                . "MANDATORY BEHAVIOR: If the manager asks about or inputs a specific employee's/team member's name (e.g. \"Alice\", \"Rahul\", etc.), compile a detailed performance report for that specific employee. "
+                . "Summarize how much work they completed, how many commits they made today, which tasks are assigned to them (with due dates and statuses), their attendance check-in status today, and evaluate their contribution compared to others.\n"
+                . "If the database snapshot does not contain enough information to answer, state that honestly.\n\n"
+                . "Question: " . $question;
+
+            Log::info("AI Chatbot Prompt:\n" . $prompt);
+
             // 2. Call local Ollama API with the context
-            return $this->queryOllama($context, $question);
+            $answer = $this->queryOllama($context, $question);
+            
+            Log::info("AI Chatbot Response:\n" . $answer);
+            return $answer;
         } catch (\Throwable $e) {
             $msg = $e->getMessage();
             Log::error("ChatbotAgentService Error: " . $msg);
 
             // 3. Fallback to a smart local rule-based response with the specific error message
-            return $this->generateLocalResponse($question, $msg);
+            $fallbackAnswer = $this->generateLocalResponse($question, $msg);
+            Log::info("AI Chatbot Fallback Response:\n" . $fallbackAnswer);
+            return $fallbackAnswer;
         }
     }
 
@@ -407,7 +423,8 @@ class ChatbotAgentService
         }
 
         return "I am currently operating in offline mode because of {$offlineReason}. "
+            . "I received your question: \"{$question}\", but could not find a direct keyword match in local rule database. "
             . "However, according to my database logs, we have {$membersCount} team members and {$tasksCount} tasks registered. "
-            . "Please resolve this issue to unlock full conversational intelligence!";
+            . "Try asking about 'attendance', 'tasks', 'absent members', or a specific team member name to get detailed data!";
     }
 }

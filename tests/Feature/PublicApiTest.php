@@ -41,11 +41,14 @@ class PublicApiTest extends TestCase
     public function test_generate_report_endpoint(): void
     {
         Http::fake([
-            'http://localhost:11434/api/generate' => Http::response([
-                'response' => json_encode([
-                    'status' => 'excellent',
-                    'productivity' => 90
-                ])
+            'http://127.0.0.1:11434/api/chat' => Http::response([
+                'message' => [
+                    'role' => 'assistant',
+                    'content' => json_encode([
+                        'status' => 'excellent',
+                        'productivity' => 90
+                    ])
+                ]
             ], 200)
         ]);
 
@@ -66,8 +69,11 @@ class PublicApiTest extends TestCase
     public function test_analyze_team_endpoint(): void
     {
         Http::fake([
-            'http://localhost:11434/api/generate' => Http::response([
-                'response' => 'Team is doing great'
+            'http://127.0.0.1:11434/api/chat' => Http::response([
+                'message' => [
+                    'role' => 'assistant',
+                    'content' => 'Team is doing great'
+                ]
             ], 200)
         ]);
 
@@ -87,7 +93,7 @@ class PublicApiTest extends TestCase
     public function test_chat_endpoint(): void
     {
         Http::fake([
-            'http://localhost:11434/api/chat' => Http::response([
+            'http://127.0.0.1:11434/api/chat' => Http::response([
                 'message' => [
                     'role' => 'assistant',
                     'content' => 'Hello there!'
@@ -111,7 +117,7 @@ class PublicApiTest extends TestCase
     public function test_rate_limiting(): void
     {
         Http::fake([
-            'http://localhost:11434/api/chat' => Http::response([
+            'http://127.0.0.1:11434/api/chat' => Http::response([
                 'message' => [
                     'role' => 'assistant',
                     'content' => 'Reply'
@@ -139,7 +145,7 @@ class PublicApiTest extends TestCase
     public function test_api_usage_logging_and_retrieval(): void
     {
         Http::fake([
-            'http://localhost:11434/api/chat' => Http::response([
+            'http://127.0.0.1:11434/api/chat' => Http::response([
                 'message' => [
                     'role' => 'assistant',
                     'content' => 'Logging reply'
