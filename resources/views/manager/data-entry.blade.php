@@ -106,20 +106,10 @@
                     @csrf
                     <h3 class="h4 font-outfit text-white mb-4 pb-2 border-bottom border-slate-800">Assign New Task</h3>
                     <div class="mb-4">
-                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Assign Team Member(s) / Group</label>
-                        <div class="developer-select-container border border-slate-700 bg-slate-900/60 rounded-3 p-2.5" style="max-height: 200px; overflow-y: auto;">
-                            @foreach($teamMembers as $m)
-                                <div class="developer-select-item d-flex align-items-center p-2 mb-1.5 rounded-3 border border-slate-800 bg-slate-950/30 cursor-pointer" onclick="toggleDeveloperSelect(event, 'chk-data-task-{{ $m->id }}')" style="transition: all 0.2s; cursor: pointer;">
-                                    <input class="form-check-input me-3 border-slate-600 bg-slate-800" type="checkbox" name="team_member_ids[]" value="{{ $m->id }}" id="chk-data-task-{{ $m->id }}" style="cursor: pointer;" {{ is_array(old('team_member_ids')) && in_array($m->id, old('team_member_ids')) ? 'checked' : '' }}>
-                                    <div class="min-w-0 flex-grow-1">
-                                        <div class="text-white font-outfit font-semibold mb-0.5" style="font-size: 12.5px; line-height: 1.2;">{{ $m->name }}</div>
-                                        <div class="text-slate-400 font-outfit" style="font-size: 10.5px;">{{ $m->role }}</div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div class="text-slate-400 small mt-1.5" style="font-size: 10px;">Select one or more team members. Click to toggle selection.</div>
-                        @error('team_member_ids')
+                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Assignee Email(s)</label>
+                        <input type="text" name="email" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('email') is-invalid @enderror" placeholder="e.g. rahul@company.com or dev1@co.com, dev2@co.com" value="{{ old('email') }}" required>
+                        <div class="text-slate-400 small mt-1.5" style="font-size: 10px;">Enter one or more email addresses separated by commas.</div>
+                        @error('email')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
@@ -163,14 +153,9 @@
                     <h3 class="h4 font-outfit text-white mb-4 pb-2 border-bottom border-slate-800">Log Git Commit</h3>
                     <div class="row g-4 mb-4">
                         <div class="col-md-4">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Author Member</label>
-                            <select name="team_member_id" class="form-select border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('team_member_id') is-invalid @enderror" required>
-                                <option value="">Select a member...</option>
-                                @foreach($teamMembers as $m)
-                                    <option value="{{ $m->id }}" {{ old('team_member_id') == $m->id ? 'selected' : '' }}>{{ $m->name }} ({{ $m->role }})</option>
-                                @endforeach
-                            </select>
-                            @error('team_member_id')
+                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Author Email</label>
+                            <input type="email" name="email" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('email') is-invalid @enderror" placeholder="e.g. rahul@company.com" value="{{ old('email') }}" required>
+                            @error('email')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
@@ -215,14 +200,9 @@
                     @csrf
                     <h3 class="h4 font-outfit text-white mb-4 pb-2 border-bottom border-slate-800">Log Daily Attendance</h3>
                     <div class="mb-4">
-                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Team Member</label>
-                        <select name="team_member_id" class="form-select border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('team_member_id') is-invalid @enderror" required>
-                            <option value="">Select a member...</option>
-                            @foreach($teamMembers as $m)
-                                <option value="{{ $m->id }}" {{ old('team_member_id') == $m->id ? 'selected' : '' }}>{{ $m->name }} ({{ $m->role }})</option>
-                            @endforeach
-                        </select>
-                        @error('team_member_id')
+                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Employee Email</label>
+                        <input type="email" name="email" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('email') is-invalid @enderror" placeholder="e.g. rahul@company.com" value="{{ old('email') }}" required>
+                        @error('email')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
@@ -288,20 +268,10 @@
                         </div>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Assign Group / Team Member Attendees</label>
-                        <div class="developer-select-container border border-slate-700 bg-slate-900/60 rounded-3 p-2.5" style="max-height: 200px; overflow-y: auto;">
-                            @foreach($teamMembers as $m)
-                                <div class="developer-select-item d-flex align-items-center p-2 mb-1.5 rounded-3 border border-slate-800 bg-slate-950/30 cursor-pointer" onclick="toggleDeveloperSelect(event, 'chk-data-meet-{{ $m->id }}')" style="transition: all 0.2s; cursor: pointer;">
-                                    <input class="form-check-input me-3 border-slate-600 bg-slate-800" type="checkbox" name="team_members[]" value="{{ $m->id }}" id="chk-data-meet-{{ $m->id }}" style="cursor: pointer;" {{ is_array(old('team_members')) && in_array($m->id, old('team_members')) ? 'checked' : '' }}>
-                                    <div class="min-w-0 flex-grow-1">
-                                        <div class="text-white font-outfit font-semibold mb-0.5" style="font-size: 12.5px; line-height: 1.2;">{{ $m->name }}</div>
-                                        <div class="text-slate-400 font-outfit" style="font-size: 10.5px;">{{ $m->role }}</div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div class="text-slate-400 small mt-1.5" style="font-size: 10px;">Select attendees for the meeting. Click to toggle selection. Leave empty for all-hands.</div>
-                        @error('team_members')
+                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Attendee Email(s)</label>
+                        <input type="text" name="email" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('email') is-invalid @enderror" placeholder="e.g. rahul@company.com, developer@company.com" value="{{ old('email') }}">
+                        <div class="text-slate-400 small mt-1.5" style="font-size: 10px;">Enter one or more attendee email addresses separated by commas. Leave empty for all-hands.</div>
+                        @error('email')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>

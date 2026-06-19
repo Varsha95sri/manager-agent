@@ -407,6 +407,25 @@
         .hover-slate-800:hover {
             background-color: rgba(255, 255, 255, 0.04) !important;
         }
+
+        /* Custom scrollbar for content panels */
+        .custom-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #334155 transparent;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
     </style>
     @yield('styles')
 </head>
@@ -452,6 +471,30 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     Daily Attendance
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="{{ route('manager.meetings.index') }}" class="sidebar-nav-link {{ request()->routeIs('manager.meetings.index') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Meetings
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="{{ route('manager.commits.index') }}" class="sidebar-nav-link {{ request()->routeIs('manager.commits.index') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    Commits Log
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="{{ route('manager.repositories.index') }}" class="sidebar-nav-link {{ request()->routeIs('manager.repositories.index') ? 'active' : '' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20" />
+                    </svg>
+                    Repositories
                 </a>
             </li>
             <li class="sidebar-nav-item">
@@ -676,6 +719,9 @@
             &copy; {{ date('Y') }} Manager Agent. Powered by AI.
         </footer>
     </div>
+
+    <!-- jQuery (required for DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <!-- Bootstrap 5 JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

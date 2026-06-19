@@ -24,10 +24,7 @@
     }
 
     // Task and meeting stats
-    $totalTasksCount = $allTasks->count();
-    $completedTasksCount = $allTasks->where('status', 'completed')->count();
-    $pendingTasksCount = $allTasks->where('status', 'pending')->count();
-    $totalMeetingsCount = \App\Models\MeetingNote::count();
+    $totalTasksCount = $totalTasks;
 @endphp
 
 <div class="row g-4 align-items-center mb-4">
@@ -36,8 +33,16 @@
         <p class="text-secondary small mb-0">AI-generated performance analytics and evening dashboard reports.</p>
     </div>
     <div class="col-md-4 text-md-end">
-        <form method="POST" action="{{ route('manager.generate') }}" id="generate-form">
+        <form method="POST" action="{{ route('manager.generate') }}" id="generate-form" class="d-flex align-items-center justify-content-md-end gap-2">
             @csrf
+            <input 
+                type="date" 
+                name="date" 
+                class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2" 
+                value="{{ request('date', $targetDate) }}"
+                style="color-scheme: dark; width: 150px; font-size: 13px;"
+                onchange="window.location.href = '{{ route('manager.dashboard') }}?date=' + this.value"
+            >
             <button type="submit" class="btn accent-btn d-inline-flex align-items-center" onclick="generateReport(event, this)">
                 <span id="generate-icon-container" class="me-2 d-inline-flex align-items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -151,7 +156,7 @@
                     <span class="text-xs font-semibold" style="font-size: 10px; color: #60a5fa; opacity: 0.95;">View Log &rarr;</span>
                 </div>
                 <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold">
-                    {{ $allCommits->count() }}
+                    {{ $totalCommits }}
                 </h3>
                 <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Daily repository updates</span>
             </div>
@@ -207,44 +212,56 @@
         <!-- Performing and Warnings Grids -->
         <div class="col-lg-8">
             <div class="row g-4 h-100">
-                <!-- Top Performers List -->
                 <div class="col-md-6">
                     <div class="card glass-card p-4 h-100">
-                        <h4 class="h5 font-outfit text-white mb-4 d-flex align-items-center">
-                            <span class="d-inline-block bg-success rounded-circle me-2 shadow-lg" style="width: 10px; height: 10px;"></span>
-                            Top Performers
+                        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center justify-content-between">
+                            <span class="d-flex align-items-center">
+                                <span class="d-inline-block bg-success rounded-circle me-2 shadow-lg" style="width: 10px; height: 10px;"></span>
+                                Top Performers
+                            </span>
+                            @if(!empty($latestReport->top_performers))
+                                <span class="badge rounded-pill" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);font-size:9px;">{{ count($latestReport->top_performers) }} entries</span>
+                            @endif
                         </h4>
                         
+                        <div style="max-height: 260px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
                         @if(!empty($latestReport->top_performers) && is_array($latestReport->top_performers))
                             <ul class="list-unstyled mb-0">
                                 @foreach($latestReport->top_performers as $performer)
                                     <li class="d-flex align-items-center justify-content-between mb-3 text-white small">
                                         <div class="d-flex align-items-center">
-                                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; background-color: rgba(16, 185, 129, 0.1) !important;">
+                                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; background-color: rgba(16, 185, 129, 0.1) !important; flex-shrink:0;">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                                                     <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
                                                 </svg>
                                             </div>
                                             <span class="font-weight-medium">{{ $performer }}</span>
                                         </div>
-                                        <span class="badge text-success border border-success-subtle bg-success bg-opacity-10 px-2 py-1 text-uppercase" style="font-size: 8px;">Star Badge</span>
+                                        <span class="badge text-success border border-success-subtle bg-success bg-opacity-10 px-2 py-1 text-uppercase" style="font-size: 8px; flex-shrink:0;">Star</span>
                                     </li>
                                 @endforeach
                             </ul>
                         @else
                             <p class="text-secondary small italic mb-0">No entries logged today.</p>
                         @endif
+                        </div>
                     </div>
                 </div>
 
                 <!-- Attention Required List -->
                 <div class="col-md-6">
                     <div class="card glass-card p-4 h-100">
-                        <h4 class="h5 font-outfit text-white mb-4 d-flex align-items-center">
-                            <span class="d-inline-block bg-danger rounded-circle me-2 shadow-lg" style="width: 10px; height: 10px;"></span>
-                            Attention Required
+                        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center justify-content-between">
+                            <span class="d-flex align-items-center">
+                                <span class="d-inline-block bg-danger rounded-circle me-2 shadow-lg" style="width: 10px; height: 10px;"></span>
+                                Attention Required
+                            </span>
+                            @if(!empty($latestReport->attention_required))
+                                <span class="badge rounded-pill" style="background:rgba(244,63,94,0.12);color:#fb7185;border:1px solid rgba(244,63,94,0.25);font-size:9px;">{{ count($latestReport->attention_required) }} alerts</span>
+                            @endif
                         </h4>
 
+                        <div style="max-height: 260px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
                         @if(!empty($latestReport->attention_required) && is_array($latestReport->attention_required))
                             <ul class="list-unstyled mb-0">
                                 @foreach($latestReport->attention_required as $needsAttention)
@@ -261,6 +278,7 @@
                         @else
                             <p class="text-secondary small italic mb-0">No alerts logged today.</p>
                         @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -337,8 +355,8 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 d-flex justify-content-between align-items-center hover-card" style="transition: all 0.2s;">
                         <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
-                            <h6 class="text-white font-outfit font-semibold mb-0.5 text-truncate">{{ $member->name }}</h6>
-                            <span class="text-secondary small text-truncate d-block">{{ $member->role }}</span>
+                             <h6 class="text-white font-outfit font-semibold mb-0.5 text-truncate">{{ $member->name }}</h6>
+                             <span class="text-secondary small text-truncate d-block">{{ $member->role }}</span>
                         </div>
                         <button class="btn btn-sm btn-primary py-1.5 px-3 rounded-3 shrink-0" onclick="showEmployeeReport({{ $member->id }}, '{{ addslashes($member->name) }}')">
                             AI Report
@@ -350,11 +368,15 @@
                 <div class="col-12 text-center text-secondary py-3 italic small">No team members registered to audit.</div>
             @endif
         </div>
+        
+        <div class="mt-4 d-flex justify-content-center">
+            {!! $allMembers->appends(request()->except('members_page'))->links() !!}
+        </div>
     </div>
 
     @php
         $groupTasks = [];
-        foreach ($allTasks as $task) {
+        foreach ($groupTasksPaginated as $task) {
             $members = $task->teamMembers;
             if ($members->count() > 1) {
                 $sortedMembers = $members->sortBy('id');
@@ -403,7 +425,7 @@
                     }
                 @endphp
                 <div class="col-md-6 col-lg-4">
-                    <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 hover-card" style="transition: all 0.2s; --accent-border-hover: rgba(168, 85, 247, 0.4); --accent-glow: rgba(168, 85, 247, 0.1);">
+                    <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 hover-card" style="cursor: pointer; transition: all 0.2s; --accent-border-hover: rgba(168, 85, 247, 0.4); --accent-glow: rgba(168, 85, 247, 0.1);" onclick="showGroupReport('{{ $gId }}', '{{ addslashes($gData['names']) }}')">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
                                 <h6 class="text-white font-outfit font-semibold mb-0.5 text-truncate" title="{{ $gData['names'] }}">{{ $gData['names'] }}</h6>
@@ -414,14 +436,27 @@
                         <div class="progress mb-2" style="height: 6px; background-color: #1e293b;">
                             <div class="progress-bar {{ $progressColor }}" role="progressbar" style="width: {{ $gPct }}%" aria-valuenow="{{ $gPct }}" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
-                        <div class="d-flex justify-content-between text-secondary" style="font-size: 10px;">
+                        <div class="d-flex justify-content-between text-secondary mb-2" style="font-size: 10px;">
                             <span>Tasks: {{ $gCompleted }} / {{ $gTotal }} completed</span>
+                            @if($gTasks->first())
+                                <span class="text-slate-400" style="font-size:10px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" fill="currentColor" viewBox="0 0 16 16" class="me-1 align-middle"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+                                    Due: {{ \Carbon\Carbon::parse($gTasks->first()->due_date)->format('M d, Y') }}
+                                </span>
+                            @endif
+                        </div>
+                        <div class="d-flex justify-content-end align-items-center border-top border-slate-800/60 pt-2">
+                            <span class="text-primary small font-semibold" style="font-size: 11px;">AI Report &rarr;</span>
                         </div>
                     </div>
                 </div>
             @empty
                 <div class="col-12 text-center text-slate-400 py-3 italic small">No group tasks logged yet. Assign a task to multiple developers to start tracking team group productivity.</div>
             @endforelse
+        </div>
+        
+        <div class="mt-4 d-flex justify-content-center">
+            {!! $groupTasksPaginated->appends(request()->except('groups_page'))->links() !!}
         </div>
     </div>
 
@@ -555,6 +590,11 @@
                     </div>
                 </div>
 
+                <!-- Search Input -->
+                <div class="mb-3">
+                    <input type="text" id="membersModalSearch" class="form-control form-control-sm" placeholder="Search members by name, email, or role..." oninput="onMembersSearchChange(this.value)">
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
                         <thead class="text-secondary" style="font-size: 11px;">
@@ -567,52 +607,14 @@
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @forelse($allMembers as $member)
-                                <tr id="member-row-{{ $member->id }}">
-                                    <td class="py-3 text-secondary">{{ $loop->iteration }}</td>
-                                    <td class="py-3">
-                                        <span class="view-mode font-semibold text-slate-100">{{ $member->name }}</span>
-                                        <input type="text" name="name" form="edit-member-form-{{ $member->id }}" value="{{ $member->name }}" class="form-control form-control-sm edit-mode d-none" required>
-                                    </td>
-                                    <td class="py-3">
-                                        <span class="view-mode text-slate-300">{{ $member->role }}</span>
-                                        <input type="text" name="role" form="edit-member-form-{{ $member->id }}" value="{{ $member->role }}" class="form-control form-control-sm edit-mode d-none" required>
-                                    </td>
-                                    <td class="py-3">
-                                        <span class="view-mode text-slate-400">{{ $member->email }}</span>
-                                        <input type="email" name="email" form="edit-member-form-{{ $member->id }}" value="{{ $member->email }}" class="form-control form-control-sm edit-mode d-none" required>
-                                    </td>
-                                    <td class="py-3">
-                                        <span class="view-mode font-mono text-purple-400">{{ $member->github_id ?? 'N/A' }}</span>
-                                        <input type="text" name="github_id" form="edit-member-form-{{ $member->id }}" value="{{ $member->github_id }}" class="form-control form-control-sm edit-mode d-none">
-                                    </td>
-                                    <td class="py-3 text-end">
-                                        <form id="edit-member-form-{{ $member->id }}" action="{{ route('manager.update-team-member', $member->id) }}" method="POST" class="d-none">
-                                            @csrf
-                                            @method('PUT')
-                                        </form>
-                                        <div class="d-inline-flex justify-content-end gap-1">
-                                            <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $member->id }}, 'member')">Edit</button>
-                                            
-                                            <form action="{{ route('manager.destroy-team-member', $member->id) }}" method="POST" class="d-inline view-mode" onsubmit="return confirm('Are you sure you want to delete this member?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-xs btn-outline-danger">Delete</button>
-                                            </form>
-                                            
-                                            <button type="submit" form="edit-member-form-{{ $member->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
-                                            <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none" onclick="toggleEditMode({{ $member->id }}, 'member')">Cancel</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="text-center py-4 text-secondary italic">No team members registered.</td>
-                                </tr>
-                            @endforelse
+                        <tbody id="membersModalTableBody">
+                            <!-- Populated via AJAX -->
                         </tbody>
                     </table>
+                </div>
+
+                <div id="membersModalPagination" class="d-flex justify-content-between align-items-center mt-3 text-secondary small">
+                    <!-- Populated via AJAX -->
                 </div>
             </div>
             <div class="modal-footer border-top border-slate-800 p-4">
@@ -644,23 +646,7 @@
                                     <input type="text" name="title" class="form-control form-control-sm" placeholder="Task Title" required>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="dropdown" style="min-width: 140px;">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100 text-start text-white text-truncate" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="border: 1px solid #334155; font-size: 11px; padding: 0.25rem 0.5rem;">
-                                            Select Assignee(s)...
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-dark p-2 border-slate-700 shadow-xl" style="background-color: #0f172a; max-height: 200px; overflow-y: auto; z-index: 1050;">
-                                            @foreach($allMembers as $m)
-                                                <li class="px-2 py-1 hover-slate-800 rounded">
-                                                    <div class="form-check d-flex align-items-center gap-2 mb-0">
-                                                        <input class="form-check-input" type="checkbox" name="team_member_ids[]" value="{{ $m->id }}" id="chk-dash-add-{{ $m->id }}" style="cursor: pointer;">
-                                                        <label class="form-check-label text-slate-200 small cursor-pointer" for="chk-dash-add-{{ $m->id }}">
-                                                            {{ $m->name }}
-                                                        </label>
-                                                    </div>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
+                                    <input type="text" name="email" class="form-control form-control-sm" placeholder="Assignee Email(s) (comma separated)" required>
                                 </div>
                                 <div class="col-md-2">
                                     <select name="status" class="form-select form-select-sm" required>
@@ -680,6 +666,11 @@
                     </div>
                 </div>
 
+                <!-- Search Input -->
+                <div class="mb-3">
+                    <input type="text" id="tasksModalSearch" class="form-control form-control-sm" placeholder="Search tasks by title or developer..." oninput="onTasksSearchChange(this.value)">
+                </div>
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
                         <thead class="text-secondary" style="font-size: 11px;">
@@ -692,94 +683,14 @@
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @forelse($allTasks as $task)
-                                <tr id="task-row-{{ $task->id }}">
-                                    <td class="py-3 text-secondary">{{ $loop->iteration }}</td>
-                                    <td class="py-3">
-                                        <span class="view-mode font-semibold text-slate-100">{{ $task->title }}</span>
-                                        <input type="text" name="title" form="edit-task-form-{{ $task->id }}" value="{{ $task->title }}" class="form-control form-control-sm edit-mode d-none" required>
-                                    </td>
-                                    <td class="py-3">
-                                        <span class="view-mode text-slate-300">
-                                            <div class="d-flex flex-wrap gap-1">
-                                                @forelse($task->teamMembers as $tm)
-                                                    <span class="badge bg-indigo-500 bg-opacity-10 text-indigo-400 border border-indigo-500 border-opacity-20 px-2 py-0.5" style="font-size: 10px;">{{ $tm->name }}</span>
-                                                @empty
-                                                    <span class="badge bg-indigo-500 bg-opacity-10 text-indigo-400 border border-indigo-500 border-opacity-20 px-2 py-0.5" style="font-size: 10px;">{{ $task->teamMember?->name ?? 'Unassigned' }}</span>
-                                                @endforelse
-                                            </div>
-                                        </span>
-                                        <div class="dropdown edit-mode d-none" style="min-width: 140px;">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100 text-start text-white text-truncate" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="border: 1px solid #334155; font-size: 11px; padding: 0.25rem 0.5rem;">
-                                                Select Group...
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-dark p-2 border-slate-700 shadow-xl" style="background-color: #0f172a; max-height: 200px; overflow-y: auto; z-index: 1050;">
-                                                @php
-                                                    $assignedIds = $task->teamMembers->pluck('id')->toArray();
-                                                    if (empty($assignedIds) && $task->team_member_id) {
-                                                        $assignedIds = [$task->team_member_id];
-                                                    }
-                                                @endphp
-                                                @foreach($allMembers as $m)
-                                                    <li class="px-2 py-1 hover-slate-800 rounded">
-                                                        <div class="form-check d-flex align-items-center gap-2 mb-0">
-                                                            <input class="form-check-input" type="checkbox" name="team_member_ids[]" form="edit-task-form-{{ $task->id }}" value="{{ $m->id }}" id="chk-dash-edit-{{ $task->id }}-{{ $m->id }}" {{ in_array($m->id, $assignedIds) ? 'checked' : '' }} style="cursor: pointer;">
-                                                            <label class="form-check-label text-slate-200 small cursor-pointer" for="chk-dash-edit-{{ $task->id }}-{{ $m->id }}">
-                                                                {{ $m->name }}
-                                                            </label>
-                                                        </div>
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-                                    </td>
-                                    <td class="py-3">
-                                        <span class="view-mode">
-                                            @if($task->status === 'completed')
-                                                <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Completed</span>
-                                            @elseif($task->status === 'in_progress')
-                                                <span class="badge rounded-pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 px-2.5 py-1" style="font-size: 10px;">In Progress</span>
-                                            @else
-                                                <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Pending</span>
-                                            @endif
-                                        </span>
-                                        <select name="status" form="edit-task-form-{{ $task->id }}" class="form-select form-select-sm edit-mode d-none" required>
-                                            <option value="pending" {{ $task->status == 'pending' ? 'selected' : '' }}>Pending</option>
-                                            <option value="in_progress" {{ $task->status == 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                                            <option value="completed" {{ $task->status == 'completed' ? 'selected' : '' }}>Completed</option>
-                                        </select>
-                                    </td>
-                                    <td class="py-3 text-slate-400">
-                                        <span class="view-mode">{{ \Carbon\Carbon::parse($task->due_date)->format('M d, Y') }}</span>
-                                        <input type="date" name="due_date" form="edit-task-form-{{ $task->id }}" value="{{ \Carbon\Carbon::parse($task->due_date)->format('Y-m-d') }}" class="form-control form-control-sm edit-mode d-none" required>
-                                    </td>
-                                    <td class="py-3 text-end">
-                                        <form id="edit-task-form-{{ $task->id }}" action="{{ route('manager.update-task', $task->id) }}" method="POST" class="d-none">
-                                            @csrf
-                                            @method('PUT')
-                                        </form>
-                                        <div class="d-inline-flex justify-content-end gap-1">
-                                            <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $task->id }}, 'task')">Edit</button>
-                                            
-                                            <form action="{{ route('manager.destroy-task', $task->id) }}" method="POST" class="d-inline view-mode" onsubmit="return confirm('Are you sure you want to delete this task?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-xs btn-outline-danger">Delete</button>
-                                            </form>
-                                            
-                                            <button type="submit" form="edit-task-form-{{ $task->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
-                                            <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none" onclick="toggleEditMode({{ $task->id }}, 'task')">Cancel</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="text-center py-4 text-secondary italic">No tasks logged in system.</td>
-                                </tr>
-                            @endforelse
+                        <tbody id="tasksModalTableBody">
+                            <!-- Populated via AJAX -->
                         </tbody>
                     </table>
+                </div>
+
+                <div id="tasksModalPagination" class="d-flex justify-content-between align-items-center mt-3 text-secondary small">
+                    <!-- Populated via AJAX -->
                 </div>
             </div>
             <div class="modal-footer border-top border-slate-800 p-4">
@@ -814,12 +725,7 @@
                                     <input type="text" name="repository_name" class="form-control form-control-sm" placeholder="Repository Name" value="manager-agent" required>
                                 </div>
                                 <div class="col-md-3">
-                                    <select name="team_member_id" class="form-select form-select-sm" required>
-                                        <option value="" disabled selected>Developer</option>
-                                        @foreach($allMembers as $m)
-                                            <option value="{{ $m->id }}">{{ $m->name }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="Developer Email" required>
                                 </div>
                                 <div class="col-md-4">
                                     <input type="text" name="message" class="form-control form-control-sm" placeholder="Commit Message" required>
@@ -833,6 +739,11 @@
                             </div>
                         </form>
                     </div>
+                </div>
+
+                <!-- Search Input -->
+                <div class="mb-3">
+                    <input type="text" id="commitsModalSearch" class="form-control form-control-sm" placeholder="Search commits by message, hash, repository, or developer..." oninput="onCommitsSearchChange(this.value)">
                 </div>
 
                 <div class="table-responsive">
@@ -849,64 +760,14 @@
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @forelse($allCommits as $commit)
-                                <tr id="commit-row-{{ $commit->id }}">
-                                    <td class="py-3 text-secondary">{{ $loop->iteration }}</td>
-                                    <td class="py-3 font-mono text-primary" style="font-size: 13px;">
-                                        <span class="view-mode">{{ $commit->commit_hash }}</span>
-                                        <input type="text" name="commit_hash" form="edit-commit-form-{{ $commit->id }}" value="{{ $commit->commit_hash }}" class="form-control form-control-sm edit-mode d-none" required>
-                                    </td>
-                                    <td class="py-3 text-slate-300 font-semibold">
-                                        <span class="view-mode">{{ $commit->repository_name ?? 'manager-agent' }}</span>
-                                        <input type="text" name="repository_name" form="edit-commit-form-{{ $commit->id }}" value="{{ $commit->repository_name ?? 'manager-agent' }}" class="form-control form-control-sm edit-mode d-none" required>
-                                    </td>
-                                    <td class="py-3 text-slate-300">
-                                        <span class="view-mode">{{ $commit->teamMember?->name ?? 'Unknown' }}</span>
-                                        <select name="team_member_id" form="edit-commit-form-{{ $commit->id }}" class="form-select form-select-sm edit-mode d-none" required>
-                                            @foreach($allMembers as $m)
-                                                <option value="{{ $m->id }}" {{ $commit->team_member_id == $m->id ? 'selected' : '' }}>{{ $m->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td class="py-3 font-mono text-purple-400" style="font-size: 12px;">
-                                        <span class="view-mode">{{ $commit->teamMember?->github_id ?? 'N/A' }}</span>
-                                        <span class="edit-mode d-none text-secondary">Linked to Member</span>
-                                    </td>
-                                    <td class="py-3 text-slate-100" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                        <span class="view-mode">{{ $commit->message }}</span>
-                                        <input type="text" name="message" form="edit-commit-form-{{ $commit->id }}" value="{{ $commit->message }}" class="form-control form-control-sm edit-mode d-none" required>
-                                    </td>
-                                    <td class="py-3 text-slate-400" style="font-size: 12px;">
-                                        <span class="view-mode">{{ $commit->committed_at->format('M d, Y h:i A') }}</span>
-                                        <input type="datetime-local" name="committed_at" form="edit-commit-form-{{ $commit->id }}" value="{{ $commit->committed_at->format('Y-m-d\TH:i') }}" class="form-control form-control-sm edit-mode d-none" required>
-                                    </td>
-                                    <td class="py-3 text-end">
-                                        <form id="edit-commit-form-{{ $commit->id }}" action="{{ route('manager.update-commit', $commit->id) }}" method="POST" class="d-none">
-                                            @csrf
-                                            @method('PUT')
-                                        </form>
-                                        <div class="d-inline-flex justify-content-end gap-1">
-                                            <button type="button" class="btn btn-xs btn-outline-info view-mode" onclick="toggleEditMode({{ $commit->id }}, 'commit')">Edit</button>
-                                            
-                                            <form action="{{ route('manager.destroy-commit', $commit->id) }}" method="POST" class="d-inline view-mode" onsubmit="return confirm('Are you sure you want to delete this commit?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-xs btn-outline-danger">Delete</button>
-                                            </form>
-                                            
-                                            <button type="submit" form="edit-commit-form-{{ $commit->id }}" class="btn btn-xs btn-success edit-mode d-none">Save</button>
-                                            <button type="button" class="btn btn-xs btn-outline-secondary edit-mode d-none" onclick="toggleEditMode({{ $commit->id }}, 'commit')">Cancel</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="text-center py-4 text-secondary italic">No commits recorded in log.</td>
-                                </tr>
-                            @endforelse
+                        <tbody id="commitsModalTableBody">
+                            <!-- Populated via AJAX -->
                         </tbody>
                     </table>
+                </div>
+
+                <div id="commitsModalPagination" class="d-flex justify-content-between align-items-center mt-3 text-secondary small">
+                    <!-- Populated via AJAX -->
                 </div>
             </div>
             <div class="modal-footer border-top border-slate-800 p-4">
@@ -1073,6 +934,9 @@
         const modalEl = document.getElementById('employeeReportModal');
         const modal = new bootstrap.Modal(modalEl);
         
+        // Reset/Update Modal Header Title
+        document.getElementById('employeeReportModalLabel').innerText = 'Employee Evening AI Audit';
+        
         const metaEl = document.getElementById('employee-report-meta');
         const spinnerEl = document.getElementById('employee-report-spinner');
         const contentEl = document.getElementById('employee-report-content');
@@ -1085,7 +949,7 @@
         modal.show();
         
         const urlParams = new URLSearchParams(window.location.search);
-        const filterDate = urlParams.get('date') || '';
+        const filterDate = urlParams.get('date') || urlParams.get('filter_date') || '';
         const targetUrl = `{{ url('/manager-agent/employee-report') }}/${memberId}${filterDate ? '?date=' + filterDate : ''}`;
         
         fetch(targetUrl, {
@@ -1126,6 +990,228 @@
                 </div>
             `;
         });
+    }
+
+    // Show AI report for group
+    function showGroupReport(gId, groupName) {
+        const modalEl = document.getElementById('employeeReportModal');
+        const modal = new bootstrap.Modal(modalEl);
+        
+        // Reset/Update Modal Header Title
+        document.getElementById('employeeReportModalLabel').innerText = 'Group Evening AI Audit';
+        
+        const metaEl = document.getElementById('employee-report-meta');
+        const spinnerEl = document.getElementById('employee-report-spinner');
+        const contentEl = document.getElementById('employee-report-content');
+        
+        metaEl.innerText = `${groupName} — Preparing group report...`;
+        spinnerEl.classList.remove('d-none');
+        contentEl.classList.add('d-none');
+        contentEl.innerHTML = '';
+        
+        modal.show();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterDate = urlParams.get('date') || urlParams.get('filter_date') || '';
+        const targetUrl = `{{ url('/manager-agent/group-report') }}?ids=${gId}${filterDate ? '&date=' + filterDate : ''}`;
+        
+        fetch(targetUrl, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            return response.json().then(data => {
+                throw new Error(data.message || 'Failed to fetch group report.');
+            });
+        })
+        .then(data => {
+            metaEl.innerText = `${data.group_name} — Report for ${data.date}`;
+            spinnerEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+            
+            // Render using marked library
+            if (typeof marked !== 'undefined') {
+                contentEl.innerHTML = marked.parse(data.report);
+            } else {
+                contentEl.innerHTML = data.report.replace(/\n/g, '<br>');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching group report:', error);
+            metaEl.innerText = `${groupName} — Generation Failed`;
+            spinnerEl.classList.add('d-none');
+            contentEl.classList.remove('d-none');
+            contentEl.innerHTML = `
+                <div class="alert alert-danger border-0 p-3 text-white" style="background-color: rgba(244, 63, 94, 0.15); border-left: 4px solid #f43f5e !important;">
+                    <strong>Error:</strong> ${error.message}
+                </div>
+            `;
+        });
+    }
+
+    // AJAX Pagination and search for dashboard modals
+    let membersSearch = '';
+    let tasksSearch = '';
+    let commitsSearch = '';
+
+    document.getElementById('membersModal').addEventListener('shown.bs.modal', function () {
+        loadMembers(1);
+    });
+    document.getElementById('tasksModal').addEventListener('shown.bs.modal', function () {
+        loadTasks(1);
+    });
+    document.getElementById('commitsModal').addEventListener('shown.bs.modal', function () {
+        loadCommits(1);
+    });
+
+    let searchTimeout;
+    function onMembersSearchChange(value) {
+        membersSearch = value;
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => loadMembers(1), 300);
+    }
+    function onTasksSearchChange(value) {
+        tasksSearch = value;
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => loadTasks(1), 300);
+    }
+    function onCommitsSearchChange(value) {
+        commitsSearch = value;
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => loadCommits(1), 300);
+    }
+
+    function loadMembers(page) {
+        const tbody = document.getElementById('membersModalTableBody');
+        const pagEl = document.getElementById('membersModalPagination');
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...</td></tr>';
+        
+        fetch(`{{ url('/manager-agent/api/members') }}?page=${page}&search=${encodeURIComponent(membersSearch)}`)
+            .then(res => res.json())
+            .then(res => {
+                let html = '';
+                res.data.forEach((member, index) => {
+                    const i = (res.current_page - 1) * 10 + index + 1;
+                    html += `
+                        <tr id="member-row-${member.id}">
+                            <td class="py-3 text-secondary">${i}</td>
+                            <td class="py-3"><span class="font-semibold text-slate-100">${member.name}</span></td>
+                            <td class="py-3"><span class="text-slate-300">${member.role}</span></td>
+                            <td class="py-3"><span class="text-slate-400">${member.email}</span></td>
+                            <td class="py-3"><span class="font-mono text-purple-400">${member.github_id || 'N/A'}</span></td>
+                            <td class="py-3 text-end">
+                                <a href="{{ route('manager.employees.index') }}?search=${encodeURIComponent(member.email)}" class="btn btn-xs btn-outline-info">Manage</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+                if (res.data.length === 0) {
+                    html = '<tr><td colspan="6" class="text-center py-4 text-secondary italic">No team members found.</td></tr>';
+                }
+                tbody.innerHTML = html;
+                renderPagination(pagEl, res.current_page, res.last_page, 'loadMembers');
+            });
+    }
+
+    function loadTasks(page) {
+        const tbody = document.getElementById('tasksModalTableBody');
+        const pagEl = document.getElementById('tasksModalPagination');
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...</td></tr>';
+
+        fetch(`{{ url('/manager-agent/api/tasks') }}?page=${page}&search=${encodeURIComponent(tasksSearch)}`)
+            .then(res => res.json())
+            .then(res => {
+                let html = '';
+                res.data.forEach((task, index) => {
+                    const i = (res.current_page - 1) * 10 + index + 1;
+                    let badge = '';
+                    if (task.status === 'completed') {
+                        badge = '<span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Completed</span>';
+                    } else if (task.status === 'in_progress') {
+                        badge = '<span class="badge rounded-pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 px-2.5 py-1" style="font-size: 10px;">In Progress</span>';
+                    } else {
+                        badge = '<span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Pending</span>';
+                    }
+                    html += `
+                        <tr id="task-row-${task.id}">
+                            <td class="py-3 text-secondary">${i}</td>
+                            <td class="py-3"><span class="font-semibold text-slate-100">${task.title}</span></td>
+                            <td class="py-3"><span class="badge bg-indigo-500 bg-opacity-10 text-indigo-400 border border-indigo-500 border-opacity-20 px-2 py-0.5" style="font-size: 10px;">${task.member_name}</span></td>
+                            <td class="py-3">${badge}</td>
+                            <td class="py-3 text-slate-400">${task.due_date}</td>
+                            <td class="py-3 text-end">
+                                <a href="{{ route('manager.task-entry') }}?search=${encodeURIComponent(task.title)}" class="btn btn-xs btn-outline-info">Manage</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+                if (res.data.length === 0) {
+                    html = '<tr><td colspan="6" class="text-center py-4 text-secondary italic">No tasks found.</td></tr>';
+                }
+                tbody.innerHTML = html;
+                renderPagination(pagEl, res.current_page, res.last_page, 'loadTasks');
+            });
+    }
+
+    function loadCommits(page) {
+        const tbody = document.getElementById('commitsModalTableBody');
+        const pagEl = document.getElementById('commitsModalPagination');
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...</td></tr>';
+
+        fetch(`{{ url('/manager-agent/api/commits') }}?page=${page}&search=${encodeURIComponent(commitsSearch)}`)
+            .then(res => res.json())
+            .then(res => {
+                let html = '';
+                res.data.forEach((commit, index) => {
+                    const i = (res.current_page - 1) * 10 + index + 1;
+                    html += `
+                        <tr id="commit-row-${commit.id}">
+                            <td class="py-3 text-secondary">${i}</td>
+                            <td class="py-3 font-mono text-primary" style="font-size: 13px;">${commit.commit_hash.substring(0, 7)}</td>
+                            <td class="py-3 text-slate-300 font-semibold">${commit.repository_name || 'N/A'}</td>
+                            <td class="py-3 text-slate-300">${commit.member_name}</td>
+                            <td class="py-3 font-mono text-purple-400" style="font-size: 12px;">git_user_${commit.team_member_id}</td>
+                            <td class="py-3 text-slate-100" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${commit.message}</td>
+                            <td class="py-3 text-slate-400" style="font-size: 12px;">${commit.committed_at}</td>
+                            <td class="py-3 text-end">
+                                <a href="{{ route('manager.commits.index') }}?search=${encodeURIComponent(commit.commit_hash)}" class="btn btn-xs btn-outline-info">Manage</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+                if (res.data.length === 0) {
+                    html = '<tr><td colspan="8" class="text-center py-4 text-secondary italic">No commits found.</td></tr>';
+                }
+                tbody.innerHTML = html;
+                renderPagination(pagEl, res.current_page, res.last_page, 'loadCommits');
+            });
+    }
+
+    function renderPagination(el, currentPage, lastPage, funcName) {
+        if (lastPage <= 1) {
+            el.innerHTML = '<div></div><div></div>';
+            return;
+        }
+        let html = `<div>Page ${currentPage} of ${lastPage}</div>`;
+        html += '<div class="btn-group">';
+        if (currentPage > 1) {
+            html += `<button type="button" class="btn btn-xs btn-outline-secondary" onclick="${funcName}(${currentPage - 1})">Prev</button>`;
+        } else {
+            html += `<button type="button" class="btn btn-xs btn-outline-secondary" disabled>Prev</button>`;
+        }
+        if (currentPage < lastPage) {
+            html += `<button type="button" class="btn btn-xs btn-outline-secondary" onclick="${funcName}(${currentPage + 1})">Next</button>`;
+        } else {
+            html += `<button type="button" class="btn btn-xs btn-outline-secondary" disabled>Next</button>`;
+        }
+        html += '</div>';
+        el.innerHTML = html;
     }
 </script>
 @endsection

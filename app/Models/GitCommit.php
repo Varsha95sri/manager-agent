@@ -13,6 +13,7 @@ class GitCommit extends Model
 
     protected $fillable = [
         'team_member_id',
+        'repository_id',
         'commit_hash',
         'message',
         'repository_name',
@@ -26,5 +27,10 @@ class GitCommit extends Model
     public function teamMember(): BelongsTo
     {
         return $this->belongsTo(TeamMember::class);
+    }
+
+    public function repository(): BelongsTo
+    {
+        return $this->belongsTo(Repository::class);
     }
 }

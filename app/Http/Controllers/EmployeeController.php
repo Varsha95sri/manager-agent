@@ -107,19 +107,18 @@ class EmployeeController extends Controller
             'Expires'             => '0'
         ];
 
-        $employees = TeamMember::all();
-
         $columns = [
             'Name', 'Email', 'Role', 'GitHub ID', 'Task Title', 
             'Task Commit', 'Attendance', 'Meeting Date', 'Meeting Title', 
             'Task Assign Date', 'Due Date', 'Login Timing'
         ];
 
-        $callback = function() use($employees, $columns) {
+        $callback = function() use ($columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
-            foreach ($employees as $employee) {
+            // Use lazy cursor for chunked streaming with low memory footprint
+            TeamMember::query()->lazy()->each(function($employee) use ($file) {
                 fputcsv($file, [
                     $employee->name,
                     $employee->email,
@@ -134,7 +133,7 @@ class EmployeeController extends Controller
                     $employee->due_date,
                     $employee->login_timing,
                 ]);
-            }
+            });
 
             fclose($file);
         };

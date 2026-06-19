@@ -16,12 +16,17 @@ use Carbon\Carbon;
 class ManagerAgentService
 {
     /**
-     * Fetch tasks with team member names for given date.
+     * Fetch tasks with team member names for given date, capped to prevent memory and token overflow.
      */
-    public function readTasks(string $date): array
+    public function readTasks(string $date, int $limit = 30): array
     {
-        return Task::with('teamMember')
+        $total = Task::whereDate('due_date', $date)->count();
+        $completed = Task::whereDate('due_date', $date)->where('status', 'completed')->count();
+        
+        $items = Task::with('teamMember')
             ->whereDate('due_date', $date)
+            ->latest('id')
+            ->limit($limit)
             ->get()
             ->map(fn($task) => [
                 'id' => $task->id,
@@ -32,15 +37,26 @@ class ManagerAgentService
                 'due_date' => $task->due_date,
             ])
             ->toArray();
+
+        return [
+            'total_count' => $total,
+            'completed_count' => $completed,
+            'pending_count' => $total - $completed,
+            'sample_items' => $items
+        ];
     }
 
     /**
-     * Fetch commits with team member names for given date.
+     * Fetch commits with team member names for given date, capped to prevent memory and token overflow.
      */
-    public function readGitCommits(string $date): array
+    public function readGitCommits(string $date, int $limit = 30): array
     {
-        return GitCommit::with('teamMember')
+        $total = GitCommit::whereDate('committed_at', $date)->count();
+
+        $items = GitCommit::with('teamMember')
             ->whereDate('committed_at', $date)
+            ->latest('id')
+            ->limit($limit)
             ->get()
             ->map(fn($commit) => [
                 'id' => $commit->id,
@@ -53,15 +69,27 @@ class ManagerAgentService
                 'committed_at' => $commit->committed_at->toDateTimeString(),
             ])
             ->toArray();
+
+        return [
+            'total_count' => $total,
+            'sample_items' => $items
+        ];
     }
 
     /**
-     * Fetch attendance with team member names for given date.
+     * Fetch attendance with team member names for given date, capped to prevent memory and token overflow.
      */
-    public function readAttendance(string $date): array
+    public function readAttendance(string $date, int $limit = 30): array
     {
-        return AttendanceLog::with('teamMember')
+        $present = AttendanceLog::whereDate('date', $date)->where('status', 'present')->count();
+        $late = AttendanceLog::whereDate('date', $date)->where('status', 'late')->count();
+        $absent = AttendanceLog::whereDate('date', $date)->where('status', 'absent')->count();
+
+        // Get late/absent logs first (exceptions) as they are most important for managerial action
+        $items = AttendanceLog::with('teamMember')
             ->whereDate('date', $date)
+            ->orderByRaw("CASE WHEN status = 'absent' THEN 1 WHEN status = 'late' THEN 2 ELSE 3 END")
+            ->limit($limit)
             ->get()
             ->map(fn($log) => [
                 'id' => $log->id,
@@ -72,6 +100,13 @@ class ManagerAgentService
                 'check_in' => $log->check_in,
             ])
             ->toArray();
+
+        return [
+            'present_count' => $present,
+            'late_count' => $late,
+            'absent_count' => $absent,
+            'sample_items' => $items
+        ];
     }
 
     /**
@@ -95,8 +130,19 @@ class ManagerAgentService
      */
     public function analyzeWithLLM(array $tasks, array $commits, array $attendance, array $meetings): array
     {
-        // Fetch team members list for context
-        $teamMembers = TeamMember::all()->map(fn($m) => [
+        $taskItems = $tasks['sample_items'] ?? [];
+        $commitItems = $commits['sample_items'] ?? [];
+        $attendanceItems = $attendance['sample_items'] ?? [];
+
+        // Fetch only active team members in our samples to prevent token context & memory overflows
+        $activeMemberIds = collect($taskItems)->pluck('team_member_id')
+            ->concat(collect($commitItems)->pluck('team_member_id'))
+            ->concat(collect($attendanceItems)->pluck('team_member_id'))
+            ->unique()
+            ->filter()
+            ->toArray();
+
+        $teamMembers = TeamMember::whereIn('id', $activeMemberIds)->get()->map(fn($m) => [
             'id' => $m->id,
             'name' => $m->name,
             'role' => $m->role,
@@ -117,11 +163,27 @@ class ManagerAgentService
             ->toArray();
 
         $dataContext = [
-            'team_members' => $teamMembers,
+            'summary' => [
+                'total_members' => TeamMember::count(),
+                'tasks' => [
+                    'total' => $tasks['total_count'],
+                    'completed' => $tasks['completed_count'],
+                    'pending' => $tasks['pending_count'],
+                ],
+                'commits' => [
+                    'total' => $commits['total_count'],
+                ],
+                'attendance' => [
+                    'present' => $attendance['present_count'],
+                    'late' => $attendance['late_count'],
+                    'absent' => $attendance['absent_count'],
+                ]
+            ],
+            'team_members_sample_details' => $teamMembers,
             'historical_performance_reports' => $historicalReports,
-            'today_git_commits' => $commits,
-            'today_tasks' => $tasks,
-            'today_attendance' => $attendance,
+            'today_git_commits_sample' => $commitItems,
+            'today_tasks_sample' => $taskItems,
+            'today_attendance_sample' => $attendanceItems,
             'today_meeting_notes' => $meetings,
         ];
 
@@ -136,7 +198,7 @@ class ManagerAgentService
             . "  \"top_performers\": (array of strings, names of the team members who showed exceptional contribution today),\n"
             . "  \"attention_required\": (array of strings, listing members or issues needing direct managerial intervention, e.g. \"Shipra (Absent)\", \"Rahul (Overdue task: optimize queries)\"),\n"
             . "  \"risks\": (array of strings, detailing any project risks, blockers, delayed timelines, or resource shortages),\n"
-            . "  \"full_report\": (string, a concise and detailed markdown-formatted executive report containing sections: Executive Summary, Key Achievements, Team Member Status Breakdown (MANDATORY: list every team member by name and summarize their individual commits, attendance, and tasks next to their name), Activity Details, and Recommendations. Write in a formal, professional management tone. Keep sections concise and focused, using bullet points and summaries instead of long paragraphs to optimize response times)\n"
+            . "  \"full_report\": (string, a concise and detailed markdown-formatted executive report containing sections: Executive Summary (MANDATORY: you MUST explicitly mention the calculated team_productivity percentage score in this section and write a brief sentence evaluating it), Key Achievements, Team Member Status Breakdown (MANDATORY: list every team member by name and summarize their individual commits, attendance, and tasks next to their name), Activity Details, and Recommendations. Write in a formal, professional management tone. Keep sections concise and focused, using bullet points and summaries instead of long paragraphs to optimize response times)\n"
             . "}\n\n"
             . "Analyze the following team activities context and generate a daily report matching the schema exactly:\n\n"
             . "Context:\n{$dataJson}";
@@ -377,10 +439,10 @@ class ManagerAgentService
     {
         // 1. Calculate productivity based on attendance and task status
         $totalMembers = TeamMember::count() ?: 1;
-        $presentCount = collect($attendance)->whereIn('status', ['present', 'late'])->count();
-        $absentCount = collect($attendance)->where('status', 'absent')->count();
-        $completedTasks = collect($tasks)->where('status', 'completed')->count();
-        $totalTasks = collect($tasks)->count();
+        $presentCount = $attendance['present_count'];
+        $absentCount = $attendance['absent_count'];
+        $completedTasks = $tasks['completed_count'];
+        $totalTasks = $tasks['total_count'];
 
         // Base attendance factor
         $attendanceScore = ($presentCount / $totalMembers) * 100;
@@ -392,13 +454,17 @@ class ManagerAgentService
         if ($productivity < 10) $productivity = 82; // Fallback default
         if ($productivity > 100) $productivity = 100;
 
-        // 2. Determine top performers based on commits and completed tasks
+        // 2. Determine top performers based on commits and completed tasks in the samples
         $performersMap = [];
-        foreach ($commits as $c) {
+        $commitItems = $commits['sample_items'] ?? [];
+        $taskItems = $tasks['sample_items'] ?? [];
+        $attendanceItems = $attendance['sample_items'] ?? [];
+
+        foreach ($commitItems as $c) {
             $name = $c['member_name'];
             $performersMap[$name] = ($performersMap[$name] ?? 0) + 1.5;
         }
-        foreach ($tasks as $t) {
+        foreach ($taskItems as $t) {
             if ($t['status'] === 'completed') {
                 $name = $t['member_name'];
                 $performersMap[$name] = ($performersMap[$name] ?? 0) + 1;
@@ -407,32 +473,30 @@ class ManagerAgentService
         arsort($performersMap);
         $topPerformers = array_slice(array_keys($performersMap), 0, 2);
         if (empty($topPerformers)) {
-            $topPerformers = []; // No dummy default performers
+            $topPerformers = [];
         }
 
-        // 3. Attention required based on absentees, lates, or pending tasks
+        // 3. Attention required based on absentees, lates, or pending tasks in the samples
         $attentionList = [];
-        foreach ($attendance as $att) {
+        foreach ($attendanceItems as $att) {
             if ($att['status'] === 'absent') {
                 $attentionList[] = $att['member_name'] . ' (Absent)';
             } elseif ($att['status'] === 'late') {
                 $attentionList[] = $att['member_name'] . ' (Late check-in)';
             }
         }
-        $overdueTasks = Task::with('teamMember')
-            ->whereIn('status', ['pending', 'in_progress'])
-            ->whereDate('due_date', '<', $date)
-            ->get();
-
-        foreach ($overdueTasks as $task) {
-            $memberName = $task->teamMember?->name ?? 'Unknown';
-            $desc = $memberName . ' (Overdue task: ' . $task->title . ')';
-            if (!in_match_name($attentionList, $memberName)) {
-                $attentionList[] = $desc;
+        
+        // Find overdue tasks in sample
+        foreach ($taskItems as $task) {
+            if (in_array($task['status'], ['pending', 'in_progress']) && Carbon::parse($task['due_date'])->lt(Carbon::parse($date))) {
+                $desc = $task['member_name'] . ' (Overdue task: ' . $task['title'] . ')';
+                if (!in_match_name($attentionList, $task['member_name'])) {
+                    $attentionList[] = $desc;
+                }
             }
         }
         if (empty($attentionList)) {
-            $attentionList = []; // No dummy attention items
+            $attentionList = [];
         }
 
         // 4. Risks list
@@ -440,11 +504,8 @@ class ManagerAgentService
         if ($absentCount > 1) {
             $risks[] = "Multiple team members absent ({$absentCount} members). Potential timeline impact.";
         }
-        $overdueCount = Task::whereIn('status', ['pending', 'in_progress'])
-            ->whereDate('due_date', '<', $date)
-            ->count();
-        if ($overdueCount > 0) {
-            $risks[] = "{$overdueCount} tasks are currently overdue. Milestones might be delayed.";
+        if ($totalTasks - $completedTasks > 0) {
+            $risks[] = ($totalTasks - $completedTasks) . " tasks are currently pending/in progress. Milestones might be delayed.";
         }
         foreach ($meetings as $m) {
             if (stripos($m['notes'], 'delay') !== false || stripos($m['notes'], 'block') !== false) {
@@ -457,7 +518,7 @@ class ManagerAgentService
 
         // 5. Generate detailed text report
         $formattedDate = Carbon::parse($date)->format('F j, Y');
-        $commitsCount = count($commits);
+        $commitsCount = $commits['total_count'];
         
         $fullReport = "### Manager Agent Performance Report for {$formattedDate}\n\n";
         $fullReport .= "#### Executive Summary\n";
@@ -590,6 +651,127 @@ class ManagerAgentService
             }
 
             $output .= "\n\n*Note: This report was compiled using local automated statistics due to Claude/Ollama API server integration fallback.*";
+            return $output;
+        }
+    }
+
+    /**
+     * Generate an AI-powered performance report for a group of team members.
+     */
+    public function generateGroupReport(array $memberIds, string $date): string
+    {
+        $members = TeamMember::whereIn('id', $memberIds)->get();
+
+        if ($members->isEmpty()) {
+            return "No team members found for the specified group.";
+        }
+
+        $memberNames = $members->pluck('name')->join(', ');
+
+        // Fetch tasks assigned to any of these members (individual or shared)
+        $tasks = Task::where(function($q) use ($memberIds) {
+                $q->whereIn('team_member_id', $memberIds)
+                  ->orWhereHas('teamMembers', fn($q2) => $q2->whereIn('team_member_id', $memberIds));
+            })
+            ->whereDate('due_date', $date)
+            ->with('teamMembers')
+            ->get()
+            ->map(fn($t) => [
+                'title'        => $t->title,
+                'status'       => $t->status,
+                'due_date'     => $t->due_date,
+                'members'      => $t->teamMembers->pluck('name')->join(', '),
+            ])
+            ->toArray();
+
+        // Fetch commits by any of these members
+        $commits = GitCommit::whereIn('team_member_id', $memberIds)
+            ->whereDate('committed_at', $date)
+            ->with('teamMember')
+            ->get()
+            ->map(fn($c) => [
+                'member'   => $c->teamMember?->name ?? 'Unknown',
+                'message'  => $c->message,
+                'hash'     => $c->commit_hash,
+                'repo'     => $c->repository_name,
+            ])
+            ->toArray();
+
+        // Fetch attendance logs for each member
+        $attendance = AttendanceLog::whereIn('team_member_id', $memberIds)
+            ->whereDate('date', $date)
+            ->with('teamMember')
+            ->get()
+            ->map(fn($a) => [
+                'member'    => $a->teamMember?->name ?? 'Unknown',
+                'status'    => $a->status,
+                'check_in'  => $a->check_in ?? 'N/A',
+            ])
+            ->toArray();
+
+        $dataContext = [
+            'group_members' => $members->map(fn($m) => ['name' => $m->name, 'role' => $m->role])->toArray(),
+            'date'          => $date,
+            'tasks'         => $tasks,
+            'commits'       => $commits,
+            'attendance'    => $attendance,
+        ];
+
+        $dataJson = json_encode($dataContext, JSON_PRETTY_PRINT);
+
+        $totalTasks     = count($tasks);
+        $completedCount = collect($tasks)->where('status', 'completed')->count();
+        $commitsCount   = count($commits);
+
+        $prompt = "You are the Manager Agent, a strategic engineering manager. Analyze the daily group activities of the following team members: {$memberNames} for date {$date}.\n\n"
+            . "Context:\n{$dataJson}\n\n"
+            . "Generate a concise, professional group evening performance report in clean Markdown format with these sections:\n"
+            . "### 👥 Group Summary\n"
+            . "(MANDATORY: you MUST calculate and explicitly mention the group's productivity percentage score based on tasks completed vs total tasks, and evaluate the team's velocity)\n"
+            . "### ⚡ Group Velocity & Collaboration\n"
+            . "(Evaluate teamwork, code coordination, shared task completion rate, and group velocity)\n"
+            . "### 🚀 Recommendations for the Team\n"
+            . "(Provide 2-3 actionable recommendations or blockers to address as a group)\n\n"
+            . "Keep the report brief, professional, and clear. Output ONLY the markdown report text.";
+
+        try {
+            return $this->callLLM($prompt);
+        } catch (\Throwable $e) {
+            Log::error("Failed to generate group report for [{$memberNames}]: " . $e->getMessage());
+
+            // Robust local fallback
+            $formattedDate = Carbon::parse($date)->format('F j, Y');
+            $presentCount  = collect($attendance)->where('status', 'present')->count();
+            $lateCount     = collect($attendance)->where('status', 'late')->count();
+            $absentCount   = collect($attendance)->where('status', 'absent')->count();
+            $completionPct = $totalTasks > 0 ? (int)(($completedCount / $totalTasks) * 100) : 100;
+
+            $output  = "### 👥 Group Summary\n";
+            $output .= "On **{$formattedDate}**, the group ({$memberNames}) collectively completed **{$completedCount} / {$totalTasks} tasks** ";
+            $output .= "achieving a group productivity of **{$completionPct}%**, and pushed **{$commitsCount} git commits** to version control.\n\n";
+            $output .= "**Attendance**: {$presentCount} present, {$lateCount} late, {$absentCount} absent.\n\n";
+
+            $output .= "### ⚡ Group Velocity & Collaboration\n";
+            $output .= "- **Task Completion Rate**: {$completionPct}%\n";
+            $output .= "- **Code Commits**: {$commitsCount} commits pushed to the repository.\n";
+            if ($absentCount > 0) {
+                $output .= "- **Availability Impact**: {$absentCount} member(s) absent; this may have affected group throughput.\n";
+            } else {
+                $output .= "- **Full Availability**: All group members were available today — strong collaboration potential.\n";
+            }
+
+            $output .= "\n### 🚀 Recommendations for the Team\n";
+            $pendingTasks = collect($tasks)->where('status', '!=', 'completed');
+            if ($pendingTasks->count() > 0) {
+                $pendingNames = $pendingTasks->pluck('title')->take(3)->join(', ');
+                $output .= "1. Prioritize clearing pending tasks tomorrow: **{$pendingNames}**.\n";
+            }
+            if ($absentCount > 0) {
+                $output .= "2. Sync with absent members to ensure no blockers or missed handoffs.\n";
+            }
+            $output .= "3. Maintain group code review cadence to ensure shared tasks are delivered consistently.\n";
+
+            $output .= "\n\n*Note: This report was compiled using local automated statistics due to API server integration fallback.*";
             return $output;
         }
     }

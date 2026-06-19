@@ -95,6 +95,12 @@
                 <div class="col-12 text-center text-secondary py-3 italic small">No team members registered to audit.</div>
             @endif
         </div>
+
+        @if($allMembers->hasPages())
+            <div class="mt-4 border-top border-slate-800 pt-4 d-flex justify-content-center">
+                {!! $allMembers->links() !!}
+            </div>
+        @endif
     </div>
 
         <div class="card glass-card p-4 shadow-2xl">
@@ -158,7 +164,14 @@
                                     <span class="badge rounded-pill {{ $badgeClass }} px-2.5 py-1" style="font-size: 10px;">{{ $label }}</span>
                                 </td>
                                 <td class="py-3 text-end">
-                                    <a href="{{ route('manager.report-detail', $report->id) }}" class="text-primary font-semibold text-decoration-none small">View Details</a>
+                                    <div class="d-inline-flex gap-2.5 align-items-center">
+                                        <a href="{{ route('manager.report-detail', $report->id) }}" class="text-primary font-semibold text-decoration-none small">View Details</a>
+                                        <form action="{{ route('manager.destroy-report', $report->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this report?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-link text-danger p-0 m-0 font-semibold text-decoration-none small" style="border: none; background: none; line-height: 1;">Delete</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

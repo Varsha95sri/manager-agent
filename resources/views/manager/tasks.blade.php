@@ -14,7 +14,16 @@
                 <p class="text-secondary small mb-0">Add, edit, or remove daily tasks to evaluate performance statistics and manage workloads.</p>
             </div>
             
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <!-- Add Daily Task Button -->
+                <button type="button" class="btn accent-btn d-inline-flex align-items-center rounded-3 px-3 py-2 text-white" data-bs-toggle="modal" data-bs-target="#addDailyTaskModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-white" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    Add Daily Task
+                </button>
+
                 <!-- Export CSV Button -->
                 <a href="{{ route('manager.tasks.export') }}" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-3 px-3 py-2 text-white border-slate-700 bg-slate-900/40">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-info" viewBox="0 0 16 16">
@@ -45,69 +54,8 @@
         </div>
 
         <div class="row g-4">
-            <!-- Left Column: Add Task Form -->
-            <div class="col-lg-4 col-12">
-                <div class="card glass-card p-4 border border-slate-800">
-                    <h4 class="h5 font-outfit text-white mb-3">Add Daily Task</h4>
-                    <form method="POST" action="{{ route('manager.store-task') }}">
-                        @csrf
-                        
-                        <div class="mb-3">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Assign Team Member(s) / Group</label>
-                            <div class="developer-select-container border border-slate-700 bg-slate-900/60 rounded-3 p-2.5" style="max-height: 200px; overflow-y: auto;">
-                                @foreach($teamMembers as $m)
-                                    <div class="developer-select-item d-flex align-items-center p-2 mb-1.5 rounded-3 border border-slate-800 bg-slate-950/30 cursor-pointer" onclick="toggleDeveloperSelect(event, 'chk-add-task-{{ $m->id }}')" style="transition: all 0.2s; cursor: pointer;">
-                                        <input class="form-check-input me-3 border-slate-600 bg-slate-800" type="checkbox" name="team_member_ids[]" value="{{ $m->id }}" id="chk-add-task-{{ $m->id }}" style="cursor: pointer;" {{ is_array(old('team_member_ids')) && in_array($m->id, old('team_member_ids')) ? 'checked' : '' }}>
-                                        <div class="min-w-0 flex-grow-1">
-                                            <div class="text-white font-outfit font-semibold mb-0.5" style="font-size: 12.5px; line-height: 1.2;">{{ $m->name }}</div>
-                                            <div class="text-slate-400 font-outfit" style="font-size: 10.5px;">{{ $m->role }}</div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                            <div class="text-slate-400 small mt-1.5" style="font-size: 10px;">Select one or more team members. Click to toggle selection.</div>
-                            @error('team_member_ids')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Task Title / Activity</label>
-                            <input type="text" name="title" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('title') is-invalid @enderror" placeholder="e.g. Debug Oauth callback views" value="{{ old('title') }}" required>
-                            @error('title')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Status</label>
-                            <select name="status" class="form-select border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('status') is-invalid @enderror" required>
-                                <option value="pending" {{ old('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                                <option value="in_progress" {{ old('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                                <option value="completed" {{ old('status') === 'completed' ? 'selected' : '' }}>Completed</option>
-                            </select>
-                            @error('status')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Due Date</label>
-                            <input type="date" name="due_date" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('due_date') is-invalid @enderror" value="{{ old('due_date', date('Y-m-d')) }}" required>
-                            @error('due_date')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="text-end">
-                            <button type="submit" class="btn accent-btn w-100 py-2.5">Log Task Data</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Right Column: Tasks Table -->
-            <div class="col-lg-8 col-12">
+            <!-- Tasks Table -->
+            <div class="col-12">
                 <div class="card glass-card p-4 border border-slate-800 shadow-2xl">
                     <h4 class="h5 font-outfit text-white mb-3">Allocated Tasks Registry</h4>
                     <div class="table-responsive">
@@ -142,22 +90,11 @@
                                                     <span class="text-secondary italic">{{ $task->teamMember?->name ?? 'Unassigned' }}</span>
                                                 @endif
                                             </div>
-                                            <div class="dropdown edit-mode d-none" style="min-width: 140px;">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100 text-start text-white text-truncate" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" style="border: 1px solid #334155; font-size: 11px; padding: 0.25rem 0.5rem;">
-                                                    Select Group...
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-dark p-2 border-slate-700 shadow-xl" style="background-color: #0f172a; max-height: 200px; overflow-y: auto; z-index: 1050;">
-                                                    @foreach($teamMembers as $m)
-                                                        <li class="px-2 py-1 hover-slate-800 rounded">
-                                                            <div class="form-check d-flex align-items-center gap-2 mb-0">
-                                                                <input class="form-check-input" type="checkbox" name="team_member_ids[]" form="edit-task-form-{{ $task->id }}" value="{{ $m->id }}" id="chk-edit-{{ $task->id }}-{{ $m->id }}" {{ $task->teamMembers->contains($m->id) ? 'checked' : '' }} style="cursor: pointer;">
-                                                                <label class="form-check-label text-slate-200 small cursor-pointer" for="chk-edit-{{ $task->id }}-{{ $m->id }}">
-                                                                    {{ $m->name }}
-                                                                </label>
-                                                            </div>
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
+                                            <div class="edit-mode d-none" style="min-width: 140px;">
+                                                @php
+                                                    $emailsList = $task->teamMembers->pluck('email')->join(', ') ?: ($task->teamMember?->email ?? '');
+                                                @endphp
+                                                <input type="text" name="email" form="edit-task-form-{{ $task->id }}" value="{{ $emailsList }}" class="form-control form-control-sm border-slate-700 bg-slate-900 text-white" placeholder="email1, email2..." required>
                                             </div>
                                         </td>
                                         <td class="py-3">
@@ -251,10 +188,86 @@
         </div>
     </div>
 </div>
+
+<!-- Add Daily Task Modal -->
+<div class="modal fade" id="addDailyTaskModal" tabindex="-1" aria-labelledby="addDailyTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
+            <div class="modal-header border-bottom border-slate-800 p-4">
+                <h5 class="modal-title font-outfit text-white" id="addDailyTaskModalLabel">Add Daily Task</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ route('manager.store-task') }}">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Assignee Developer(s)</label>
+                        <div class="border border-slate-700 bg-slate-900 rounded-3 p-3" style="max-height: 180px; overflow-y: auto;">
+                            @foreach($allTeamMembers as $member)
+                                <div class="form-check developer-select-item mb-2 p-2 rounded-3" style="border: 1px solid #1e293b;">
+                                    <input class="form-check-input ms-1" type="checkbox" name="team_member_ids[]" value="{{ $member->id }}" id="chk-member-{{ $member->id }}" {{ is_array(old('team_member_ids')) && in_array($member->id, old('team_member_ids')) ? 'checked' : '' }}>
+                                    <label class="form-check-label text-white small ms-2" for="chk-member-{{ $member->id }}">
+                                        <strong>{{ $member->name }}</strong> <span class="text-secondary">({{ $member->role }})</span>
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                        @error('team_member_ids')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                        @error('team_member_id')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Task Title / Activity</label>
+                        <input type="text" name="title" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('title') is-invalid @enderror" placeholder="e.g. Debug Oauth callback views" value="{{ old('title') }}" required>
+                        @error('title')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Status</label>
+                        <select name="status" class="form-select border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('status') is-invalid @enderror" required>
+                            <option value="pending" {{ old('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="in_progress" {{ old('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                            <option value="completed" {{ old('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                        </select>
+                        @error('status')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Due Date</label>
+                        <input type="date" name="due_date" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('due_date') is-invalid @enderror" value="{{ old('due_date', date('Y-m-d')) }}" required>
+                        @error('due_date')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-slate-800 p-4">
+                    <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn accent-btn rounded-3 px-4 font-bold">Log Task Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
 <script>
+    // Automatically open Add Daily Task Modal if there are validation errors
+    document.addEventListener('DOMContentLoaded', function () {
+        @if($errors->has('team_member_ids') || $errors->has('team_member_id') || $errors->has('title') || $errors->has('status') || $errors->has('due_date'))
+            const addModal = new bootstrap.Modal(document.getElementById('addDailyTaskModal'));
+            addModal.show();
+        @endif
+    });
+
     // Toggle view/edit mode for inline table fields
     function toggleEditMode(rowId, type) {
         const row = document.getElementById(`${type}-row-${rowId}`);

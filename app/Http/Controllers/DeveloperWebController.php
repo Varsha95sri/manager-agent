@@ -30,7 +30,7 @@ class DeveloperWebController extends Controller
             ->limit(50)
             ->get();
 
-        $teamMembers = \App\Models\TeamMember::orderBy('name')->get();
+        $teamMembers = \App\Models\TeamMember::orderBy('name')->take(15)->get();
 
         return view('developer.index', compact('keys', 'thirdPartyKeys', 'logs', 'teamMembers'));
     }

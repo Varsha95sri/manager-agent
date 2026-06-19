@@ -13,6 +13,7 @@ class Task extends Model
 
     protected $fillable = [
         'team_member_id',
+        'project_id',
         'title',
         'status',
         'due_date',
@@ -26,5 +27,10 @@ class Task extends Model
     public function teamMembers()
     {
         return $this->belongsToMany(TeamMember::class, 'task_team_member');
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 }

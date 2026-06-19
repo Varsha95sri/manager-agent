@@ -58,48 +58,72 @@ class ChatbotAgentService
     {
         $todayStr = Carbon::today()->toDateString();
 
-        // Query team members
-        $members = TeamMember::all();
-        $membersText = "";
+        // Query team members counts & preview (limit to 30)
+        $totalMembersCount = TeamMember::count();
+        $members = TeamMember::orderBy('id')->take(30)->get();
+        $membersText = "Total Team Members Count: {$totalMembersCount}\n"
+            . "Latest Registered Team Members (Preview):\n";
         foreach ($members as $m) {
             $membersText .= "- ID {$m->id}: {$m->name} (Role: {$m->role}, Email: {$m->email})\n";
         }
 
-        // Query tasks status
-        $tasks = Task::with('teamMember')->get();
-        $tasksCount = $tasks->count();
-        $completedTasks = $tasks->where('status', 'completed')->count();
-        $inProgressTasks = $tasks->where('status', 'in_progress')->count();
-        $pendingTasks = $tasks->where('status', 'pending')->count();
-        $overdueTasksCount = $tasks->where('status', '!=', 'completed')->filter(fn($t) => Carbon::parse($t->due_date)->lt(Carbon::today()))->count();
+        // Query tasks counts & preview (limit to 30)
+        $tasksCount = Task::count();
+        $completedTasks = Task::where('status', 'completed')->count();
+        $inProgressTasks = Task::where('status', 'in_progress')->count();
+        $pendingTasks = Task::where('status', 'pending')->count();
+        $overdueTasksCount = Task::where('status', '!=', 'completed')->whereDate('due_date', '<', Carbon::today())->count();
         
+        $detailedTasks = Task::with('teamMember')
+            ->whereDate('due_date', Carbon::today())
+            ->orWhere(function($query) {
+                $query->where('status', '!=', 'completed')
+                      ->whereDate('due_date', '<', Carbon::today());
+            })
+            ->latest('due_date')
+            ->take(30)
+            ->get();
+
         $tasksText = "Total Tasks Count: {$tasksCount}\n"
             . "- Completed: {$completedTasks}\n"
             . "- In Progress: {$inProgressTasks}\n"
             . "- Pending: {$pendingTasks}\n"
             . "- Overdue Count: {$overdueTasksCount}\n\n"
-            . "Detailed Tasks List (Assignee, Task Title, Status, Due Date):\n";
-        foreach ($tasks as $t) {
+            . "Active/Overdue Tasks (Preview):\n";
+        foreach ($detailedTasks as $t) {
             $memberName = $t->teamMember?->name ?? 'Unassigned';
             $tasksText .= "- [{$memberName}] \"{$t->title}\" (Status: {$t->status}, Due Date: {$t->due_date})\n";
         }
 
-        // Query today's commits
-        $commits = GitCommit::with('teamMember')->whereDate('committed_at', $todayStr)->get();
-        $commitsText = "";
+        // Query today's commits (preview latest 50 to avoid prompt overflow)
+        $commits = GitCommit::with('teamMember')
+            ->whereDate('committed_at', $todayStr)
+            ->latest('committed_at')
+            ->take(50)
+            ->get();
+        $commitsText = "Today's Commits (Showing latest 50):\n";
         foreach ($commits as $c) {
-            $commitsText .= "- [Hash: {$c->commit_hash}] {$c->teamMember?->name}: \"{$c->message}\"\n";
+            $commitsText .= "- [Hash: " . substr($c->commit_hash, 0, 7) . "] {$c->teamMember?->name}: \"{$c->message}\"\n";
         }
         if ($commits->isEmpty()) {
             $commitsText = "No commits pushed today.\n";
         }
 
-        // Query today's attendance logs
+        // Query today's attendance logs (summarized to avoid overflow)
         $attendance = AttendanceLog::with('teamMember')->whereDate('date', $todayStr)->get();
-        $attText = "";
-        foreach ($attendance as $att) {
-            $checkIn = $att->check_in ?: 'N/A';
-            $attText .= "- {$att->teamMember?->name}: {$att->status} (Check-in time: {$checkIn})\n";
+        $presentCount = $attendance->where('status', 'present')->count();
+        $lateCount = $attendance->where('status', 'late')->count();
+        $absentCount = $attendance->where('status', 'absent')->count();
+        
+        $attText = "Today's Attendance Summary:\n"
+            . "- Present: {$presentCount}\n"
+            . "- Late: {$lateCount}\n"
+            . "- Absent: {$absentCount}\n\n"
+            . "Absent Members List (Preview):\n";
+            
+        $absentMembers = $attendance->where('status', 'absent')->take(20);
+        foreach ($absentMembers as $att) {
+            $attText .= "- {$att->teamMember?->name} (Absent)\n";
         }
         if ($attendance->isEmpty()) {
             $attText = "No attendance logged today.\n";

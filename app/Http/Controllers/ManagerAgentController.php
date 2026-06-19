@@ -9,11 +9,14 @@ use App\Models\GitCommit;
 use App\Models\AttendanceLog;
 use App\Models\MeetingNote;
 use App\Models\PerformanceReport;
+use App\Models\Repository;
+use App\Models\Project;
 use App\Services\ManagerAgentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Carbon\Carbon;
+use Yajra\DataTables\Facades\DataTables;
 
 class ManagerAgentController extends Controller
 {
@@ -27,25 +30,51 @@ class ManagerAgentController extends Controller
     /**
      * Display the manager dashboard.
      */
-    public function index()
+    /**
+     * Display the manager dashboard.
+     */
+    public function index(Request $request)
     {
         try {
-            $todayStr = Carbon::today()->toDateString();
+            $targetDate = $request->input('date', Carbon::today()->toDateString());
             
             $totalMembers = TeamMember::count();
-            $totalTasks = Task::count();
             
-            // Count git commits logged today
-            $totalCommits = GitCommit::whereDate('committed_at', $todayStr)->count();
+            // Count stats specifically for targetDate (or fallback to today)
+            $totalTasks = Task::whereDate('due_date', $targetDate)->count();
+            $totalCommits = GitCommit::whereDate('committed_at', $targetDate)->count();
             
-            $latestReport = PerformanceReport::latest()->first();
+            $latestReport = PerformanceReport::whereDate('report_date', $targetDate)->first();
+            if (!$latestReport) {
+                $latestReport = PerformanceReport::whereDate('report_date', '<=', $targetDate)
+                    ->orderBy('report_date', 'desc')
+                    ->first();
+            }
+            
             $reports = PerformanceReport::latest()->take(7)->get();
 
-            // Data for dashboard modals
-            $allMembers = TeamMember::all();
-            $allTasks = Task::with(['teamMember', 'teamMembers'])->get();
-            $allCommits = GitCommit::with('teamMember')->get();
-            $allMeetings = MeetingNote::with('teamMembers')->orderBy('meeting_date', 'desc')->get();
+            // Calculate task and meeting stats specifically for target date directly in SQL to avoid memory overflow
+            $completedTasksCount = Task::whereDate('due_date', $targetDate)->where('status', 'completed')->count();
+            $pendingTasksCount = Task::whereDate('due_date', $targetDate)->where('status', 'pending')->count();
+            $totalMeetingsCount = MeetingNote::whereDate('meeting_date', $targetDate)->count();
+
+            // Paginate team members for the AI audits (9 per page)
+            $allMembers = TeamMember::orderBy('name')->paginate(9, ['*'], 'members_page')->withQueryString();
+
+            // Paginate group tasks (6 per page) for targetDate
+            $groupTasksPaginated = Task::whereDate('due_date', $targetDate)
+                ->has('teamMembers', '>', 1)
+                ->with('teamMembers')
+                ->latest()
+                ->paginate(6, ['*'], 'groups_page')
+                ->withQueryString();
+
+            // Limit meeting notes to target date to keep it lightweight
+            $allMeetings = MeetingNote::with('teamMembers')
+                ->whereDate('meeting_date', $targetDate)
+                ->orderBy('meeting_time', 'desc')
+                ->take(10)
+                ->get();
 
             return view('manager.dashboard', compact(
                 'totalMembers',
@@ -54,9 +83,12 @@ class ManagerAgentController extends Controller
                 'latestReport',
                 'reports',
                 'allMembers',
-                'allTasks',
-                'allCommits',
-                'allMeetings'
+                'completedTasksCount',
+                'pendingTasksCount',
+                'totalMeetingsCount',
+                'groupTasksPaginated',
+                'allMeetings',
+                'targetDate'
             ));
         } catch (\Throwable $e) {
             dd([
@@ -69,12 +101,153 @@ class ManagerAgentController extends Controller
     }
 
     /**
+     * AJAX API to return paginated team members.
+     */
+    public function apiMembers(Request $request)
+    {
+        $search = $request->input('search');
+        $query = TeamMember::query();
+        
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('role', 'like', "%{$search}%");
+        }
+        
+        $members = $query->orderBy('name')->paginate(10);
+        
+        return response()->json([
+            'data' => $members->items(),
+            'current_page' => $members->currentPage(),
+            'last_page' => $members->lastPage(),
+            'total' => $members->total(),
+        ]);
+    }
+
+    /**
+     * AJAX API to return paginated tasks.
+     */
+    public function apiTasks(Request $request)
+    {
+        $search = $request->input('search');
+        $query = Task::with('teamMember');
+        
+        if ($search) {
+            $query->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('teamMember', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+        }
+        
+        $tasks = $query->orderBy('due_date', 'desc')->paginate(10);
+        
+        $formatted = collect($tasks->items())->map(fn($task) => [
+            'id' => $task->id,
+            'title' => $task->title,
+            'status' => $task->status,
+            'due_date' => $task->due_date,
+            'member_name' => $task->teamMember?->name ?? 'Unassigned',
+            'team_member_id' => $task->team_member_id,
+        ]);
+        
+        return response()->json([
+            'data' => $formatted,
+            'current_page' => $tasks->currentPage(),
+            'last_page' => $tasks->lastPage(),
+            'total' => $tasks->total(),
+        ]);
+    }
+
+    /**
+     * AJAX API to return paginated commits.
+     */
+    public function apiCommits(Request $request)
+    {
+        $search = $request->input('search');
+        $query = GitCommit::with('teamMember');
+        
+        if ($search) {
+            $query->where('commit_hash', 'like', "%{$search}%")
+                  ->orWhere('message', 'like', "%{$search}%")
+                  ->orWhere('repository_name', 'like', "%{$search}%")
+                  ->orWhereHas('teamMember', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+        }
+        
+        $commits = $query->orderBy('committed_at', 'desc')->paginate(10);
+        
+        $formatted = collect($commits->items())->map(fn($c) => [
+            'id' => $c->id,
+            'commit_hash' => $c->commit_hash,
+            'message' => $c->message,
+            'repository_name' => $c->repository_name,
+            'committed_at' => $c->committed_at->toDateTimeString(),
+            'member_name' => $c->teamMember?->name ?? 'Unknown',
+            'team_member_id' => $c->team_member_id,
+        ]);
+        
+        return response()->json([
+            'data' => $formatted,
+            'current_page' => $commits->currentPage(),
+            'last_page' => $commits->lastPage(),
+            'total' => $commits->total(),
+        ]);
+    }
+
+    /**
+     * Display a dedicated paginated list of commits.
+     */
+    public function commitsList(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = GitCommit::with('teamMember', 'repository');
+            return DataTables::eloquent($query)
+                ->addColumn('developer', fn($c) => $c->teamMember?->name ?? 'Unknown')
+                ->addColumn('github_id', fn($c) => $c->teamMember?->github_id ?? 'N/A')
+                ->addColumn('repo_link', fn($c) => $c->repository?->url ?? null)
+                ->editColumn('committed_at', fn($c) => $c->committed_at->format('M d, Y h:i A'))
+                ->editColumn('commit_hash', fn($c) => substr($c->commit_hash, 0, 7))
+                ->addColumn('actions', fn($c) => $c->id)
+                ->rawColumns(['actions'])
+                ->make(true);
+        }
+
+        $teamMembers = TeamMember::orderBy('name')->select('id', 'name', 'email')->take(500)->get();
+        $repositories = Repository::with('project')->orderBy('name')->select('id', 'name', 'project_id')->get();
+
+        return view('manager.commits', compact('teamMembers', 'repositories'));
+    }
+
+    /**
+     * Display a dedicated paginated list of repositories and projects.
+     */
+    public function repositoriesList(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = Repository::with('project');
+            return DataTables::eloquent($query)
+                ->addColumn('project_name', fn($r) => $r->project?->name ?? 'N/A')
+                ->addColumn('project_desc', fn($r) => $r->project?->description ?? '')
+                ->editColumn('created_at', fn($r) => $r->created_at->format('M d, Y'))
+                ->addColumn('actions', fn($r) => $r->id)
+                ->rawColumns(['actions'])
+                ->make(true);
+        }
+
+        $projects = Project::orderBy('name')->select('id', 'name')->get();
+
+        return view('manager.repositories', compact('projects'));
+    }
+
+    /**
      * Generate the daily performance report.
      */
     public function generate(Request $request)
     {
         try {
-            $this->agentService->generateDailyReport();
+            $date = $request->input('date');
+            $this->agentService->generateDailyReport($date);
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Daily performance report generated successfully!']);
             }
@@ -117,7 +290,7 @@ class ManagerAgentController extends Controller
         }
 
         $reports = $query->latest()->paginate(10)->withQueryString();
-        $allMembers = TeamMember::orderBy('name')->get();
+        $allMembers = TeamMember::orderBy('name')->paginate(12, ['*'], 'members_page')->withQueryString();
 
         return view('manager.reports', compact('reports', 'allMembers'));
     }
@@ -146,12 +319,21 @@ class ManagerAgentController extends Controller
     }
 
     /**
+     * Delete a specific performance report.
+     */
+    public function destroyReport($id): RedirectResponse
+    {
+        $report = PerformanceReport::findOrFail($id);
+        $report->delete();
+        return redirect()->route('manager.reports')->with('success', 'Performance report deleted successfully!');
+    }
+
+    /**
      * Display manual data entry tab logs.
      */
     public function dataEntry(): View
     {
-        $teamMembers = TeamMember::orderBy('name')->get();
-        return view('manager.data-entry', compact('teamMembers'));
+        return view('manager.data-entry');
     }
 
     /**
@@ -159,9 +341,9 @@ class ManagerAgentController extends Controller
      */
     public function taskEntry(): View
     {
-        $teamMembers = TeamMember::orderBy('name')->get();
         $tasks = Task::with(['teamMember', 'teamMembers'])->orderBy('due_date', 'desc')->paginate(15);
-        return view('manager.tasks', compact('teamMembers', 'tasks'));
+        $allTeamMembers = TeamMember::orderBy('name')->get();
+        return view('manager.tasks', compact('tasks', 'allTeamMembers'));
     }
 
     /**
@@ -186,6 +368,17 @@ class ManagerAgentController extends Controller
      */
     public function storeTask(Request $request): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $emails = array_map('trim', explode(',', $request->input('email')));
+            $foundIds = TeamMember::whereIn('email', $emails)->pluck('id')->toArray();
+            if (!empty($foundIds)) {
+                $request->merge([
+                    'team_member_id' => $foundIds[0],
+                    'team_member_ids' => $foundIds
+                ]);
+            }
+        }
+
         $validated = $request->validate([
             'team_member_id' => 'nullable|exists:team_members,id',
             'team_member_ids' => 'nullable|array',
@@ -225,6 +418,13 @@ class ManagerAgentController extends Controller
      */
     public function storeCommit(Request $request): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $member = TeamMember::where('email', $request->input('email'))->first();
+            if ($member) {
+                $request->merge(['team_member_id' => $member->id]);
+            }
+        }
+
         $validated = $request->validate([
             'team_member_id' => 'required|exists:team_members,id',
             'commit_hash' => 'required|string|max:255',
@@ -243,6 +443,13 @@ class ManagerAgentController extends Controller
      */
     public function storeAttendance(Request $request): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $member = TeamMember::where('email', $request->input('email'))->first();
+            if ($member) {
+                $request->merge(['team_member_id' => $member->id]);
+            }
+        }
+
         $validated = $request->validate([
             'team_member_id' => 'required|exists:team_members,id',
             'date' => 'required|date',
@@ -256,13 +463,21 @@ class ManagerAgentController extends Controller
     }
 
     /**
-     * Validate and store meeting notes.
+     * Store meeting notes.
      */
     public function storeMeeting(Request $request): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $emails = array_map('trim', explode(',', $request->input('email')));
+            $foundIds = TeamMember::whereIn('email', $emails)->pluck('id')->toArray();
+            if (!empty($foundIds)) {
+                $request->merge(['team_members' => $foundIds]);
+            }
+        }
+
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'notes' => 'required|string',
+            'title'        => 'required|string|max:255',
+            'notes'        => 'required|string',
             'meeting_date' => 'required|date',
             'meeting_time' => 'nullable|string',
             'team_members' => 'nullable|array',
@@ -270,8 +485,8 @@ class ManagerAgentController extends Controller
         ]);
 
         $meeting = MeetingNote::create([
-            'title' => $validated['title'],
-            'notes' => $validated['notes'],
+            'title'        => $validated['title'],
+            'notes'        => $validated['notes'],
             'meeting_date' => $validated['meeting_date'],
             'meeting_time' => $validated['meeting_time'] ?? null,
         ]);
@@ -280,7 +495,67 @@ class ManagerAgentController extends Controller
             $meeting->teamMembers()->sync($validated['team_members']);
         }
 
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Meeting saved successfully!']);
+        }
         return redirect()->back()->with('success', 'Meeting note saved successfully!')->with('active_tab', 'meetings');
+    }
+
+    /**
+     * Display paginated meetings with Yajra DataTables.
+     */
+    public function meetingsList(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = MeetingNote::withCount('teamMembers');
+            return DataTables::eloquent($query)
+                ->editColumn('meeting_date', fn($m) => Carbon::parse($m->meeting_date)->format('M d, Y'))
+                ->editColumn('meeting_time', fn($m) => $m->meeting_time ? Carbon::parse($m->meeting_time)->format('h:i A') : '—')
+                ->addColumn('attendees', fn($m) => $m->team_members_count)
+                ->addColumn('notes_short', fn($m) => substr($m->notes, 0, 80) . (strlen($m->notes) > 80 ? '...' : ''))
+                ->addColumn('actions', fn($m) => $m->id)
+                ->rawColumns(['actions'])
+                ->make(true);
+        }
+        $teamMembers = TeamMember::orderBy('name')->select('id', 'name', 'email')->take(500)->get();
+        return view('manager.meetings', compact('teamMembers'));
+    }
+
+    /**
+     * Update meeting note.
+     */
+    public function updateMeeting(Request $request, $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title'          => 'required|string|max:255',
+            'notes'          => 'required|string',
+            'meeting_date'   => 'required|date',
+            'meeting_time'   => 'nullable|string',
+            'team_member_ids'=> 'nullable|array',
+            'team_member_ids.*' => 'exists:team_members,id',
+        ]);
+        $meeting = MeetingNote::findOrFail($id);
+        $meeting->update([
+            'title'        => $validated['title'],
+            'notes'        => $validated['notes'],
+            'meeting_date' => $validated['meeting_date'],
+            'meeting_time' => $validated['meeting_time'] ?? null,
+        ]);
+        if (isset($validated['team_member_ids'])) {
+            $meeting->teamMembers()->sync($validated['team_member_ids']);
+        }
+        return redirect()->back()->with('success', 'Meeting updated successfully!');
+    }
+
+    /**
+     * Delete meeting note.
+     */
+    public function destroyMeeting($id): RedirectResponse
+    {
+        $meeting = MeetingNote::findOrFail($id);
+        $meeting->teamMembers()->detach();
+        $meeting->delete();
+        return redirect()->back()->with('success', 'Meeting deleted successfully!');
     }
 
     /**
@@ -317,6 +592,17 @@ class ManagerAgentController extends Controller
      */
     public function updateTask(Request $request, $id): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $emails = array_map('trim', explode(',', $request->input('email')));
+            $foundIds = TeamMember::whereIn('email', $emails)->pluck('id')->toArray();
+            if (!empty($foundIds)) {
+                $request->merge([
+                    'team_member_id' => $foundIds[0],
+                    'team_member_ids' => $foundIds
+                ]);
+            }
+        }
+
         $validated = $request->validate([
             'team_member_id' => 'nullable|exists:team_members,id',
             'team_member_ids' => 'nullable|array',
@@ -369,6 +655,13 @@ class ManagerAgentController extends Controller
      */
     public function updateCommit(Request $request, $id): RedirectResponse
     {
+        if ($request->filled('email')) {
+            $member = TeamMember::where('email', $request->input('email'))->first();
+            if ($member) {
+                $request->merge(['team_member_id' => $member->id]);
+            }
+        }
+
         $validated = $request->validate([
             'team_member_id' => 'required|exists:team_members,id',
             'commit_hash' => 'required|string|max:255',
@@ -391,7 +684,62 @@ class ManagerAgentController extends Controller
         $commit = GitCommit::findOrFail($id);
         $commit->delete();
 
+        if (request()->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Commit deleted successfully!']);
+        }
         return redirect()->back()->with('success', 'Git commit deleted successfully!');
+    }
+
+    /**
+     * Store a new repository.
+     */
+    public function storeRepository(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'project_id' => 'required|exists:projects,id',
+            'name'       => 'required|string|max:255',
+            'url'        => 'nullable|url|max:255',
+        ]);
+        Repository::create($validated);
+        return redirect()->back()->with('success', 'Repository added successfully!');
+    }
+
+    /**
+     * Update a repository.
+     */
+    public function updateRepository(Request $request, $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'project_id' => 'required|exists:projects,id',
+            'name'       => 'required|string|max:255',
+            'url'        => 'nullable|url|max:255',
+        ]);
+        $repo = Repository::findOrFail($id);
+        $repo->update($validated);
+        return redirect()->back()->with('success', 'Repository updated successfully!');
+    }
+
+    /**
+     * Delete a repository.
+     */
+    public function destroyRepository($id): RedirectResponse
+    {
+        $repo = Repository::findOrFail($id);
+        $repo->delete();
+        return redirect()->back()->with('success', 'Repository deleted successfully!');
+    }
+
+    /**
+     * Store a new project.
+     */
+    public function storeProject(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+        Project::create($validated);
+        return redirect()->back()->with('success', 'Project created successfully!');
     }
 
     /**
@@ -421,25 +769,58 @@ class ManagerAgentController extends Controller
     }
 
     /**
+     * Generate AI-powered evening report for a group of employees.
+     */
+    public function groupReport(Request $request)
+    {
+        try {
+            $ids = array_map('intval', explode(',', $request->query('ids', '')));
+            $ids = array_filter($ids);
+            if (empty($ids)) {
+                return response()->json(['success' => false, 'message' => 'No member IDs provided.'], 422);
+            }
+            $date = $request->query('date', Carbon::today()->toDateString());
+            $members = TeamMember::whereIn('id', $ids)->orderBy('name')->get();
+            $groupName = $members->pluck('name')->join(' & ');
+            $report = $this->agentService->generateGroupReport($ids, $date);
+            return response()->json([
+                'success' => true,
+                'group_name' => $groupName,
+                'date' => $date,
+                'report' => $report,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to generate group report: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Display dedicated attendance registry and statistics.
      */
     public function attendanceRegistry(Request $request): View
     {
         $date = $request->input('date', Carbon::today()->toDateString());
-        $teamMembers = TeamMember::orderBy('name')->get();
         
-        // Get all attendance logs for the selected date
+        // Paginate team members
+        $teamMembers = TeamMember::orderBy('name')->paginate(15)->withQueryString();
+        
+        // Get all attendance logs for the selected date for ONLY the paginated team members
+        $memberIds = $teamMembers->pluck('id');
         $attendanceLogs = AttendanceLog::with('teamMember')
             ->whereDate('date', $date)
+            ->whereIn('team_member_id', $memberIds)
             ->get();
             
         // Map logs by team_member_id for easy lookup in view
         $logsMap = $attendanceLogs->keyBy('team_member_id');
         
-        // Calculate stats
-        $totalPresent = $attendanceLogs->where('status', 'present')->count();
-        $totalLate = $attendanceLogs->where('status', 'late')->count();
-        $totalAbsent = $attendanceLogs->where('status', 'absent')->count();
+        // Calculate stats using SQL counts instead of collection loops
+        $totalMembers = TeamMember::count();
+        $totalPresent = AttendanceLog::whereDate('date', $date)->where('status', 'present')->count();
+        $totalLate = AttendanceLog::whereDate('date', $date)->where('status', 'late')->count();
+        $totalAbsent = AttendanceLog::whereDate('date', $date)->where('status', 'absent')->count();
+        
+        $allTeamMembers = TeamMember::orderBy('name')->get();
         
         return view('manager.attendance', compact(
             'teamMembers',
@@ -448,7 +829,9 @@ class ManagerAgentController extends Controller
             'logsMap',
             'totalPresent',
             'totalLate',
-            'totalAbsent'
+            'totalAbsent',
+            'totalMembers',
+            'allTeamMembers'
         ));
     }
 
@@ -492,21 +875,21 @@ class ManagerAgentController extends Controller
             'Expires'             => '0'
         ];
 
-        $tasks = Task::with('teamMember')->get();
         $columns = ['Employee Email', 'Task Title', 'Status', 'Due Date'];
 
-        $callback = function() use($tasks, $columns) {
+        $callback = function() use($columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
-            foreach ($tasks as $task) {
+            // Use lazy cursor to stream memory-safely
+            Task::with('teamMember')->lazy()->each(function($task) use($file) {
                 fputcsv($file, [
                     $task->teamMember?->email ?? '',
                     $task->title,
                     $task->status,
                     $task->due_date,
                 ]);
-            }
+            });
 
             fclose($file);
         };
@@ -584,21 +967,21 @@ class ManagerAgentController extends Controller
             'Expires'             => '0'
         ];
 
-        $logs = AttendanceLog::with('teamMember')->get();
         $columns = ['Employee Email', 'Date', 'Status', 'Check-in Time'];
 
-        $callback = function() use($logs, $columns) {
+        $callback = function() use($columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
-            foreach ($logs as $log) {
+            // Use lazy cursor to stream memory-safely
+            AttendanceLog::with('teamMember')->lazy()->each(function($log) use($file) {
                 fputcsv($file, [
                     $log->teamMember?->email ?? '',
                     $log->date,
                     $log->status,
                     $log->check_in,
                 ]);
-            }
+            });
 
             fclose($file);
         };

@@ -29,7 +29,16 @@
                     </form>
                 </div>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- Log Attendance Button -->
+                    <button type="button" class="btn accent-btn d-inline-flex align-items-center rounded-3 px-3 py-2 text-white" data-bs-toggle="modal" data-bs-target="#addAttendanceModal">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-white" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                        Log Attendance
+                    </button>
+
                     <!-- Export CSV Button -->
                     <a href="{{ route('manager.attendance.export') }}" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-3 px-3 py-2 text-white border-slate-700 bg-slate-900/40">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-info" viewBox="0 0 16 16">
@@ -65,7 +74,7 @@
             <div class="col-12 col-sm-6 col-md-3">
                 <div class="card glass-card p-3 border border-slate-800 text-center">
                     <span class="text-secondary small font-bold text-uppercase tracking-wider">Total Members</span>
-                    <h3 class="h2 font-outfit text-white mt-1 mb-0">{{ $teamMembers->count() }}</h3>
+                    <h3 class="h2 font-outfit text-white mt-1 mb-0">{{ $totalMembers }}</h3>
                 </div>
             </div>
             <div class="col-12 col-sm-6 col-md-3">
@@ -91,59 +100,8 @@
         <!-- Main Workspace -->
         <div class="row g-4">
             
-            <!-- Left Column: Add/Log Attendance Form -->
-            <div class="col-lg-4 col-12">
-                <div class="card glass-card p-4 border border-slate-800">
-                    <h4 class="h5 font-outfit text-white mb-3">Log Attendance Log</h4>
-                    <form method="POST" action="{{ route('manager.store-attendance') }}">
-                        @csrf
-                        
-                        <!-- Keep selected date context -->
-                        <input type="hidden" name="date" value="{{ $date }}">
-                        
-                        <div class="mb-3">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Select Employee</label>
-                            <select name="team_member_id" class="form-select border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('team_member_id') is-invalid @enderror" required>
-                                <option value="" disabled selected>Choose a developer...</option>
-                                @foreach($teamMembers as $m)
-                                    <!-- Only select if they do not have a log already logged for this date -->
-                                    <option value="{{ $m->id }}" {{ old('team_member_id') == $m->id ? 'selected' : '' }}>
-                                        {{ $m->name }} ({{ $m->role }}) {{ $logsMap->has($m->id) ? '✓ Logged' : '⚠ Missing' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('team_member_id')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Status</label>
-                            <select name="status" id="form-status-select" class="form-select border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('status') is-invalid @enderror" required onchange="toggleFormCheckIn()">
-                                <option value="present" {{ old('status', 'present') === 'present' ? 'selected' : '' }}>Present</option>
-                                <option value="late" {{ old('status') === 'late' ? 'selected' : '' }}>Late</option>
-                                <option value="absent" {{ old('status') === 'absent' ? 'selected' : '' }}>Absent</option>
-                            </select>
-                            @error('status')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-4" id="form-check-in-group">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Check-in Time</label>
-                            <input type="time" name="check_in" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('check_in') is-invalid @enderror" value="{{ old('check_in', '09:00') }}">
-                            @error('check_in')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <button type="submit" class="btn accent-btn w-100 py-2.5">Record Attendance</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Right Column: Employee List & Log Table -->
-            <div class="col-lg-8 col-12">
+            <!-- Employee List & Log Table -->
+            <div class="col-12">
                 <div class="card glass-card p-4 border border-slate-800 shadow-2xl">
                     <h4 class="h5 font-outfit text-white mb-3">Logs Registry for {{ \Carbon\Carbon::parse($date)->format('M d, Y') }}</h4>
                     <div class="table-responsive">
@@ -304,6 +262,12 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Pagination Links -->
+                    @if($teamMembers->hasPages())
+                        <div class="mt-4 border-top border-slate-800 pt-4 d-flex justify-content-center">
+                            {!! $teamMembers->links() !!}
+                        </div>
+                    @endif
                 </div>
             </div>
             

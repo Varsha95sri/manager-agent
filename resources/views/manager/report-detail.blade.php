@@ -44,6 +44,13 @@
                 <a href="{{ route('manager.reports') }}" class="btn btn-sm btn-outline-secondary rounded-3 px-3">
                     Back to History
                 </a>
+                <form action="{{ route('manager.destroy-report', $report->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this report?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-sm btn-danger rounded-3 px-3">
+                        Delete
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -76,18 +83,23 @@
             <div class="col-md-7 col-lg-8">
                 <div class="card glass-card p-4 h-100">
                     <div class="row g-4">
-                        <!-- Top Performers -->
                         <div class="col-sm-6">
-                            <h4 class="h6 font-outfit text-white mb-3 flex-shrink-0 d-flex align-items-center">
-                                <span class="d-inline-block bg-success rounded-circle me-2 shadow-lg" style="width: 8px; height: 8px;"></span>
-                                Top Performers
+                            <h4 class="h6 font-outfit text-white mb-3 flex-shrink-0 d-flex align-items-center justify-content-between">
+                                <span class="d-flex align-items-center">
+                                    <span class="d-inline-block bg-success rounded-circle me-2 shadow-lg" style="width: 8px; height: 8px;"></span>
+                                    Top Performers
+                                </span>
+                                @if(!empty($report->top_performers))
+                                    <span class="badge rounded-pill" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);font-size:8px;">{{ count($report->top_performers) }}</span>
+                                @endif
                             </h4>
                             
+                            <div style="max-height: 240px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
                             @if(!empty($report->top_performers) && is_array($report->top_performers))
                                 <ul class="list-unstyled mb-0">
                                     @foreach($report->top_performers as $performer)
                                         <li class="d-flex align-items-center mb-2.5 text-slate-300 small">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="text-success me-2" viewBox="0 0 16 16">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="text-success me-2" viewBox="0 0 16 16" style="flex-shrink:0;">
                                                 <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
                                             </svg>
                                             <span class="font-weight-medium">{{ $performer }}</span>
@@ -97,20 +109,27 @@
                             @else
                                 <p class="text-secondary small italic mb-0">None identified.</p>
                             @endif
+                            </div>
                         </div>
 
                         <!-- Attention Required -->
                         <div class="col-sm-6">
-                            <h4 class="h6 font-outfit text-white mb-3 flex-shrink-0 d-flex align-items-center">
-                                <span class="d-inline-block bg-danger rounded-circle me-2 shadow-lg" style="width: 8px; height: 8px;"></span>
-                                Attention Required
+                            <h4 class="h6 font-outfit text-white mb-3 flex-shrink-0 d-flex align-items-center justify-content-between">
+                                <span class="d-flex align-items-center">
+                                    <span class="d-inline-block bg-danger rounded-circle me-2 shadow-lg" style="width: 8px; height: 8px;"></span>
+                                    Attention Required
+                                </span>
+                                @if(!empty($report->attention_required))
+                                    <span class="badge rounded-pill" style="background:rgba(244,63,94,0.12);color:#fb7185;border:1px solid rgba(244,63,94,0.25);font-size:8px;">{{ count($report->attention_required) }}</span>
+                                @endif
                             </h4>
                             
+                            <div style="max-height: 240px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
                             @if(!empty($report->attention_required) && is_array($report->attention_required))
                                 <ul class="list-unstyled mb-0">
                                     @foreach($report->attention_required as $needsAttention)
                                         <li class="d-flex align-items-start mb-2.5 text-slate-300 small">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="text-danger me-2 mt-0.5" viewBox="0 0 16 16">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="text-danger me-2 mt-0.5" viewBox="0 0 16 16" style="flex-shrink:0;">
                                                 <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
                                             </svg>
                                             <span class="font-weight-medium">{{ $needsAttention }}</span>
@@ -120,6 +139,7 @@
                             @else
                                 <p class="text-secondary small italic mb-0">None identified.</p>
                             @endif
+                            </div>
                         </div>
                     </div>
                 </div>

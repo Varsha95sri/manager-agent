@@ -18,6 +18,11 @@ Route::middleware('auth')->group(function () {
 
     // Manager Agent Routes
     Route::get('/manager-agent', [\App\Http\Controllers\ManagerAgentController::class, 'index'])->name('manager.dashboard');
+    Route::get('/manager-agent/api/members', [\App\Http\Controllers\ManagerAgentController::class, 'apiMembers'])->name('manager.api.members');
+    Route::get('/manager-agent/api/tasks', [\App\Http\Controllers\ManagerAgentController::class, 'apiTasks'])->name('manager.api.tasks');
+    Route::get('/manager-agent/api/commits', [\App\Http\Controllers\ManagerAgentController::class, 'apiCommits'])->name('manager.api.commits');
+    Route::get('/manager-agent/commits-list', [\App\Http\Controllers\ManagerAgentController::class, 'commitsList'])->name('manager.commits.index');
+    Route::get('/manager-agent/repositories-list', [\App\Http\Controllers\ManagerAgentController::class, 'repositoriesList'])->name('manager.repositories.index');
     Route::post('/manager-agent/generate', [\App\Http\Controllers\ManagerAgentController::class, 'generate'])->name('manager.generate');
     Route::get('/manager-agent/data-entry', [\App\Http\Controllers\ManagerAgentController::class, 'dataEntry'])->name('manager.data-entry');
     Route::post('/manager-agent/task', [\App\Http\Controllers\ManagerAgentController::class, 'storeTask'])->name('manager.store-task');
@@ -27,11 +32,22 @@ Route::middleware('auth')->group(function () {
     Route::post('/manager-agent/commit', [\App\Http\Controllers\ManagerAgentController::class, 'storeCommit'])->name('manager.store-commit');
     Route::put('/manager-agent/commit/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'updateCommit'])->name('manager.update-commit');
     Route::delete('/manager-agent/commit/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'destroyCommit'])->name('manager.destroy-commit');
+
+    // Repository CRUD routes
+    Route::post('/manager-agent/repository', [\App\Http\Controllers\ManagerAgentController::class, 'storeRepository'])->name('manager.store-repository');
+    Route::put('/manager-agent/repository/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'updateRepository'])->name('manager.update-repository');
+    Route::delete('/manager-agent/repository/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'destroyRepository'])->name('manager.destroy-repository');
+
+    // Project store route
+    Route::post('/manager-agent/project', [\App\Http\Controllers\ManagerAgentController::class, 'storeProject'])->name('manager.store-project');
     Route::get('/manager-agent/attendance', [\App\Http\Controllers\ManagerAgentController::class, 'attendanceRegistry'])->name('manager.attendance-registry');
     Route::post('/manager-agent/attendance', [\App\Http\Controllers\ManagerAgentController::class, 'storeAttendance'])->name('manager.store-attendance');
     Route::put('/manager-agent/attendance/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'updateAttendance'])->name('manager.update-attendance');
     Route::delete('/manager-agent/attendance/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'destroyAttendance'])->name('manager.destroy-attendance');
+    Route::get('/manager-agent/meetings', [\App\Http\Controllers\ManagerAgentController::class, 'meetingsList'])->name('manager.meetings.index');
     Route::post('/manager-agent/meeting', [\App\Http\Controllers\ManagerAgentController::class, 'storeMeeting'])->name('manager.store-meeting');
+    Route::put('/manager-agent/meeting/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'updateMeeting'])->name('manager.update-meeting');
+    Route::delete('/manager-agent/meeting/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'destroyMeeting'])->name('manager.destroy-meeting');
     Route::post('/manager-agent/team-member', [\App\Http\Controllers\ManagerAgentController::class, 'storeTeamMember'])->name('manager.store-team-member');
     Route::put('/manager-agent/team-member/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'updateTeamMember'])->name('manager.update-team-member');
     Route::delete('/manager-agent/team-member/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'destroyTeamMember'])->name('manager.destroy-team-member');
@@ -39,7 +55,9 @@ Route::middleware('auth')->group(function () {
     // Reports History & Details Routes
     Route::get('/manager-agent/reports', [\App\Http\Controllers\ManagerAgentController::class, 'reports'])->name('manager.reports');
     Route::get('/manager-agent/reports/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'detail'])->name('manager.report-detail');
+    Route::delete('/manager-agent/reports/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'destroyReport'])->name('manager.destroy-report');
     Route::get('/manager-agent/employee-report/{id}', [\App\Http\Controllers\ManagerAgentController::class, 'employeeReport'])->name('manager.employee-report');
+    Route::get('/manager-agent/group-report', [\App\Http\Controllers\ManagerAgentController::class, 'groupReport'])->name('manager.group-report');
 
     // AI Chatbot Routes
     Route::get('/manager-agent/chatbot', [\App\Http\Controllers\ChatbotController::class, 'index'])->name('manager.chatbot');
