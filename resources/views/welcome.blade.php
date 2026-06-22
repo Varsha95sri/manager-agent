@@ -270,7 +270,7 @@
                         </div>
                         <h2 class="hero-title font-outfit">AI-Powered Performance Insights for Managers</h2>
                         <p class="hero-subtitle">
-                            Manager Agent collects tasks logs, GitHub commits, attendance indices, and standup notes, then generates a comprehensive daily productivity audit every evening at 8 PM.
+                            Manager Agent collects tasks logs, GitLab commits, attendance indices, and standup notes, then generates a comprehensive daily productivity audit every evening at 8 PM.
                         </p>
                         
                         <div class="d-flex flex-wrap gap-3">

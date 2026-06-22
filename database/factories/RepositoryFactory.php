@@ -15,7 +15,7 @@ class RepositoryFactory extends Factory
         return [
             'project_id' => Project::factory(),
             'name' => 'repo-' . $this->faker->slug(2),
-            'url' => 'https://github.com/org/' . $this->faker->slug(2),
+            'url' => 'https://gitlab.com/org/' . $this->faker->slug(2),
         ];
     }
 }

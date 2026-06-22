@@ -18,7 +18,7 @@ class ManagerAgentService
     /**
      * Fetch tasks with team member names for given date, capped to prevent memory and token overflow.
      */
-    public function readTasks(string $date, int $limit = 30): array
+    public function readTasks(string $date, int $limit = 5): array
     {
         $total = Task::whereDate('due_date', $date)->count();
         $completed = Task::whereDate('due_date', $date)->where('status', 'completed')->count();
@@ -49,7 +49,7 @@ class ManagerAgentService
     /**
      * Fetch commits with team member names for given date, capped to prevent memory and token overflow.
      */
-    public function readGitCommits(string $date, int $limit = 30): array
+    public function readGitCommits(string $date, int $limit = 5): array
     {
         $total = GitCommit::whereDate('committed_at', $date)->count();
 
@@ -62,7 +62,7 @@ class ManagerAgentService
                 'id' => $commit->id,
                 'team_member_id' => $commit->team_member_id,
                 'member_name' => $commit->teamMember?->name ?? 'Unknown',
-                'github_id' => $commit->teamMember?->github_id ?? 'N/A',
+                'gitlab_id' => $commit->teamMember?->gitlab_id ?? 'N/A',
                 'commit_hash' => $commit->commit_hash,
                 'repository_name' => $commit->repository_name ?? 'N/A',
                 'message' => $commit->message,
@@ -79,7 +79,7 @@ class ManagerAgentService
     /**
      * Fetch attendance with team member names for given date, capped to prevent memory and token overflow.
      */
-    public function readAttendance(string $date, int $limit = 30): array
+    public function readAttendance(string $date, int $limit = 5): array
     {
         $present = AttendanceLog::whereDate('date', $date)->where('status', 'present')->count();
         $late = AttendanceLog::whereDate('date', $date)->where('status', 'late')->count();
@@ -198,7 +198,7 @@ class ManagerAgentService
             . "  \"top_performers\": (array of strings, names of the team members who showed exceptional contribution today),\n"
             . "  \"attention_required\": (array of strings, listing members or issues needing direct managerial intervention, e.g. \"Shipra (Absent)\", \"Rahul (Overdue task: optimize queries)\"),\n"
             . "  \"risks\": (array of strings, detailing any project risks, blockers, delayed timelines, or resource shortages),\n"
-            . "  \"full_report\": (string, a concise and detailed markdown-formatted executive report containing sections: Executive Summary (MANDATORY: you MUST explicitly mention the calculated team_productivity percentage score in this section and write a brief sentence evaluating it), Key Achievements, Team Member Status Breakdown (MANDATORY: list every team member by name and summarize their individual commits, attendance, and tasks next to their name), Activity Details, and Recommendations. Write in a formal, professional management tone. Keep sections concise and focused, using bullet points and summaries instead of long paragraphs to optimize response times)\n"
+            . "  \"full_report\": (string, a VERY SHORT markdown executive report. Mandatory: mention the calculated team_productivity percentage score. Keep it extremely brief, under 4 sentences total to save generation time.)\n"
             . "}\n\n"
             . "Analyze the following team activities context and generate a daily report matching the schema exactly:\n\n"
             . "Context:\n{$dataJson}";
@@ -237,7 +237,8 @@ class ManagerAgentService
      */
     protected function callLLM(string $prompt, bool $requireJson = false): string
     {
-        @set_time_limit(60);
+        @set_time_limit(600);
+        @ini_set('max_execution_time', '600');
 
         $userId = auth()->id() ?? (\App\Models\User::first()?->id ?? 1);
         $activeKey = \App\Models\ThirdPartyApiKey::where('user_id', $userId)
@@ -321,13 +322,13 @@ class ManagerAgentService
                     'stream' => false,
                     'options' => [
                         'temperature' => 0.1,
-                        'num_predict' => 1024,
+                        'num_predict' => 150,
                     ]
                 ];
                 if ($requireJson) {
                     $params['format'] = 'json';
                 }
-                $response = Http::timeout(25)->post($endpoint, $params);
+                $response = Http::timeout(45)->post($endpoint, $params);
 
                 if ($response->failed()) {
                     throw new \Exception("Ollama API call failed: " . $response->body());
@@ -351,13 +352,13 @@ class ManagerAgentService
                 'stream' => false,
                 'options' => [
                     'temperature' => 0.1,
-                    'num_predict' => 1024,
+                    'num_predict' => 150,
                 ]
             ];
             if ($requireJson) {
                 $params['format'] = 'json';
             }
-            $response = Http::timeout(25)->post($endpoint, $params);
+            $response = Http::timeout(45)->post($endpoint, $params);
 
             if ($response->failed()) {
                 throw new \Exception("Ollama API call failed: " . $response->body());
@@ -397,8 +398,8 @@ class ManagerAgentService
      */
     public function generateDailyReport(?string $date = null): array
     {
-        @set_time_limit(180);
-        @ini_set('max_execution_time', '180');
+        @set_time_limit(60);
+        @ini_set('max_execution_time', '60');
 
         $targetDate = $date ?: Carbon::today()->toDateString();
 

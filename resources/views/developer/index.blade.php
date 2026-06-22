@@ -512,7 +512,7 @@
                 name: "Amit Dev",
                 email: "amit@company.com",
                 role: "iOS Developer",
-                github_id: "amit-coder",
+                gitlab_id: "amit-coder",
                 login_timing: "09:30 AM",
                 attendance: "present"
             }

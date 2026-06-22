@@ -89,7 +89,7 @@
                     <th>Commit Hash</th>
                     <th>Repository</th>
                     <th>Developer</th>
-                    <th>GitHub ID</th>
+                    <th>GitLab ID</th>
                     <th>Message</th>
                     <th>Committed At</th>
                     <th class="text-end">Actions</th>
@@ -242,9 +242,9 @@ $(document).ready(function () {
         columns: [
             { data: 'id', name: 'id', render: (d, t, r, m) => m.row + 1 + m.settings._iDisplayStart, orderable: false, searchable: false, width: '40px' },
             { data: 'commit_hash', name: 'commit_hash', render: d => `<span class="font-mono text-primary" style="font-size:13px;">${d}</span>` },
-            { data: 'repository_name', name: 'repository_name', render: d => `<span class="text-slate-300 font-semibold">${d ?? 'N/A'}</span>` },
-            { data: 'developer', name: 'teamMember.name', render: d => `<span class="text-slate-300">${d}</span>` },
-            { data: 'github_id', name: 'teamMember.github_id', render: d => `<span class="font-mono text-purple-400" style="font-size:12px;">${d}</span>` },
+            { data: 'repository_name', name: 'repository_name', render: d => `<a href="/manager-agent/gitlab?tab=projects" class="text-slate-300 font-semibold text-decoration-none hover-text-white">${d ?? 'N/A'}</a>` },
+            { data: 'developer', name: 'teamMember.name', render: d => `<a href="/manager-agent/gitlab?tab=employees" class="text-slate-300 text-decoration-none hover-text-white">${d}</a>` },
+            { data: 'gitlab_id', name: 'teamMember.gitlab_id', render: d => `<span class="font-mono text-purple-400" style="font-size:12px;">${d ?? 'N/A'}</span>` },
             { data: 'message', name: 'message', render: d => `<span class="text-slate-100" style="max-width:300px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d}">${d}</span>` },
             { data: 'committed_at', name: 'committed_at', render: d => `<span class="text-slate-400" style="font-size:12px;">${d}</span>` },
             {
@@ -257,7 +257,7 @@ $(document).ready(function () {
                     return `
                         <div class="d-flex gap-1 justify-content-end">
                             <button class="btn btn-sm btn-action" style="background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3);"
-                                onclick="openEditCommit(${id}, '${row.commit_hash}', '${row.repository_name}', '${row.message}', '${row.committed_at}')">
+                                onclick="openEditCommit(${id}, '${row.commit_hash}', '${row.repository_name}', '${row.message}', '${row.committed_at}', '${row.developer_email}')">
                                 Edit
                             </button>
                             <button class="btn btn-sm btn-action" style="background:rgba(244,63,94,0.12);color:#fb7185;border:1px solid rgba(244,63,94,0.3);"
@@ -279,7 +279,8 @@ function fillRepoName(sel) {
     document.getElementById('repoNameInput').value = opt.dataset.name || '';
 }
 
-function openEditCommit(id, hash, repo, message, committedAt) {
+function openEditCommit(id, hash, repo, message, committedAt, email) {
+    document.getElementById('editCommitEmail').value = email || '';
     document.getElementById('editCommitHash').value = hash;
     document.getElementById('editCommitRepo').value = repo;
     document.getElementById('editCommitMessage').value = message;

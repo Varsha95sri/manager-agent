@@ -15,7 +15,7 @@ class TeamMemberFactory extends Factory
             'name' => $this->faker->name,
             'email' => $this->faker->unique()->safeEmail,
             'role' => $this->faker->randomElement(['Frontend Developer', 'Backend Developer', 'Fullstack Developer', 'DevOps Engineer', 'QA Engineer', 'UI/UX Designer']),
-            'github_id' => $this->faker->userName,
+            'gitlab_id' => $this->faker->userName,
             'attendance' => 'present',
             'login_timing' => '09:00 AM',
         ];

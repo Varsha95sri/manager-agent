@@ -275,14 +275,110 @@
 
     </div>
 </div>
+
+<!-- Add Attendance Modal -->
+<div class="modal fade" id="addAttendanceModal" tabindex="-1" aria-labelledby="addAttendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
+            <div class="modal-header border-bottom border-slate-800 p-4">
+                <h5 class="modal-title font-outfit text-white" id="addAttendanceModalLabel">Log Attendance</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('manager.store-attendance') }}" method="POST">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-slate-400 small font-bold text-uppercase">Employee <span class="text-danger">*</span></label>
+                        <select name="team_member_id" class="form-select border-slate-700 bg-slate-900 text-white" required>
+                            <option value="">-- Select Employee --</option>
+                            @foreach($allTeamMembers as $member)
+                                <option value="{{ $member->id }}">{{ $member->name }} ({{ $member->email }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-slate-400 small font-bold text-uppercase">Date <span class="text-danger">*</span></label>
+                            <input type="date" name="date" class="form-control text-white" value="{{ $date }}" required style="color-scheme: dark;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-slate-400 small font-bold text-uppercase">Status <span class="text-danger">*</span></label>
+                            <select name="status" id="modal-status-select" class="form-select text-white" onchange="toggleModalCheckIn()" required>
+                                <option value="present">Present</option>
+                                <option value="late">Late</option>
+                                <option value="absent">Absent</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="modal-check-in-group">
+                        <label class="form-label text-slate-400 small font-bold text-uppercase">Check-in Time</label>
+                        <input type="time" name="check_in" class="form-control text-white" value="09:00" style="color-scheme: dark;">
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-slate-800 p-4">
+                    <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success rounded-3 px-4 font-bold">Save Attendance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import Attendance CSV Modal -->
+<div class="modal fade" id="importAttendanceCSVModal" tabindex="-1" aria-labelledby="importAttendanceCSVModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
+            <div class="modal-header border-bottom border-slate-800 p-4">
+                <h5 class="modal-title font-outfit text-white" id="importAttendanceCSVModalLabel">Bulk Import Attendance</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('manager.attendance.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-info border-0 text-white rounded-3 small p-3 mb-4" style="background-color: rgba(99, 102, 241, 0.15); border-left: 4px solid #6366f1 !important;">
+                        <strong>Note:</strong> Columns in the CSV file must match the following format exactly:
+                        <div class="mt-2 font-mono text-slate-300" style="font-size: 10px; word-break: break-all;">
+                            Employee Email, Date, Status, Check-in Time
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-slate-400 small font-bold text-uppercase">Select CSV File <span class="text-danger">*</span></label>
+                        <input type="file" name="file" class="form-control" accept=".csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-slate-800 p-4">
+                    <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning rounded-3 text-dark px-4 font-bold">Upload & Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
 <script>
+    // Toggle check-in time visibility based on status in modal form
+    function toggleModalCheckIn() {
+        const status = document.getElementById('modal-status-select').value;
+        const group = document.getElementById('modal-check-in-group');
+        const input = group.querySelector('input[name="check_in"]');
+        if (status === 'absent') {
+            input.disabled = true;
+            group.style.opacity = '0.5';
+        } else {
+            input.disabled = false;
+            group.style.opacity = '1';
+        }
+    }
+
     // Toggle check-in time visibility based on status in standard add form
     function toggleFormCheckIn() {
-        const status = document.getElementById('form-status-select').value;
+        const statusEl = document.getElementById('form-status-select');
+        if (!statusEl) return;
+        const status = statusEl.value;
         const group = document.getElementById('form-check-in-group');
+        if (!group) return;
         const input = group.querySelector('input[name="check_in"]');
         if (status === 'absent') {
             input.disabled = true;
@@ -375,35 +471,4 @@
         document.body.removeChild(link);
     }
 </script>
-
-<!-- Import Attendance CSV Modal -->
-<div class="modal fade" id="importAttendanceCSVModal" tabindex="-1" aria-labelledby="importAttendanceCSVModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
-                <h5 class="modal-title font-outfit text-white" id="importAttendanceCSVModalLabel">Bulk Import Attendance</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ route('manager.attendance.import') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="modal-body p-4">
-                    <div class="alert alert-info border-0 text-white rounded-3 small p-3 mb-4" style="background-color: rgba(99, 102, 241, 0.15); border-left: 4px solid #6366f1 !important;">
-                        <strong>Note:</strong> Columns in the CSV file must match the following format exactly:
-                        <div class="mt-2 font-mono text-slate-300" style="font-size: 10px; word-break: break-all;">
-                            Employee Email, Date, Status, Check-in Time
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-slate-400 small font-bold text-uppercase">Select CSV File <span class="text-danger">*</span></label>
-                        <input type="file" name="file" class="form-control" accept=".csv" required>
-                    </div>
-                </div>
-                <div class="modal-footer border-top border-slate-800 p-4">
-                    <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning rounded-3 text-dark px-4 font-bold">Upload & Import</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @endsection

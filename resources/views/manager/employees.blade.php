@@ -62,7 +62,7 @@
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                             </svg>
                         </span>
-                        <input type="text" name="search" class="form-control border-slate-700 bg-slate-900 text-white shadow-none" style="border-left: none;" placeholder="Search employees by name, email, role, or github username..." value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control border-slate-700 bg-slate-900 text-white shadow-none" style="border-left: none;" placeholder="Search employees by name, email, role, or gitlab username..." value="{{ request('search') }}">
                     </div>
                 </div>
                 <div class="col-md-3 d-flex gap-2">
@@ -83,7 +83,7 @@
                             <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">#</th>
                             <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Employee Name & Role</th>
                             <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Contact Email</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">GitHub Link</th>
+                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">GitLab Link</th>
                             <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Attendance & Login</th>
                             <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Assigned Task</th>
                             <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Latest Commit</th>
@@ -103,12 +103,12 @@
                                     <span class="font-mono text-slate-300" style="font-size: 13px;">{{ $employee->email }}</span>
                                 </td>
                                 <td class="py-3">
-                                    @if($employee->github_id)
-                                        <a href="https://github.com/{{ $employee->github_id }}" target="_blank" class="text-decoration-none text-purple-400 font-semibold hover-underline d-inline-flex align-items-center" style="font-size: 13px;">
+                                    @if($employee->gitlab_id)
+                                        <a href="https://gitlab.com/{{ $employee->gitlab_id }}" target="_blank" class="text-decoration-none text-purple-400 font-semibold hover-underline d-inline-flex align-items-center" style="font-size: 13px;">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="me-1" viewBox="0 0 16 16">
                                                 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
                                             </svg>
-                                            {{ $employee->github_id }}
+                                            {{ $employee->gitlab_id }}
                                         </a>
                                     @else
                                         <span class="text-secondary italic" style="font-size: 12px;">N/A</span>
@@ -233,8 +233,8 @@
                             <input type="text" name="role" class="form-control" placeholder="e.g. Backend Dev" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">GitHub Username</label>
-                            <input type="text" name="github_id" class="form-control" placeholder="e.g. rahul-dev">
+                            <label class="form-label text-slate-400 small font-bold text-uppercase">GitLab Username</label>
+                            <input type="text" name="gitlab_id" class="form-control" placeholder="e.g. rahul-dev">
                         </div>
                     </div>
 
@@ -327,8 +327,8 @@
                             <input type="text" name="role" id="edit_role" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">GitHub Username</label>
-                            <input type="text" name="github_id" id="edit_github_id" class="form-control">
+                            <label class="form-label text-slate-400 small font-bold text-uppercase">GitLab Username</label>
+                            <input type="text" name="gitlab_id" id="edit_gitlab_id" class="form-control">
                         </div>
                     </div>
 
@@ -407,7 +407,7 @@
                     <div class="alert alert-info border-0 text-white rounded-3 small p-3 mb-4" style="background-color: rgba(99, 102, 241, 0.15); border-left: 4px solid #6366f1 !important;">
                         <strong>Note:</strong> Columns in the CSV file must match the following format exactly:
                         <div class="mt-2 font-mono text-slate-300" style="font-size: 10px; word-break: break-all;">
-                            Name, Email, Role, GitHub ID, Task Title, Task Commit, Attendance, Meeting Date, Meeting Title, Task Assign Date, Due Date, Login Timing
+                            Name, Email, Role, GitLab ID, Task Title, Task Commit, Attendance, Meeting Date, Meeting Title, Task Assign Date, Due Date, Login Timing
                         </div>
                     </div>
                     <div class="mb-3">
@@ -435,7 +435,7 @@
         document.getElementById('edit_name').value = employee.name || '';
         document.getElementById('edit_email').value = employee.email || '';
         document.getElementById('edit_role').value = employee.role || '';
-        document.getElementById('edit_github_id').value = employee.github_id || '';
+        document.getElementById('edit_gitlab_id').value = employee.gitlab_id || '';
         document.getElementById('edit_attendance').value = employee.attendance || '';
         document.getElementById('edit_login_timing').value = employee.login_timing || '';
         document.getElementById('edit_task_title').value = employee.task_title || '';
@@ -452,7 +452,7 @@
     // Download CSV template
     function downloadCsvTemplate() {
         const headers = [
-            'Name', 'Email', 'Role', 'GitHub ID', 'Task Title', 
+            'Name', 'Email', 'Role', 'GitLab ID', 'Task Title', 
             'Task Commit', 'Attendance', 'Meeting Date', 'Meeting Title', 
             'Task Assign Date', 'Due Date', 'Login Timing'
         ];

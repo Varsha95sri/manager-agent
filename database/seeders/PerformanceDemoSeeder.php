@@ -69,7 +69,7 @@ class PerformanceDemoSeeder extends Seeder
                 'name'       => "{$fn} {$ln} {$i}",
                 'email'      => "employee{$i}@company.dev",
                 'role'       => $roles[($i - 1) % $rc],
-                'github_id'  => "dev_{$i}",
+                'gitlab_id'  => "dev_{$i}",
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -94,7 +94,7 @@ class PerformanceDemoSeeder extends Seeder
                 'id'         => $i,
                 'project_id' => $i,
                 'name'       => "org/repo-{$type}-{$i}",
-                'url'        => "https://github.com/org/repo-{$type}-{$i}",
+                'url'        => "https://gitlab.com/org/repo-{$type}-{$i}",
                 'created_at' => $now,
                 'updated_at' => $now,
             ];

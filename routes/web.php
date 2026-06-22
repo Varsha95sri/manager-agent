@@ -21,8 +21,34 @@ Route::middleware('auth')->group(function () {
     Route::get('/manager-agent/api/members', [\App\Http\Controllers\ManagerAgentController::class, 'apiMembers'])->name('manager.api.members');
     Route::get('/manager-agent/api/tasks', [\App\Http\Controllers\ManagerAgentController::class, 'apiTasks'])->name('manager.api.tasks');
     Route::get('/manager-agent/api/commits', [\App\Http\Controllers\ManagerAgentController::class, 'apiCommits'])->name('manager.api.commits');
+
+    // GitLab Integration Routes
+    Route::prefix('manager-agent/gitlab')->name('manager.gitlab.')->group(function () {
+        Route::get('/', [App\Http\Controllers\GitLabController::class, 'index'])->name('index');
+        Route::post('/save-credentials', [App\Http\Controllers\GitLabController::class, 'saveCredentials'])->name('credentials.save');
+        Route::get('/test-connection', [App\Http\Controllers\GitLabController::class, 'testConnection'])->name('credentials.test');
+        
+        // Projects CRUD
+        Route::post('/project', [App\Http\Controllers\GitLabController::class, 'storeProject'])->name('project.store');
+        Route::put('/project/{id}/details', [App\Http\Controllers\GitLabController::class, 'updateProjectDetails'])->name('project.update_details');
+        Route::delete('/project/{id}', [App\Http\Controllers\GitLabController::class, 'destroyProject'])->name('project.destroy');
+        Route::put('/project/{id}', [App\Http\Controllers\GitLabController::class, 'updateProject'])->name('project.update'); // existing mapping update
+        Route::post('/project/{id}/sync', [App\Http\Controllers\GitLabController::class, 'syncProjectCommits'])->name('project.sync');
+
+        // Employees CRUD
+        Route::post('/employee', [App\Http\Controllers\GitLabController::class, 'storeEmployee'])->name('employee.store');
+        Route::put('/employee/{id}/details', [App\Http\Controllers\GitLabController::class, 'updateEmployeeDetails'])->name('employee.update_details');
+        Route::delete('/employee/{id}', [App\Http\Controllers\GitLabController::class, 'destroyEmployee'])->name('employee.destroy');
+        Route::put('/employee/{id}', [App\Http\Controllers\GitLabController::class, 'updateEmployee'])->name('employee.update'); // existing mapping update
+
+        // Commits CRUD
+        Route::post('/commit', [App\Http\Controllers\GitLabController::class, 'storeCommit'])->name('commit.store');
+        Route::put('/commit/{id}', [App\Http\Controllers\GitLabController::class, 'updateCommit'])->name('commit.update');
+        Route::delete('/commit/{id}', [App\Http\Controllers\GitLabController::class, 'destroyCommit'])->name('commit.destroy');
+    });
+
     Route::get('/manager-agent/commits-list', [\App\Http\Controllers\ManagerAgentController::class, 'commitsList'])->name('manager.commits.index');
-    Route::get('/manager-agent/repositories-list', [\App\Http\Controllers\ManagerAgentController::class, 'repositoriesList'])->name('manager.repositories.index');
+    Route::get('/manager-agent/repositories-list', function () { return redirect()->route('manager.gitlab.index', ['tab' => 'projects']); })->name('manager.repositories.index');
     Route::post('/manager-agent/generate', [\App\Http\Controllers\ManagerAgentController::class, 'generate'])->name('manager.generate');
     Route::get('/manager-agent/data-entry', [\App\Http\Controllers\ManagerAgentController::class, 'dataEntry'])->name('manager.data-entry');
     Route::post('/manager-agent/task', [\App\Http\Controllers\ManagerAgentController::class, 'storeTask'])->name('manager.store-task');

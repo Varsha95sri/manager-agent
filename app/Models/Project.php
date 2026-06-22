@@ -13,6 +13,8 @@ class Project extends Model
     protected $fillable = [
         'name',
         'description',
+        'gitlab_project_id',
+        'gitlab_repo_url',
     ];
 
     public function repositories(): HasMany
@@ -23,5 +25,10 @@ class Project extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function commits(): HasMany
+    {
+        return $this->hasMany(Commit::class);
     }
 }

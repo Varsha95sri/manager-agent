@@ -87,9 +87,9 @@
                             @enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">GitHub Username / ID</label>
-                            <input type="text" name="github_id" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('github_id') is-invalid @enderror" placeholder="e.g. rahul-dev" value="{{ old('github_id') }}">
-                            @error('github_id')
+                            <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">GitLab Username / ID</label>
+                            <input type="text" name="gitlab_id" class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2.5 @error('gitlab_id') is-invalid @enderror" placeholder="e.g. rahul-dev" value="{{ old('gitlab_id') }}">
+                            @error('gitlab_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

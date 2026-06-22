@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\DeveloperController;
 use App\Http\Controllers\PublicApiController;
+use App\Http\Controllers\GitLabWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/webhooks/gitlab', [GitLabWebhookController::class, 'handleWebhook']);
 
 Route::get('/user', function (Request $request) {
     return $request->user();

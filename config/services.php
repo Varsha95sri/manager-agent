@@ -39,5 +39,11 @@ return [
         'key' => env('ANTHROPIC_API_KEY'),
     ],
 
+    'gitlab' => [
+        'base_url' => env('GITLAB_BASE_URL', 'https://gitlab.com'),
+        'access_token' => env('GITLAB_ACCESS_TOKEN'),
+        'webhook_secret' => env('GITLAB_WEBHOOK_SECRET'),
+    ],
+
 ];
 

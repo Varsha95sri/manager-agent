@@ -185,7 +185,7 @@ class PublicApiController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:team_members,email',
                 'role' => 'required|string|max:255',
-                'github_id' => 'nullable|string|max:255',
+                'gitlab_id' => 'nullable|string|max:255',
                 'login_timing' => 'nullable|string|max:255',
                 'attendance' => 'nullable|string|max:255',
             ]);

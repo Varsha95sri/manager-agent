@@ -23,16 +23,16 @@ class ProductivityDemoSeeder extends Seeder
         $todayStr = Carbon::today()->toDateString();
 
         // 1. Clear all existing records cleanly to avoid duplicate/inconsistent data
-        Schema::disableForeignKeyConstraints();
-        DB::table('task_team_member')->delete();
-        DB::table('meeting_note_team_member')->delete();
-        DB::table('tasks')->delete();
-        DB::table('git_commits')->delete();
-        DB::table('attendance_logs')->delete();
-        DB::table('meeting_notes')->delete();
-        DB::table('performance_reports')->delete();
-        DB::table('team_members')->delete();
-        Schema::enableForeignKeyConstraints();
+        // Schema::disableForeignKeyConstraints();
+        // DB::table('task_team_member')->delete();
+        // DB::table('meeting_note_team_member')->delete();
+        // DB::table('tasks')->delete();
+        // DB::table('git_commits')->delete();
+        // DB::table('attendance_logs')->delete();
+        // DB::table('meeting_notes')->delete();
+        // DB::table('performance_reports')->delete();
+        // DB::table('team_members')->delete();
+        // Schema::enableForeignKeyConstraints();
 
         // 2. Define 20 team members with names, roles, and legacy fields
         $membersData = [
@@ -40,7 +40,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Rahul Kumar',
                 'email' => 'rahul@gmail.com',
                 'role' => 'Senior Frontend Developer',
-                'github_id' => 'rahul-dev',
+                'gitlab_id' => 'rahul-dev',
                 'task_title' => 'Optimize Dashboard Charts',
                 'task_commit' => 'perf: optimized charts rendering speed',
                 'attendance' => 'present',
@@ -54,7 +54,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Arjun Singh',
                 'email' => 'arjun@gmail.com',
                 'role' => 'Senior Backend Developer',
-                'github_id' => 'arjun-dev',
+                'gitlab_id' => 'arjun-dev',
                 'task_title' => 'Integrate Caching Layer',
                 'task_commit' => 'feat: redis cache for report endpoints',
                 'attendance' => 'present',
@@ -68,7 +68,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Anushka Sharma',
                 'email' => 'anushka@gmail.com',
                 'role' => 'QA Lead',
-                'github_id' => 'anushka-qa',
+                'gitlab_id' => 'anushka-qa',
                 'task_title' => 'E2E Testing of Group Tasks',
                 'task_commit' => 'test: add group task e2e specs',
                 'attendance' => 'present',
@@ -82,7 +82,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Shipra Verma',
                 'email' => 'shipra@gmail.com',
                 'role' => 'Backend Developer',
-                'github_id' => 'shipra-dev',
+                'gitlab_id' => 'shipra-dev',
                 'task_title' => 'Design Group Database Migrations',
                 'task_commit' => 'db: migrations for task_team_member pivot',
                 'attendance' => 'present',
@@ -96,7 +96,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Amit Patel',
                 'email' => 'amit@gmail.com',
                 'role' => 'UI/UX Designer',
-                'github_id' => 'amit-design',
+                'gitlab_id' => 'amit-design',
                 'task_title' => 'Create Glassmorphism Layout Specs',
                 'task_commit' => 'design: update dashboard cards styles',
                 'attendance' => 'present',
@@ -110,7 +110,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Varun Joshi',
                 'email' => 'varun@gmail.com',
                 'role' => 'DevOps Engineer',
-                'github_id' => 'varun-ops',
+                'gitlab_id' => 'varun-ops',
                 'task_title' => 'Configure GitHub Actions Pipeline',
                 'task_commit' => 'ci: setup automatic linting step',
                 'attendance' => 'present',
@@ -124,7 +124,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Neha Gupta',
                 'email' => 'neha@gmail.com',
                 'role' => 'Fullstack Developer',
-                'github_id' => 'neha-code',
+                'gitlab_id' => 'neha-code',
                 'task_title' => 'Refactor Authentication Forms',
                 'task_commit' => 'refactor: simplify login error checks',
                 'attendance' => 'present',
@@ -138,7 +138,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Priya Nair',
                 'email' => 'priya@gmail.com',
                 'role' => 'Product Manager',
-                'github_id' => 'priya-pm',
+                'gitlab_id' => 'priya-pm',
                 'task_title' => 'Draft Product Spec V2',
                 'task_commit' => 'docs: update project roadmap requirements',
                 'attendance' => 'present',
@@ -152,7 +152,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Kabir Das',
                 'email' => 'kabir@gmail.com',
                 'role' => 'Security Specialist',
-                'github_id' => 'kabir-sec',
+                'gitlab_id' => 'kabir-sec',
                 'task_title' => 'Conduct Security Audit on API Auth',
                 'task_commit' => 'security: patch potential CSRF loopholes',
                 'attendance' => 'present',
@@ -166,7 +166,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Riya Sen',
                 'email' => 'riya@gmail.com',
                 'role' => 'Database Administrator',
-                'github_id' => 'riya-db',
+                'gitlab_id' => 'riya-db',
                 'task_title' => 'Optimize DB Indexes for Logs',
                 'task_commit' => 'db: added index on attendance log date',
                 'attendance' => 'present',
@@ -180,7 +180,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Sameer Shah',
                 'email' => 'sameer@gmail.com',
                 'role' => 'Android Developer',
-                'github_id' => 'sameer-mobi',
+                'gitlab_id' => 'sameer-mobi',
                 'task_title' => 'Fix Push Notification Receivers',
                 'task_commit' => 'fix: notification callback payload structure',
                 'attendance' => 'present',
@@ -194,7 +194,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Pooja Hegde',
                 'email' => 'pooja@gmail.com',
                 'role' => 'iOS Developer',
-                'github_id' => 'pooja-ios',
+                'gitlab_id' => 'pooja-ios',
                 'task_title' => 'Resolve Layout Constraint Warnings',
                 'task_commit' => 'ui: fixed constraint overlap on iPhone SE',
                 'attendance' => 'present',
@@ -208,7 +208,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Rohan Mehta',
                 'email' => 'rohan@gmail.com',
                 'role' => 'Junior Frontend Dev',
-                'github_id' => 'rohan-frontend',
+                'gitlab_id' => 'rohan-frontend',
                 'task_title' => 'Fix Color Contrast Accessibility',
                 'task_commit' => 'ui: increase slate text contrast ratios',
                 'attendance' => 'present',
@@ -222,7 +222,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Sneha Reddy',
                 'email' => 'sneha@gmail.com',
                 'role' => 'Data Analyst',
-                'github_id' => 'sneha-data',
+                'gitlab_id' => 'sneha-data',
                 'task_title' => 'Compile Weekly Productivity Sheet',
                 'task_commit' => 'docs: aggregate sprint velocity spreadsheets',
                 'attendance' => 'present',
@@ -236,7 +236,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Ishaan Kapoor',
                 'email' => 'ishaan@gmail.com',
                 'role' => 'Cloud Architect',
-                'github_id' => 'ishaan-cloud',
+                'gitlab_id' => 'ishaan-cloud',
                 'task_title' => 'Deploy Staging DB Replication',
                 'task_commit' => 'infra: multi-zone read replica replication',
                 'attendance' => 'present',
@@ -250,7 +250,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Tanvi Shah',
                 'email' => 'tanvi@gmail.com',
                 'role' => 'Technical Writer',
-                'github_id' => 'tanvi-docs',
+                'gitlab_id' => 'tanvi-docs',
                 'task_title' => 'Update Swagger API Reference',
                 'task_commit' => 'docs: document group-based task routes',
                 'attendance' => 'present',
@@ -264,7 +264,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Vicky Kaushal',
                 'email' => 'vicky@gmail.com',
                 'role' => 'System Admin',
-                'github_id' => 'vicky-sys',
+                'gitlab_id' => 'vicky-sys',
                 'task_title' => 'Patch Linux Kernel Vulnerability',
                 'task_commit' => 'sys: install critical kernel security updates',
                 'attendance' => 'present',
@@ -278,7 +278,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Divya Dutta',
                 'email' => 'divya@gmail.com',
                 'role' => 'Business Analyst',
-                'github_id' => 'divya-ba',
+                'gitlab_id' => 'divya-ba',
                 'task_title' => 'Refine Sprint Target Checklist',
                 'task_commit' => 'docs: update sprint retrospective targets',
                 'attendance' => 'present',
@@ -292,7 +292,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Yash Gowda',
                 'email' => 'yash@gmail.com',
                 'role' => 'Junior Backend Dev',
-                'github_id' => 'yash-backend',
+                'gitlab_id' => 'yash-backend',
                 'task_title' => 'Add Email Notification Triggers',
                 'task_commit' => 'feat: trigger email alert on late attendance',
                 'attendance' => 'present',
@@ -306,7 +306,7 @@ class ProductivityDemoSeeder extends Seeder
                 'name' => 'Meera Jasmine',
                 'email' => 'meera@gmail.com',
                 'role' => 'Scrum Master',
-                'github_id' => 'meera-scrum',
+                'gitlab_id' => 'meera-scrum',
                 'task_title' => 'Resolve Sprint Impediments',
                 'task_commit' => 'docs: updated team velocity roadblock board',
                 'attendance' => 'late',
@@ -320,7 +320,7 @@ class ProductivityDemoSeeder extends Seeder
 
         $members = [];
         foreach ($membersData as $data) {
-            $members[] = TeamMember::create($data);
+            $members[] = TeamMember::firstOrCreate(['email' => $data['email']], $data);
         }
 
         // 3. Seed Attendance Logs
@@ -382,12 +382,11 @@ class ProductivityDemoSeeder extends Seeder
         $task4->teamMembers()->sync([$members[10]->id]);
 
         // Sync all default tasks created in loop to pivot table as well
-        $allTasks = Task::all();
-        foreach ($allTasks as $t) {
-            if ($t->teamMembers()->count() === 0) {
+        Task::whereDoesntHave('teamMembers')->chunk(100, function ($tasks) {
+            foreach ($tasks as $t) {
                 $t->teamMembers()->sync([$t->team_member_id]);
             }
-        }
+        });
 
         // 5. Seed Group Tasks to show Group Productivity Analytics
         // Group A: Rahul & Arjun (100% productive - 2 completed group tasks)

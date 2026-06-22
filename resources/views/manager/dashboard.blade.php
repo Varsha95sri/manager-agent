@@ -580,7 +580,7 @@
                                     <input type="email" name="email" class="form-control form-control-sm" placeholder="Email" required>
                                 </div>
                                 <div class="col-md-3">
-                                    <input type="text" name="github_id" class="form-control form-control-sm" placeholder="GitHub Username">
+                                    <input type="text" name="gitlab_id" class="form-control form-control-sm" placeholder="GitLab Username">
                                 </div>
                                 <div class="col-12 text-end mt-2">
                                     <button type="submit" class="btn btn-sm btn-success">Save Member</button>
@@ -603,7 +603,7 @@
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Name</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Role</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Email</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">GitHub ID</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">GitLab ID</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
                             </tr>
                         </thead>
@@ -754,7 +754,7 @@
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Commit Hash</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Repository Name</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Developer</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">GitHub ID</th>
+                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">GitLab ID</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Message</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Committed At</th>
                                 <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
@@ -1104,7 +1104,7 @@
                             <td class="py-3"><span class="font-semibold text-slate-100">${member.name}</span></td>
                             <td class="py-3"><span class="text-slate-300">${member.role}</span></td>
                             <td class="py-3"><span class="text-slate-400">${member.email}</span></td>
-                            <td class="py-3"><span class="font-mono text-purple-400">${member.github_id || 'N/A'}</span></td>
+                            <td class="py-3"><span class="font-mono text-purple-400">${member.gitlab_id || 'N/A'}</span></td>
                             <td class="py-3 text-end">
                                 <a href="{{ route('manager.employees.index') }}?search=${encodeURIComponent(member.email)}" class="btn btn-xs btn-outline-info">Manage</a>
                             </td>

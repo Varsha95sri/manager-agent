@@ -15,7 +15,9 @@ class TeamMember extends Model
         'name',
         'email',
         'role',
-        'github_id',
+        'gitlab_id',
+        'gitlab_user_id',
+        'gitlab_username',
         'task_title',
         'task_commit',
         'attendance',
@@ -44,6 +46,11 @@ class TeamMember extends Model
     public function gitCommits(): HasMany
     {
         return $this->hasMany(GitCommit::class);
+    }
+
+    public function commits(): HasMany
+    {
+        return $this->hasMany(Commit::class, 'employee_id');
     }
 
     public function attendanceLogs(): HasMany

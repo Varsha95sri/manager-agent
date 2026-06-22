@@ -23,7 +23,7 @@ class EmployeeController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('role', 'like', "%{$search}%")
-                  ->orWhere('github_id', 'like', "%{$search}%");
+                  ->orWhere('gitlab_id', 'like', "%{$search}%");
             });
         }
 
@@ -41,7 +41,7 @@ class EmployeeController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:team_members,email',
             'role' => 'required|string|max:255',
-            'github_id' => 'nullable|string|max:255',
+            'gitlab_id' => 'nullable|string|max:255',
             'task_title' => 'nullable|string|max:255',
             'task_commit' => 'nullable|string|max:255',
             'attendance' => 'nullable|string|max:255',
@@ -66,7 +66,7 @@ class EmployeeController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:team_members,email,' . $id,
             'role' => 'required|string|max:255',
-            'github_id' => 'nullable|string|max:255',
+            'gitlab_id' => 'nullable|string|max:255',
             'task_title' => 'nullable|string|max:255',
             'task_commit' => 'nullable|string|max:255',
             'attendance' => 'nullable|string|max:255',
@@ -108,7 +108,7 @@ class EmployeeController extends Controller
         ];
 
         $columns = [
-            'Name', 'Email', 'Role', 'GitHub ID', 'Task Title', 
+            'Name', 'Email', 'Role', 'GitLab ID', 'Task Title', 
             'Task Commit', 'Attendance', 'Meeting Date', 'Meeting Title', 
             'Task Assign Date', 'Due Date', 'Login Timing'
         ];
@@ -123,7 +123,7 @@ class EmployeeController extends Controller
                     $employee->name,
                     $employee->email,
                     $employee->role,
-                    $employee->github_id,
+                    $employee->gitlab_id,
                     $employee->task_title,
                     $employee->task_commit,
                     $employee->attendance,
@@ -173,7 +173,7 @@ class EmployeeController extends Controller
                 [
                     'name' => trim($row[0] ?? ''),
                     'role' => trim($row[2] ?? ''),
-                    'github_id' => trim($row[3] ?? null),
+                    'gitlab_id' => trim($row[3] ?? null),
                     'task_title' => isset($row[4]) && trim($row[4]) !== '' ? trim($row[4]) : null,
                     'task_commit' => isset($row[5]) && trim($row[5]) !== '' ? trim($row[5]) : null,
                     'attendance' => isset($row[6]) && trim($row[6]) !== '' ? trim($row[6]) : null,

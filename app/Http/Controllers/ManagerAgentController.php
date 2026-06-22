@@ -44,7 +44,7 @@ class ManagerAgentController extends Controller
             $totalTasks = Task::whereDate('due_date', $targetDate)->count();
             $totalCommits = GitCommit::whereDate('committed_at', $targetDate)->count();
             
-            $latestReport = PerformanceReport::whereDate('report_date', $targetDate)->first();
+            $latestReport = PerformanceReport::whereDate('report_date', $targetDate)->latest()->first();
             if (!$latestReport) {
                 $latestReport = PerformanceReport::whereDate('report_date', '<=', $targetDate)
                     ->orderBy('report_date', 'desc')
@@ -204,7 +204,8 @@ class ManagerAgentController extends Controller
             $query = GitCommit::with('teamMember', 'repository');
             return DataTables::eloquent($query)
                 ->addColumn('developer', fn($c) => $c->teamMember?->name ?? 'Unknown')
-                ->addColumn('github_id', fn($c) => $c->teamMember?->github_id ?? 'N/A')
+                ->addColumn('developer_email', fn($c) => $c->teamMember?->email ?? '')
+                ->addColumn('gitlab_id', fn($c) => $c->teamMember?->gitlab_id ?? 'N/A')
                 ->addColumn('repo_link', fn($c) => $c->repository?->url ?? null)
                 ->editColumn('committed_at', fn($c) => $c->committed_at->format('M d, Y h:i A'))
                 ->editColumn('commit_hash', fn($c) => substr($c->commit_hash, 0, 7))
@@ -355,7 +356,7 @@ class ManagerAgentController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:team_members,email',
             'role' => 'required|string|max:255',
-            'github_id' => 'nullable|string|max:255',
+            'gitlab_id' => 'nullable|string|max:255',
         ]);
 
         TeamMember::create($validated);
@@ -567,7 +568,7 @@ class ManagerAgentController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:team_members,email,' . $id,
             'role' => 'required|string|max:255',
-            'github_id' => 'nullable|string|max:255',
+            'gitlab_id' => 'nullable|string|max:255',
         ]);
 
         $member = TeamMember::findOrFail($id);

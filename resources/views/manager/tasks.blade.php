@@ -202,15 +202,25 @@
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label text-slate-400 small font-bold text-uppercase tracking-wider">Assignee Developer(s)</label>
-                        <div class="border border-slate-700 bg-slate-900 rounded-3 p-3" style="max-height: 180px; overflow-y: auto;">
-                            @foreach($allTeamMembers as $member)
-                                <div class="form-check developer-select-item mb-2 p-2 rounded-3" style="border: 1px solid #1e293b;">
-                                    <input class="form-check-input ms-1" type="checkbox" name="team_member_ids[]" value="{{ $member->id }}" id="chk-member-{{ $member->id }}" {{ is_array(old('team_member_ids')) && in_array($member->id, old('team_member_ids')) ? 'checked' : '' }}>
-                                    <label class="form-check-label text-white small ms-2" for="chk-member-{{ $member->id }}">
-                                        <strong>{{ $member->name }}</strong> <span class="text-secondary">({{ $member->role }})</span>
-                                    </label>
-                                </div>
-                            @endforeach
+                        <div class="dropdown">
+                            <button class="btn border-slate-700 bg-slate-900 text-white w-100 text-start d-flex justify-content-between align-items-center rounded-3 px-3 py-2.5" type="button" id="assigneeDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                <span>Select Developer(s)...</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                </svg>
+                            </button>
+                            <ul class="dropdown-menu w-100 bg-slate-900 border-slate-700 shadow-xl custom-scroll" aria-labelledby="assigneeDropdown" style="max-height: 220px; overflow-y: auto;">
+                                @foreach($allTeamMembers as $member)
+                                    <li class="px-3 py-1.5 border-bottom border-slate-800 hover-slate-800">
+                                        <div class="form-check m-0">
+                                            <input class="form-check-input" type="checkbox" name="team_member_ids[]" value="{{ $member->id }}" id="chk-dropdown-{{ $member->id }}" {{ is_array(old('team_member_ids')) && in_array($member->id, old('team_member_ids')) ? 'checked' : '' }}>
+                                            <label class="form-check-label text-white small ms-2 w-100" for="chk-dropdown-{{ $member->id }}" style="cursor: pointer;">
+                                                <strong>{{ $member->name }}</strong> <span class="text-secondary">({{ $member->role }})</span>
+                                            </label>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
                         </div>
                         @error('team_member_ids')
                             <div class="invalid-feedback d-block">{{ $message }}</div>
