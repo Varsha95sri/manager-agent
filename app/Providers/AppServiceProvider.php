@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \App\Models\TeamMember::observe(\App\Observers\AuditObserver::class);
+        \App\Models\Task::observe(\App\Observers\AuditObserver::class);
+        \App\Models\Project::observe(\App\Observers\AuditObserver::class);
+
         \Illuminate\Pagination\Paginator::useBootstrapFive();
 
         if (config('app.env') === 'production') {

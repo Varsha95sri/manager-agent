@@ -10,6 +10,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
+use App\Models\GitLabMergeRequest;
+use App\Models\GitLabIssue;
+use App\Models\ProjectCodeMetric;
+use Carbon\Carbon;
+
 class GitLabController extends Controller
 {
     protected GitLabService $gitlabService;
@@ -38,12 +43,71 @@ class GitLabController extends Controller
                          ->orWhere('message', 'like', "%{$search}%");
         }
         
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $commitsQuery->whereBetween('committed_at', [$request->start_date, $request->end_date]);
+        }
+        
         $commits = $commitsQuery->paginate(15, ['*'], 'commits_page')->withQueryString();
 
         // Fetch direct projects from GitLab
         $gitlabProjects = config('services.gitlab.access_token') ? $this->gitlabService->getProjects() : [];
 
-        return view('manager.gitlab', compact('projects', 'employees', 'commits', 'gitlabProjects', 'dropdownProjects', 'dropdownEmployees'));
+        // Analytics & Metrics Data
+        $metrics = [
+            'total_mrs' => GitLabMergeRequest::count(),
+            'open_mrs' => GitLabMergeRequest::where('state', 'opened')->count(),
+            'total_issues' => GitLabIssue::count(),
+            'open_issues' => GitLabIssue::where('state', 'opened')->count(),
+            'avg_code_quality' => ProjectCodeMetric::avg('code_quality_score') ?? 100,
+            'avg_security' => ProjectCodeMetric::avg('security_score') ?? 100,
+            'avg_test_coverage' => ProjectCodeMetric::avg('test_coverage_score') ?? 0,
+        ];
+
+        $filter = $request->input('filter', 'all');
+        $dateFilterStart = null;
+        $dateFilterEnd = null;
+
+        if ($filter == 'daily') $dateFilterStart = Carbon::today();
+        elseif ($filter == 'weekly') $dateFilterStart = Carbon::now()->startOfWeek();
+        elseif ($filter == 'monthly') $dateFilterStart = Carbon::now()->startOfMonth();
+        elseif ($filter == 'quarterly') $dateFilterStart = Carbon::now()->firstOfQuarter();
+        elseif ($filter == 'yearly') $dateFilterStart = Carbon::now()->startOfYear();
+        elseif ($filter == 'custom') {
+            if ($request->filled('custom_start_date')) {
+                $dateFilterStart = Carbon::parse($request->input('custom_start_date'))->startOfDay();
+            }
+            if ($request->filled('custom_end_date')) {
+                $dateFilterEnd = Carbon::parse($request->input('custom_end_date'))->endOfDay();
+            }
+        }
+
+        // Developer Contribution Analysis
+        $developerContributionsQuery = TeamMember::withCount([
+            'commits' => function($q) use ($dateFilterStart, $dateFilterEnd) {
+                if ($dateFilterStart) $q->where('committed_at', '>=', $dateFilterStart);
+                if ($dateFilterEnd) $q->where('committed_at', '<=', $dateFilterEnd);
+            },
+            'mergeRequests' => function($q) use ($dateFilterStart, $dateFilterEnd) {
+                if ($dateFilterStart) $q->where('created_at', '>=', $dateFilterStart);
+                if ($dateFilterEnd) $q->where('created_at', '<=', $dateFilterEnd);
+            },
+            'issues' => function($q) use ($dateFilterStart, $dateFilterEnd) {
+                if ($dateFilterStart) $q->where('created_at', '>=', $dateFilterStart);
+                if ($dateFilterEnd) $q->where('created_at', '<=', $dateFilterEnd);
+            }
+        ]);
+
+        // When a filter is applied, we don't want to exclude people who have 0 commits but we DO want to order them properly. 
+        // We'll keep the HAVING clause just so we don't show developers with absolutely zero activity in that period.
+        $developerContributions = $developerContributionsQuery->havingRaw('commits_count > 0 OR merge_requests_count > 0 OR issues_count > 0')
+            ->orderByDesc('commits_count')
+            ->take(10)
+            ->get();
+
+        $customStart = $request->input('custom_start_date');
+        $customEnd = $request->input('custom_end_date');
+
+        return view('manager.gitlab', compact('projects', 'employees', 'commits', 'gitlabProjects', 'dropdownProjects', 'dropdownEmployees', 'metrics', 'developerContributions', 'filter', 'customStart', 'customEnd'));
     }
 
     /**
@@ -184,7 +248,16 @@ class GitLabController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'status' => 'nullable|in:planning,active,on_hold,completed,archived',
+            'progress_percent' => 'nullable|integer|min:0|max:100',
+            'deadline' => 'nullable|date',
+            'category' => 'nullable|string|max:255',
         ]);
+        
+        // Defaults if not provided
+        if (!isset($validated['status'])) $validated['status'] = 'planning';
+        if (!isset($validated['progress_percent'])) $validated['progress_percent'] = 0;
+
         Project::create($validated);
         return redirect()->route('manager.gitlab.index', ['tab' => 'projects'])->with('success', 'Project created successfully.');
     }
@@ -194,6 +267,10 @@ class GitLabController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'status' => 'nullable|in:planning,active,on_hold,completed,archived',
+            'progress_percent' => 'nullable|integer|min:0|max:100',
+            'deadline' => 'nullable|date',
+            'category' => 'nullable|string|max:255',
         ]);
         Project::findOrFail($id)->update($validated);
         return redirect()->route('manager.gitlab.index', ['tab' => 'projects'])->with('success', 'Project details updated.');
@@ -203,6 +280,29 @@ class GitLabController extends Controller
     {
         Project::findOrFail($id)->delete();
         return redirect()->route('manager.gitlab.index', ['tab' => 'projects'])->with('success', 'Project deleted.');
+    }
+
+    // ==========================================
+    // PROJECT REPORTS
+    // ==========================================
+    public function projectReports(): View
+    {
+        $projects = Project::withCount('tasks')->get();
+        
+        $completedProjects = $projects->where('status', 'completed');
+        $delayedProjects = $projects->where('risk_level', 'high');
+        $activeProjects = $projects->where('status', 'active');
+        
+        // Basic analytics
+        $completionRate = $projects->count() > 0 ? round(($completedProjects->count() / $projects->count()) * 100) : 0;
+        
+        return view('manager.projects.reports', compact(
+            'projects',
+            'completedProjects',
+            'delayedProjects',
+            'activeProjects',
+            'completionRate'
+        ));
     }
 
     // ==========================================

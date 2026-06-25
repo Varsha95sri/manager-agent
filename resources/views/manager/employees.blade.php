@@ -9,7 +9,7 @@
         <!-- Header Actions Section -->
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
             <div>
-                <h2 class="h3 font-outfit text-white mb-1">Employee Registry</h2>
+                <h2 class="h3 font-outfit text-dark mb-1">Employee Registry</h2>
                 <p class="text-secondary small mb-0">View, search, update, export, and import complete information of all registered employees.</p>
             </div>
             
@@ -24,7 +24,7 @@
                 </button>
 
                 <!-- Export CSV Button -->
-                <a href="{{ route('manager.employees.export') }}" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-3 px-3 py-2 text-white border-slate-700 bg-slate-900/40">
+                <a href="{{ route('manager.employees.export') }}" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-3 px-3 py-2 text-dark border-secondary-subtle bg-white shadow-sm/40">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-info" viewBox="0 0 16 16">
                         <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                         <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
@@ -33,7 +33,7 @@
                 </a>
 
                 <!-- Import CSV Trigger -->
-                <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-3 px-3 py-2 text-white border-slate-700 bg-slate-900/40" data-bs-toggle="modal" data-bs-target="#importCSVModal">
+                <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-3 px-3 py-2 text-dark border-secondary-subtle bg-white shadow-sm/40" data-bs-toggle="modal" data-bs-target="#importCSVModal">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-warning" viewBox="0 0 16 16">
                         <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                         <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
@@ -42,7 +42,7 @@
                 </button>
 
                 <!-- Download CSV Template -->
-                <button type="button" onclick="downloadCsvTemplate()" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-3 px-3 py-2 text-white border-slate-700 bg-slate-900/40">
+                <button type="button" onclick="downloadCsvTemplate()" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-3 px-3 py-2 text-dark border-secondary-subtle bg-white shadow-sm/40">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-success" viewBox="0 0 16 16">
                         <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
                         <path fill-rule="evenodd" d="M4.5 12.5A.5.5 0 0 1 5 12h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2A.5.5 0 0 1 5 10h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2A.5.5 0 0 1 5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/>
@@ -57,18 +57,18 @@
             <form method="GET" action="{{ route('manager.employees.index') }}" class="row g-2 align-items-center">
                 <div class="col-md-9">
                     <div class="input-group">
-                        <span class="input-group-text bg-slate-900 border-slate-700 text-secondary" style="border-right: none;">
+                        <span class="input-group-text bg-white shadow-sm border-secondary-subtle text-secondary" style="border-right: none;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                             </svg>
                         </span>
-                        <input type="text" name="search" class="form-control border-slate-700 bg-slate-900 text-white shadow-none" style="border-left: none;" placeholder="Search employees by name, email, role, or gitlab username..." value="{{ request('search') }}">
+                        <input type="text" name="search" class="form-control border-secondary-subtle bg-white shadow-sm text-dark shadow-none" style="border-left: none;" placeholder="Search employees by name, email, role, or gitlab username..." value="{{ request('search') }}">
                     </div>
                 </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary w-100 py-2 font-semibold">Filter / Search</button>
                     @if(request('search'))
-                        <a href="{{ route('manager.employees.index') }}" class="btn btn-outline-secondary text-white border-slate-700 py-2 d-inline-flex align-items-center">Clear</a>
+                        <a href="{{ route('manager.employees.index') }}" class="btn btn-outline-secondary text-dark border-secondary-subtle py-2 d-inline-flex align-items-center">Clear</a>
                     @endif
                 </div>
             </form>
@@ -77,18 +77,18 @@
         <!-- Employees Listing Table -->
         <div class="card glass-card p-4">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #334155;">
+                <table class="table table-hover align-middle mb-0 text-dark" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #334155;">
                     <thead class="text-secondary" style="font-size: 11px;">
                         <tr>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">#</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Employee Name & Role</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Contact Email</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">GitLab Link</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Attendance & Login</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Assigned Task</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Latest Commit</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Meeting Sync</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider text-end">Actions</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">#</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">Employee Name & Role</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">Contact Email</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">GitLab Link</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">Attendance & Login</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">Assigned Task</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">Latest Commit</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">Meeting Sync</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,11 +96,29 @@
                             <tr>
                                 <td class="py-3 text-secondary" style="font-size: 13px;">{{ ($employees->currentPage() - 1) * $employees->perPage() + $loop->iteration }}</td>
                                 <td class="py-3">
-                                    <div class="font-semibold text-slate-100" style="font-size: 14px;">{{ $employee->name }}</div>
-                                    <div class="text-secondary small mt-0.5" style="font-size: 11px;">{{ $employee->role }}</div>
+                                    <div class="font-semibold text-dark" style="font-size: 14px;">{{ $employee->name }}</div>
+                                    <div class="text-secondary small mt-0.5 d-flex flex-wrap align-items-center gap-2" style="font-size: 11px;">
+                                        <span>{{ $employee->role }}</span>
+                                        @if($employee->department)
+                                            <span class="badge bg-light text-secondary border">{{ $employee->department->name }}</span>
+                                        @endif
+                                        @if($employee->performance_grade && $employee->performance_grade !== 'N/A')
+                                            @php
+                                                $gradeColor = match($employee->performance_grade) {
+                                                    'A+' => 'bg-success',
+                                                    'A' => 'bg-primary',
+                                                    'B' => 'bg-info text-dark',
+                                                    'C' => 'bg-warning text-dark',
+                                                    'PIP' => 'bg-danger',
+                                                    default => 'bg-secondary'
+                                                };
+                                            @endphp
+                                            <span class="badge {{ $gradeColor }} rounded-pill" style="font-size: 9px;" title="Score: {{ $employee->performance_score }}">{{ $employee->performance_grade }}</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="py-3">
-                                    <span class="font-mono text-slate-300" style="font-size: 13px;">{{ $employee->email }}</span>
+                                    <span class="font-mono text-secondary" style="font-size: 13px;">{{ $employee->email }}</span>
                                 </td>
                                 <td class="py-3">
                                     @if($employee->gitlab_id)
@@ -139,10 +157,10 @@
                                 </td>
                                 <td class="py-3" style="max-width: 180px;">
                                     @if($employee->task_title)
-                                        <div class="text-slate-200 font-semibold text-truncate" style="font-size: 13px;" title="{{ $employee->task_title }}">{{ $employee->task_title }}</div>
+                                        <div class="text-dark font-semibold text-truncate" style="font-size: 13px;" title="{{ $employee->task_title }}">{{ $employee->task_title }}</div>
                                         <div class="text-secondary small mt-0.5" style="font-size: 10px;">
                                             @if($employee->task_assign_date)
-                                                Assigned: <span class="text-slate-400">{{ \Carbon\Carbon::parse($employee->task_assign_date)->format('M d') }}</span>
+                                                Assigned: <span class="text-secondary">{{ \Carbon\Carbon::parse($employee->task_assign_date)->format('M d') }}</span>
                                             @endif
                                             @if($employee->due_date)
                                                 | Due: <span class="text-rose-400 font-medium">{{ \Carbon\Carbon::parse($employee->due_date)->format('M d') }}</span>
@@ -154,17 +172,17 @@
                                 </td>
                                 <td class="py-3" style="max-width: 140px;">
                                     @if($employee->task_commit)
-                                        <div class="text-slate-300 text-truncate font-mono" style="font-size: 12px;" title="{{ $employee->task_commit }}">{{ $employee->task_commit }}</div>
+                                        <div class="text-secondary text-truncate font-mono" style="font-size: 12px;" title="{{ $employee->task_commit }}">{{ $employee->task_commit }}</div>
                                     @else
                                         <span class="text-secondary italic" style="font-size: 12px;">No Commit</span>
                                     @endif
                                 </td>
                                 <td class="py-3" style="max-width: 160px;">
                                     @if($employee->meeting_title)
-                                        <div class="text-slate-200 font-semibold text-truncate" style="font-size: 13px;" title="{{ $employee->meeting_title }}">{{ $employee->meeting_title }}</div>
+                                        <div class="text-dark font-semibold text-truncate" style="font-size: 13px;" title="{{ $employee->meeting_title }}">{{ $employee->meeting_title }}</div>
                                         @if($employee->meeting_date)
                                             <div class="text-secondary mt-0.5" style="font-size: 10px;">
-                                                Date: <span class="text-slate-400">{{ \Carbon\Carbon::parse($employee->meeting_date)->format('M d, Y') }}</span>
+                                                Date: <span class="text-secondary">{{ \Carbon\Carbon::parse($employee->meeting_date)->format('M d, Y') }}</span>
                                             </div>
                                         @endif
                                     @else
@@ -198,7 +216,7 @@
 
             <!-- Pagination Links -->
             @if($employees->hasPages())
-                <div class="mt-4 border-top border-slate-800 pt-3">
+                <div class="mt-4 border-top border-secondary-subtle pt-3">
                     {{ $employees->links() }}
                 </div>
             @endif
@@ -209,10 +227,10 @@
 <!-- Add Employee Modal -->
 <div class="modal fade" id="addEmployeeModal" tabindex="-1" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
-                <h5 class="modal-title font-outfit text-white" id="addEmployeeModalLabel">Add Employee Details</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
+                <h5 class="modal-title font-outfit text-dark" id="addEmployeeModalLabel">Add Employee Details</h5>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('manager.employees.store') }}" method="POST">
                 @csrf
@@ -221,19 +239,28 @@
                     <h6 class="text-primary font-outfit uppercase tracking-wider mb-3" style="font-size: 12px; font-weight: 700;">1. Personal & Role Info</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Full Name <span class="text-danger">*</span></label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Full Name <span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control" placeholder="e.g. Rahul Kumar" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Email Address <span class="text-danger">*</span></label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Email Address <span class="text-danger">*</span></label>
                             <input type="email" name="email" class="form-control" placeholder="e.g. rahul@company.com" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Designated Role <span class="text-danger">*</span></label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Designated Role <span class="text-danger">*</span></label>
                             <input type="text" name="role" class="form-control" placeholder="e.g. Backend Dev" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">GitLab Username</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Department</label>
+                            <select name="department_id" class="form-select text-dark">
+                                <option value="">Select Department</option>
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small font-bold text-uppercase">GitLab Username</label>
                             <input type="text" name="gitlab_id" class="form-control" placeholder="e.g. rahul-dev">
                         </div>
                     </div>
@@ -242,8 +269,8 @@
                     <h6 class="text-primary font-outfit uppercase tracking-wider mb-3" style="font-size: 12px; font-weight: 700;">2. Attendance & Login Status</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Attendance Status</label>
-                            <select name="attendance" class="form-select text-white">
+                            <label class="form-label text-secondary small font-bold text-uppercase">Attendance Status</label>
+                            <select name="attendance" class="form-select text-dark">
                                 <option value="">Select Status</option>
                                 <option value="present">Present</option>
                                 <option value="late">Late</option>
@@ -251,7 +278,7 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Login / Check-in Timing</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Login / Check-in Timing</label>
                             <input type="text" name="login_timing" class="form-control" placeholder="e.g. 09:00 AM">
                         </div>
                     </div>
@@ -260,19 +287,19 @@
                     <h6 class="text-primary font-outfit uppercase tracking-wider mb-3" style="font-size: 12px; font-weight: 700;">3. Assign Task & Git Progress</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-12">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Task Title</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Task Title</label>
                             <input type="text" name="task_title" class="form-control" placeholder="Describe the current workflow item...">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Task Assign Date</label>
-                            <input type="date" name="task_assign_date" class="form-control text-white">
+                            <label class="form-label text-secondary small font-bold text-uppercase">Task Assign Date</label>
+                            <input type="date" name="task_assign_date" class="form-control text-dark">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Task Due Date</label>
-                            <input type="date" name="due_date" class="form-control text-white">
+                            <label class="form-label text-secondary small font-bold text-uppercase">Task Due Date</label>
+                            <input type="date" name="due_date" class="form-control text-dark">
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Latest Git Commit Info</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Latest Git Commit Info</label>
                             <input type="text" name="task_commit" class="form-control" placeholder="e.g. feat: implement auth controllers">
                         </div>
                     </div>
@@ -281,16 +308,16 @@
                     <h6 class="text-primary font-outfit uppercase tracking-wider mb-3" style="font-size: 12px; font-weight: 700;">4. Meeting Sync Detail</h6>
                     <div class="row g-3">
                         <div class="col-md-8">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Sync Meeting Title</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Sync Meeting Title</label>
                             <input type="text" name="meeting_title" class="form-control" placeholder="e.g. Morning Sprint Standup">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Meeting Date</label>
-                            <input type="date" name="meeting_date" class="form-control text-white">
+                            <label class="form-label text-secondary small font-bold text-uppercase">Meeting Date</label>
+                            <input type="date" name="meeting_date" class="form-control text-dark">
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-top border-slate-800 p-4">
+                <div class="modal-footer border-top border-secondary-subtle p-4">
                     <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success rounded-3 px-4">Save Employee</button>
                 </div>
@@ -302,10 +329,10 @@
 <!-- Edit Employee Modal -->
 <div class="modal fade" id="editEmployeeModal" tabindex="-1" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
-                <h5 class="modal-title font-outfit text-white" id="editEmployeeModalLabel">Edit Employee Details</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
+                <h5 class="modal-title font-outfit text-dark" id="editEmployeeModalLabel">Edit Employee Details</h5>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="editEmployeeForm" method="POST">
                 @csrf
@@ -315,19 +342,28 @@
                     <h6 class="text-primary font-outfit uppercase tracking-wider mb-3" style="font-size: 12px; font-weight: 700;">1. Personal & Role Info</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Full Name <span class="text-danger">*</span></label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Full Name <span class="text-danger">*</span></label>
                             <input type="text" name="name" id="edit_name" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Email Address <span class="text-danger">*</span></label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Email Address <span class="text-danger">*</span></label>
                             <input type="email" name="email" id="edit_email" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Designated Role <span class="text-danger">*</span></label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Designated Role <span class="text-danger">*</span></label>
                             <input type="text" name="role" id="edit_role" class="form-control" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">GitLab Username</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Department</label>
+                            <select name="department_id" id="edit_department" class="form-select text-dark">
+                                <option value="">Select Department</option>
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-secondary small font-bold text-uppercase">GitLab Username</label>
                             <input type="text" name="gitlab_id" id="edit_gitlab_id" class="form-control">
                         </div>
                     </div>
@@ -336,8 +372,8 @@
                     <h6 class="text-primary font-outfit uppercase tracking-wider mb-3" style="font-size: 12px; font-weight: 700;">2. Attendance & Login Status</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Attendance Status</label>
-                            <select name="attendance" id="edit_attendance" class="form-select text-white">
+                            <label class="form-label text-secondary small font-bold text-uppercase">Attendance Status</label>
+                            <select name="attendance" id="edit_attendance" class="form-select text-dark">
                                 <option value="">Select Status</option>
                                 <option value="present">Present</option>
                                 <option value="late">Late</option>
@@ -345,7 +381,7 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Login / Check-in Timing</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Login / Check-in Timing</label>
                             <input type="text" name="login_timing" id="edit_login_timing" class="form-control">
                         </div>
                     </div>
@@ -354,19 +390,19 @@
                     <h6 class="text-primary font-outfit uppercase tracking-wider mb-3" style="font-size: 12px; font-weight: 700;">3. Assign Task & Git Progress</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-12">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Task Title</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Task Title</label>
                             <input type="text" name="task_title" id="edit_task_title" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Task Assign Date</label>
-                            <input type="date" name="task_assign_date" id="edit_task_assign_date" class="form-control text-white">
+                            <label class="form-label text-secondary small font-bold text-uppercase">Task Assign Date</label>
+                            <input type="date" name="task_assign_date" id="edit_task_assign_date" class="form-control text-dark">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Task Due Date</label>
-                            <input type="date" name="due_date" id="edit_due_date" class="form-control text-white">
+                            <label class="form-label text-secondary small font-bold text-uppercase">Task Due Date</label>
+                            <input type="date" name="due_date" id="edit_due_date" class="form-control text-dark">
                         </div>
                         <div class="col-md-12">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Latest Git Commit Info</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Latest Git Commit Info</label>
                             <input type="text" name="task_commit" id="edit_task_commit" class="form-control">
                         </div>
                     </div>
@@ -375,16 +411,16 @@
                     <h6 class="text-primary font-outfit uppercase tracking-wider mb-3" style="font-size: 12px; font-weight: 700;">4. Meeting Sync Detail</h6>
                     <div class="row g-3">
                         <div class="col-md-8">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Sync Meeting Title</label>
+                            <label class="form-label text-secondary small font-bold text-uppercase">Sync Meeting Title</label>
                             <input type="text" name="meeting_title" id="edit_meeting_title" class="form-control">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label text-slate-400 small font-bold text-uppercase">Meeting Date</label>
-                            <input type="date" name="meeting_date" id="edit_meeting_date" class="form-control text-white">
+                            <label class="form-label text-secondary small font-bold text-uppercase">Meeting Date</label>
+                            <input type="date" name="meeting_date" id="edit_meeting_date" class="form-control text-dark">
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-top border-slate-800 p-4">
+                <div class="modal-footer border-top border-secondary-subtle p-4">
                     <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success rounded-3 px-4">Save Changes</button>
                 </div>
@@ -396,26 +432,26 @@
 <!-- Import CSV Modal -->
 <div class="modal fade" id="importCSVModal" tabindex="-1" aria-labelledby="importCSVModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
-                <h5 class="modal-title font-outfit text-white" id="importCSVModalLabel">Bulk Import Employees</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
+                <h5 class="modal-title font-outfit text-dark" id="importCSVModalLabel">Bulk Import Employees</h5>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('manager.employees.import') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-body p-4">
-                    <div class="alert alert-info border-0 text-white rounded-3 small p-3 mb-4" style="background-color: rgba(99, 102, 241, 0.15); border-left: 4px solid #6366f1 !important;">
+                    <div class="alert alert-info border-0 text-dark rounded-3 small p-3 mb-4" style="background-color: rgba(99, 102, 241, 0.15); border-left: 4px solid #6366f1 !important;">
                         <strong>Note:</strong> Columns in the CSV file must match the following format exactly:
-                        <div class="mt-2 font-mono text-slate-300" style="font-size: 10px; word-break: break-all;">
+                        <div class="mt-2 font-mono text-secondary" style="font-size: 10px; word-break: break-all;">
                             Name, Email, Role, GitLab ID, Task Title, Task Commit, Attendance, Meeting Date, Meeting Title, Task Assign Date, Due Date, Login Timing
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label text-slate-400 small font-bold text-uppercase">Select CSV File <span class="text-danger">*</span></label>
+                        <label class="form-label text-secondary small font-bold text-uppercase">Select CSV File <span class="text-danger">*</span></label>
                         <input type="file" name="file" class="form-control" accept=".csv" required>
                     </div>
                 </div>
-                <div class="modal-footer border-top border-slate-800 p-4">
+                <div class="modal-footer border-top border-secondary-subtle p-4">
                     <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-warning rounded-3 text-dark px-4 font-bold">Upload & Import</button>
                 </div>
@@ -435,6 +471,7 @@
         document.getElementById('edit_name').value = employee.name || '';
         document.getElementById('edit_email').value = employee.email || '';
         document.getElementById('edit_role').value = employee.role || '';
+        document.getElementById('edit_department').value = employee.department_id || '';
         document.getElementById('edit_gitlab_id').value = employee.gitlab_id || '';
         document.getElementById('edit_attendance').value = employee.attendance || '';
         document.getElementById('edit_login_timing').value = employee.login_timing || '';

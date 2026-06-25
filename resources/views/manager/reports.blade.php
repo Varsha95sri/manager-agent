@@ -10,7 +10,7 @@
         
         <div class="row g-4 align-items-center mb-4">
             <div class="col-lg-4 col-md-12">
-                <h2 class="h3 font-outfit text-white mb-1">Performance Archive</h2>
+                <h2 class="h3 font-outfit text-dark mb-1">Performance Archive</h2>
                 <p class="text-secondary small mb-0">Browse and query all historical daily team analytics evaluations.</p>
             </div>
             
@@ -23,7 +23,7 @@
                         <input
                             type="text"
                             name="search"
-                            class="form-control border-slate-700 bg-slate-900 text-white placeholder-secondary rounded-3"
+                            class="form-control border-secondary-subtle bg-white shadow-sm text-dark placeholder-secondary rounded-3"
                             placeholder="Keyword or date..."
                             value="{{ request('search') }}"
                         >
@@ -34,7 +34,7 @@
                         <input
                             type="date"
                             name="filter_date"
-                            class="form-control border-slate-700 bg-slate-900 text-white placeholder-secondary rounded-3"
+                            class="form-control border-secondary-subtle bg-white shadow-sm text-dark placeholder-secondary rounded-3"
                             value="{{ request('filter_date') }}"
                             style="color-scheme: dark;"
                         >
@@ -45,7 +45,7 @@
                         <input
                             type="datetime-local"
                             name="filter_datetime"
-                            class="form-control border-slate-700 bg-slate-900 text-white placeholder-secondary rounded-3"
+                            class="form-control border-secondary-subtle bg-white shadow-sm text-dark placeholder-secondary rounded-3"
                             value="{{ request('filter_datetime') }}"
                             style="color-scheme: dark;"
                         >
@@ -69,7 +69,7 @@
 
     <!-- Individual Employee AI Audits Card -->
     <div class="card glass-card p-4 mb-4 animate-fade-in-up">
-        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center">
+        <h4 class="h5 font-outfit text-dark mb-3 d-flex align-items-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="me-2 text-primary">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
@@ -80,9 +80,9 @@
         <div class="row g-3">
             @foreach($allMembers as $member)
                 <div class="col-md-6 col-lg-4">
-                    <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 d-flex justify-content-between align-items-center hover-card" style="transition: all 0.2s;">
+                    <div class="p-3 rounded-4 border border-secondary-subtle bg-white shadow-sm/40 d-flex justify-content-between align-items-center hover-card" style="transition: all 0.2s;">
                         <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
-                            <h6 class="text-white font-outfit font-semibold mb-0.5 text-truncate">{{ $member->name }}</h6>
+                            <h6 class="text-dark font-outfit font-semibold mb-0.5 text-truncate">{{ $member->name }}</h6>
                             <span class="text-secondary small text-truncate d-block">{{ $member->role }}</span>
                         </div>
                         <button class="btn btn-sm btn-primary py-1.5 px-3 rounded-3 shrink-0" onclick="showEmployeeReport({{ $member->id }}, '{{ addslashes($member->name) }}')">
@@ -97,7 +97,7 @@
         </div>
 
         @if($allMembers->hasPages())
-            <div class="mt-4 border-top border-slate-800 pt-4 d-flex justify-content-center">
+            <div class="mt-4 border-top border-secondary-subtle pt-4 d-flex justify-content-center">
                 {!! $allMembers->links() !!}
             </div>
         @endif
@@ -105,14 +105,14 @@
 
         <div class="card glass-card p-4 shadow-2xl">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #334155;">
+                <table class="table table-hover align-middle mb-0 text-dark" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #334155;">
                     <thead class="text-secondary" style="font-size: 11px;">
                         <tr>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Report Date</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Productivity Index</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider d-none d-sm-table-cell">Performers & Risks</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Status</th>
-                            <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider text-end">Action</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">Report Date</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">Productivity Index</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider d-none d-sm-table-cell">Performers & Risks</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider">Status</th>
+                            <th scope="col" class="pb-3 border-secondary-subtle uppercase font-semibold tracking-wider text-end">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -134,7 +134,7 @@
                                 }
                             @endphp
                             <tr>
-                                <td class="py-3 font-semibold text-slate-100">
+                                <td class="py-3 font-semibold text-dark">
                                     <div class="d-flex align-items-center">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="text-primary me-2" viewBox="0 0 16 16">
                                             <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
@@ -191,7 +191,7 @@
 
             <!-- Pagination Links -->
             @if($reports->hasPages())
-                <div class="mt-4 border-top border-slate-800 pt-4 d-flex justify-content-center">
+                <div class="mt-4 border-top border-secondary-subtle pt-4 d-flex justify-content-center">
                     {!! $reports->links() !!}
                 </div>
             @endif
@@ -203,26 +203,26 @@
 <!-- Employee AI Report Modal -->
 <div class="modal fade" id="employeeReportModal" tabindex="-1" aria-labelledby="employeeReportModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content text-white shadow-2xl" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
+        <div class="modal-content text-dark shadow-2xl" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
                 <div>
-                    <h5 class="modal-title font-outfit text-white mb-0.5" id="employeeReportModalLabel">Employee Evening AI Audit</h5>
+                    <h5 class="modal-title font-outfit text-dark mb-0.5" id="employeeReportModalLabel">Employee Evening AI Audit</h5>
                     <span id="employee-report-meta" class="text-secondary small">Generating report...</span>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4" style="background-color: #0f172a; min-height: 250px;">
+            <div class="modal-body p-4" style="background-color: #f8fafc; min-height: 250px;">
                 <div id="employee-report-spinner" class="text-center py-5">
                     <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
                         <span class="visually-hidden">Loading...</span>
                     </div>
                     <p class="text-secondary mt-3 mb-0">Analyzing today's activity log...</p>
                 </div>
-                <div id="employee-report-content" class="text-slate-300 small d-none" style="line-height: 1.625;">
+                <div id="employee-report-content" class="text-secondary small d-none" style="line-height: 1.625;">
                     <!-- Rendered markdown content goes here -->
                 </div>
             </div>
-            <div class="modal-footer border-top border-slate-800 p-4">
+            <div class="modal-footer border-top border-secondary-subtle p-4">
                 <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -300,7 +300,7 @@
             spinnerEl.classList.add('d-none');
             contentEl.classList.remove('d-none');
             contentEl.innerHTML = `
-                <div class="alert alert-danger border-0 p-3 text-white" style="background-color: rgba(244, 63, 94, 0.15); border-left: 4px solid #f43f5e !important;">
+                <div class="alert alert-danger border-0 p-3 text-dark" style="background-color: rgba(244, 63, 94, 0.15); border-left: 4px solid #f43f5e !important;">
                     <strong>Error:</strong> ${error.message}
                 </div>
             `;

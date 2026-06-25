@@ -17,7 +17,25 @@ class Task extends Model
         'title',
         'status',
         'due_date',
+        'priority',
+        'dependency_id',
+        'effort_estimation',
+        'actual_time',
+        'completed_at',
     ];
+
+    public function dependency(): BelongsTo
+    {
+        return $this->belongsTo(Task::class, 'dependency_id');
+    }
+
+    public function getIsOverdueAttribute(): bool
+    {
+        if ($this->status === 'completed') {
+            return false;
+        }
+        return \Carbon\Carbon::parse($this->due_date)->endOfDay()->isPast();
+    }
 
     public function teamMember(): BelongsTo
     {

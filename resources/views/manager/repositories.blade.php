@@ -96,7 +96,7 @@
     <div class="card glass-card p-4">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <div>
-                <h4 class="h5 font-outfit text-white mb-0">Project & Repository Registry</h4>
+                <h4 class="h5 font-outfit text-dark mb-0">Project & Repository Registry</h4>
                 <p class="text-secondary small mb-0 mt-1">Yajra DataTables — server-side powered repository list</p>
             </div>
             <div class="d-flex gap-2">
@@ -111,7 +111,7 @@
         </div>
 
         <div class="table-responsive">
-            <table id="reposTable" class="table table-hover align-middle w-100 text-white"
+            <table id="reposTable" class="table table-hover align-middle w-100 text-dark"
                    style="--bs-table-bg: transparent; --bs-table-border-color: #334155;">
                 <thead>
                     <tr>
@@ -134,7 +134,7 @@
     <div class="card glass-card p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h4 class="h5 font-outfit text-white mb-0">Projects Directory</h4>
+                <h4 class="h5 font-outfit text-dark mb-0">Projects Directory</h4>
                 <p class="text-secondary small mb-0 mt-1">All registered projects in the system</p>
             </div>
             <button class="btn accent-btn d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addProjectModal">
@@ -145,10 +145,10 @@
         <div class="row g-3">
             @foreach($projects as $project)
             <div class="col-md-6 col-lg-4">
-                <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 hover-card" style="transition: all 0.2s;">
+                <div class="p-3 rounded-4 border border-secondary-subtle bg-white shadow-sm/40 hover-card" style="transition: all 0.2s;">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <h6 class="text-white font-outfit font-semibold mb-1">{{ $project->name }}</h6>
+                            <h6 class="text-dark font-outfit font-semibold mb-1">{{ $project->name }}</h6>
                             <p class="text-secondary small mb-0" style="font-size:11px;">{{ $project->description ?? 'No description' }}</p>
                         </div>
                         <span class="badge rounded-pill" style="background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.3);font-size:9px;">
@@ -168,10 +168,10 @@
 {{-- ==================== ADD REPOSITORY MODAL ==================== --}}
 <div class="modal fade" id="addRepoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
                 <h5 class="modal-title font-outfit">Add New Repository</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <form action="{{ route('manager.store-repository') }}" method="POST">
@@ -206,10 +206,10 @@
 {{-- ==================== EDIT REPOSITORY MODAL ==================== --}}
 <div class="modal fade" id="editRepoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
                 <h5 class="modal-title font-outfit">Edit Repository</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <form id="editRepoForm" method="POST">
@@ -245,15 +245,15 @@
 {{-- ==================== DELETE REPOSITORY MODAL ==================== --}}
 <div class="modal fade" id="deleteRepoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:16px;">
-            <div class="modal-header border-bottom border-slate-800 p-3">
+        <div class="modal-content text-dark" style="background-color:#0b0f19;border:1px solid #334155;border-radius:16px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-3">
                 <h6 class="modal-title font-outfit">Confirm Delete</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-3 text-secondary small">
                 Are you sure you want to delete this repository? All associated commits will also be removed.
             </div>
-            <div class="modal-footer border-top border-slate-800 p-3">
+            <div class="modal-footer border-top border-secondary-subtle p-3">
                 <button type="button" class="btn btn-secondary btn-sm rounded-3" data-bs-dismiss="modal">Cancel</button>
                 <form id="deleteRepoForm" method="POST" class="d-inline">
                     @csrf
@@ -268,10 +268,10 @@
 {{-- ==================== ADD PROJECT MODAL ==================== --}}
 <div class="modal fade" id="addProjectModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
                 <h5 class="modal-title font-outfit">Create New Project</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <form action="{{ route('manager.store-project') }}" method="POST">
@@ -310,24 +310,24 @@ $(document).ready(function () {
         order: [[1, 'asc']],
         pageLength: 15,
         language: {
-            processing: '<div class="d-flex align-items-center gap-2 text-slate-400 small"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading repositories...</div>',
+            processing: '<div class="d-flex align-items-center gap-2 text-secondary small"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading repositories...</div>',
             emptyTable: '<div class="text-center text-secondary py-4 italic small">No repositories found.</div>',
             zeroRecords: '<div class="text-center text-secondary py-4 italic small">No repositories match your search.</div>',
         },
         columns: [
             { data: 'id', name: 'id', render: (d, t, r, m) => m.row + 1 + m.settings._iDisplayStart, orderable: false, searchable: false, width: '40px' },
-            { data: 'name', name: 'name', render: d => `<span class="font-semibold text-slate-100">${d}</span>` },
+            { data: 'name', name: 'name', render: d => `<span class="font-semibold text-dark">${d}</span>` },
             {
                 data: 'project_name', name: 'project.name',
                 render: (d, t, row) => `
-                    <div><span class="text-slate-300">${d}</span></div>
+                    <div><span class="text-secondary">${d}</span></div>
                     <div class="text-secondary" style="font-size:10px;">${row.project_desc ?? ''}</div>`
             },
             {
                 data: 'url', name: 'url',
                 render: d => d ? `<a href="${d}" target="_blank" class="text-purple-400 text-decoration-none font-mono" style="font-size:12px;">${d}</a>` : '<span class="text-secondary">—</span>'
             },
-            { data: 'created_at', name: 'created_at', render: d => `<span class="text-slate-400" style="font-size:12px;">${d}</span>` },
+            { data: 'created_at', name: 'created_at', render: d => `<span class="text-secondary" style="font-size:12px;">${d}</span>` },
             {
                 data: 'actions',
                 name: 'actions',

@@ -71,7 +71,7 @@
 <div class="card glass-card p-4">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h4 class="h5 font-outfit text-white mb-0">Commit History Ledger</h4>
+            <h4 class="h5 font-outfit text-dark mb-0">Commit History Ledger</h4>
             <p class="text-secondary small mb-0 mt-1">Yajra DataTables — server-side powered commit log</p>
         </div>
         <button class="btn accent-btn d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addCommitModal">
@@ -81,7 +81,7 @@
     </div>
 
     <div class="table-responsive">
-        <table id="commitsTable" class="table table-hover align-middle w-100 text-white"
+        <table id="commitsTable" class="table table-hover align-middle w-100 text-dark"
                style="--bs-table-bg: transparent; --bs-table-border-color: #334155;">
             <thead>
                 <tr>
@@ -103,10 +103,10 @@
 {{-- ==================== ADD COMMIT MODAL ==================== --}}
 <div class="modal fade" id="addCommitModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
                 <h5 class="modal-title font-outfit">Log New Git Commit</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <form action="{{ route('manager.store-commit') }}" method="POST">
@@ -155,10 +155,10 @@
 {{-- ==================== EDIT COMMIT MODAL ==================== --}}
 <div class="modal fade" id="editCommitModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
                 <h5 class="modal-title font-outfit">Edit Git Commit</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <form id="editCommitForm" method="POST">
@@ -199,15 +199,15 @@
 {{-- ==================== DELETE COMMIT MODAL ==================== --}}
 <div class="modal fade" id="deleteCommitModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:16px;">
-            <div class="modal-header border-bottom border-slate-800 p-3">
+        <div class="modal-content text-dark" style="background-color:#0b0f19;border:1px solid #334155;border-radius:16px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-3">
                 <h6 class="modal-title font-outfit">Confirm Delete</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-3 text-secondary small">
                 Are you sure you want to delete this commit? This action cannot be undone.
             </div>
-            <div class="modal-footer border-top border-slate-800 p-3">
+            <div class="modal-footer border-top border-secondary-subtle p-3">
                 <button type="button" class="btn btn-secondary btn-sm rounded-3" data-bs-dismiss="modal">Cancel</button>
                 <form id="deleteCommitForm" method="POST" class="d-inline">
                     @csrf
@@ -235,18 +235,18 @@ $(document).ready(function () {
         order: [[6, 'desc']],
         pageLength: 15,
         language: {
-            processing: '<div class="d-flex align-items-center gap-2 text-slate-400 small"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading commits...</div>',
+            processing: '<div class="d-flex align-items-center gap-2 text-secondary small"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading commits...</div>',
             emptyTable: '<div class="text-center text-secondary py-4 italic small">No commits found.</div>',
             zeroRecords: '<div class="text-center text-secondary py-4 italic small">No commits match your search.</div>',
         },
         columns: [
             { data: 'id', name: 'id', render: (d, t, r, m) => m.row + 1 + m.settings._iDisplayStart, orderable: false, searchable: false, width: '40px' },
             { data: 'commit_hash', name: 'commit_hash', render: d => `<span class="font-mono text-primary" style="font-size:13px;">${d}</span>` },
-            { data: 'repository_name', name: 'repository_name', render: d => `<a href="/manager-agent/gitlab?tab=projects" class="text-slate-300 font-semibold text-decoration-none hover-text-white">${d ?? 'N/A'}</a>` },
-            { data: 'developer', name: 'teamMember.name', render: d => `<a href="/manager-agent/gitlab?tab=employees" class="text-slate-300 text-decoration-none hover-text-white">${d}</a>` },
+            { data: 'repository_name', name: 'repository_name', render: d => `<a href="/manager-agent/gitlab?tab=projects" class="text-secondary font-semibold text-decoration-none hover-text-dark">${d ?? 'N/A'}</a>` },
+            { data: 'developer', name: 'teamMember.name', render: d => `<a href="/manager-agent/gitlab?tab=employees" class="text-secondary text-decoration-none hover-text-dark">${d}</a>` },
             { data: 'gitlab_id', name: 'teamMember.gitlab_id', render: d => `<span class="font-mono text-purple-400" style="font-size:12px;">${d ?? 'N/A'}</span>` },
-            { data: 'message', name: 'message', render: d => `<span class="text-slate-100" style="max-width:300px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d}">${d}</span>` },
-            { data: 'committed_at', name: 'committed_at', render: d => `<span class="text-slate-400" style="font-size:12px;">${d}</span>` },
+            { data: 'message', name: 'message', render: d => `<span class="text-dark" style="max-width:300px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d}">${d}</span>` },
+            { data: 'committed_at', name: 'committed_at', render: d => `<span class="text-secondary" style="font-size:12px;">${d}</span>` },
             {
                 data: 'actions',
                 name: 'actions',

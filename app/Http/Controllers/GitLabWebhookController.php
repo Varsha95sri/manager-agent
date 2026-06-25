@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
+use App\Models\GitLabMergeRequest;
+use App\Models\GitLabIssue;
+
 class GitLabWebhookController extends Controller
 {
     /**
@@ -34,9 +37,10 @@ class GitLabWebhookController extends Controller
         // Log the received payload for debugging
         Log::info('GitLab Webhook received', ['event' => $request->header('X-Gitlab-Event')]);
 
-        // We only process push events
         $objectKind = $payload['object_kind'] ?? '';
-        if ($objectKind !== 'push') {
+        $validEvents = ['push', 'merge_request', 'issue'];
+        
+        if (!in_array($objectKind, $validEvents)) {
             return response()->json(['message' => 'Event type not processed'], 200);
         }
 
@@ -63,40 +67,78 @@ class GitLabWebhookController extends Controller
             return response()->json(['message' => 'Project not found/tracked'], 200);
         }
 
-        // 4. Save commits
-        $commits = $payload['commits'] ?? [];
-        $savedCount = 0;
+        // 4. Process based on event kind
+        $userEmail = $payload['user']['email'] ?? ($payload['user_email'] ?? '');
+        $employee = TeamMember::where('email', $userEmail)->first();
 
-        foreach ($commits as $commitData) {
-            $sha = $commitData['id'] ?? null;
-            if (!$sha) {
-                continue;
+        if ($objectKind === 'push') {
+            $commits = $payload['commits'] ?? [];
+            $savedCount = 0;
+
+            foreach ($commits as $commitData) {
+                $sha = $commitData['id'] ?? null;
+                if (!$sha) continue;
+
+                if (Commit::where('commit_sha', $sha)->exists()) continue;
+
+                $authorEmail = $commitData['author']['email'] ?? '';
+                $commitEmployee = TeamMember::where('email', $authorEmail)->first();
+
+                Commit::create([
+                    'project_id' => $project->id,
+                    'employee_id' => $commitEmployee?->id,
+                    'commit_sha' => $sha,
+                    'message' => $commitData['message'] ?? '',
+                    'commit_url' => $commitData['url'] ?? '',
+                    'committed_at' => Carbon::parse($commitData['timestamp'] ?? now()),
+                ]);
+
+                $savedCount++;
             }
 
-            // Skip duplicate commits
-            if (Commit::where('commit_sha', $sha)->exists()) {
-                continue;
-            }
-
-            $authorEmail = $commitData['author']['email'] ?? '';
-            $employee = TeamMember::where('email', $authorEmail)->first();
-
-            Commit::create([
-                'project_id' => $project->id,
-                'employee_id' => $employee?->id,
-                'commit_sha' => $sha,
-                'message' => $commitData['message'] ?? '',
-                'commit_url' => $commitData['url'] ?? '',
-                'committed_at' => Carbon::parse($commitData['timestamp'] ?? now()),
-            ]);
-
-            $savedCount++;
+            return response()->json([
+                'message' => 'Push processed successfully',
+                'commits_processed' => count($commits),
+                'commits_saved' => $savedCount
+            ], 200);
         }
 
-        return response()->json([
-            'message' => 'Webhook processed successfully',
-            'commits_processed' => count($commits),
-            'commits_saved' => $savedCount
-        ], 200);
+        if ($objectKind === 'merge_request') {
+            $mrData = $payload['object_attributes'] ?? [];
+            $mrId = $mrData['id'] ?? null;
+            if (!$mrId) return response()->json(['message' => 'Invalid MR data'], 200);
+
+            GitLabMergeRequest::updateOrCreate(
+                ['project_id' => $project->id, 'gitlab_mr_id' => $mrId],
+                [
+                    'employee_id' => $employee?->id,
+                    'state' => $mrData['state'] ?? 'opened',
+                    'title' => $mrData['title'] ?? '',
+                    'merged_at' => ($mrData['state'] === 'merged' && isset($mrData['updated_at'])) ? Carbon::parse($mrData['updated_at']) : null,
+                ]
+            );
+
+            return response()->json(['message' => 'Merge Request processed']);
+        }
+
+        if ($objectKind === 'issue') {
+            $issueData = $payload['object_attributes'] ?? [];
+            $issueId = $issueData['id'] ?? null;
+            if (!$issueId) return response()->json(['message' => 'Invalid Issue data'], 200);
+
+            GitLabIssue::updateOrCreate(
+                ['project_id' => $project->id, 'gitlab_issue_id' => $issueId],
+                [
+                    'employee_id' => $employee?->id,
+                    'state' => $issueData['state'] ?? 'opened',
+                    'title' => $issueData['title'] ?? '',
+                    'closed_at' => ($issueData['state'] === 'closed' && isset($issueData['updated_at'])) ? Carbon::parse($issueData['updated_at']) : null,
+                ]
+            );
+
+            return response()->json(['message' => 'Issue processed']);
+        }
+
+        return response()->json(['message' => 'No action taken'], 200);
     }
 }

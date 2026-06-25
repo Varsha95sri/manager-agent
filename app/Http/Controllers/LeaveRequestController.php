@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\LeaveRequest;
+use App\Models\TeamMember;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+
+class LeaveRequestController extends Controller
+{
+    public function index(): View
+    {
+        $leaves = LeaveRequest::with('employee')->orderBy('created_at', 'desc')->paginate(15);
+        $employees = TeamMember::orderBy('name')->get();
+        return view('manager.leaves', compact('leaves', 'employees'));
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:team_members,id',
+            'leave_type' => 'required|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'days' => 'required|integer|min:1',
+            'reason' => 'nullable|string',
+        ]);
+
+        LeaveRequest::create($validated);
+        return back()->with('success', 'Leave request added successfully.');
+    }
+
+    public function update(Request $request, $id): RedirectResponse
+    {
+        $leave = LeaveRequest::findOrFail($id);
+        
+        $validated = $request->validate([
+            'status' => 'required|in:pending,approved,rejected'
+        ]);
+
+        $leave->update($validated);
+        return back()->with('success', 'Leave status updated.');
+    }
+
+    public function destroy($id): RedirectResponse
+    {
+        LeaveRequest::findOrFail($id)->delete();
+        return back()->with('success', 'Leave request deleted.');
+    }
+}

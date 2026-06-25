@@ -97,7 +97,7 @@
     <div class="col-6 col-md-3">
         <div class="stats-mini-card">
             <p class="text-secondary mb-1" style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;">Total Meetings</p>
-            <p class="h4 text-white font-outfit mb-0" id="statTotal">—</p>
+            <p class="h4 text-dark font-outfit mb-0" id="statTotal">—</p>
         </div>
     </div>
     <div class="col-6 col-md-3">
@@ -124,7 +124,7 @@
 <div class="card glass-card p-4">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h4 class="h5 font-outfit text-white mb-0">Meeting Notes Registry</h4>
+            <h4 class="h5 font-outfit text-dark mb-0">Meeting Notes Registry</h4>
             <p class="text-secondary small mb-0 mt-1">All recorded meetings — server-side Yajra DataTables</p>
         </div>
         <button class="btn accent-btn d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addMeetingModal">
@@ -157,15 +157,15 @@
 {{-- ═══════════════ ADD MEETING MODAL ═══════════════ --}}
 <div class="modal fade" id="addMeetingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
                 <h5 class="modal-title font-outfit d-flex align-items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="text-purple-400" viewBox="0 0 16 16">
                         <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5z"/>
                     </svg>
                     Schedule New Meeting
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <form action="{{ route('manager.store-meeting') }}" method="POST">
@@ -189,11 +189,11 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Assign Attendees</label>
-                            <div class="p-3 rounded-3 border border-slate-800" style="max-height: 180px; overflow-y: auto;" class="custom-scroll">
+                            <div class="p-3 rounded-3 border border-secondary-subtle" style="max-height: 180px; overflow-y: auto;" class="custom-scroll">
                                 @foreach($teamMembers as $member)
                                 <div class="form-check mb-1">
                                     <input class="form-check-input" type="checkbox" name="team_members[]" value="{{ $member->id }}" id="addMem{{ $member->id }}">
-                                    <label class="form-check-label text-slate-300 small" for="addMem{{ $member->id }}">
+                                    <label class="form-check-label text-secondary small" for="addMem{{ $member->id }}">
                                         {{ $member->name }} <span class="text-secondary" style="font-size:10px;">{{ $member->email }}</span>
                                     </label>
                                 </div>
@@ -215,15 +215,15 @@
 {{-- ═══════════════ EDIT MEETING MODAL ═══════════════ --}}
 <div class="modal fade" id="editMeetingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
                 <h5 class="modal-title font-outfit d-flex align-items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="text-indigo-400" viewBox="0 0 16 16">
                         <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10z"/>
                     </svg>
                     Edit Meeting
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <form id="editMeetingForm" method="POST">
@@ -260,32 +260,32 @@
 {{-- ═══════════════ VIEW MEETING MODAL ═══════════════ --}}
 <div class="modal fade" id="viewMeetingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
+        <div class="modal-content text-dark" style="background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 20px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-4">
                 <h5 class="modal-title font-outfit" id="viewMeetingTitle">Meeting Details</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="row g-3 mb-3">
                     <div class="col-md-4">
                         <p class="text-secondary small mb-1">Date</p>
-                        <p class="text-white font-semibold mb-0" id="viewMeetingDate">—</p>
+                        <p class="text-dark font-semibold mb-0" id="viewMeetingDate">—</p>
                     </div>
                     <div class="col-md-4">
                         <p class="text-secondary small mb-1">Time</p>
-                        <p class="text-white font-semibold mb-0" id="viewMeetingTime">—</p>
+                        <p class="text-dark font-semibold mb-0" id="viewMeetingTime">—</p>
                     </div>
                     <div class="col-md-4">
                         <p class="text-secondary small mb-1">Attendees</p>
-                        <p class="text-white font-semibold mb-0" id="viewMeetingAttendees">—</p>
+                        <p class="text-dark font-semibold mb-0" id="viewMeetingAttendees">—</p>
                     </div>
                 </div>
-                <div class="p-3 rounded-3 border border-slate-800" style="background: rgba(255,255,255,0.02);">
+                <div class="p-3 rounded-3 border border-secondary-subtle" style="background: rgba(255,255,255,0.02);">
                     <p class="text-secondary small mb-1">Notes / Agenda</p>
-                    <p class="text-slate-200 small mb-0" style="line-height: 1.7;" id="viewMeetingNotes">—</p>
+                    <p class="text-dark small mb-0" style="line-height: 1.7;" id="viewMeetingNotes">—</p>
                 </div>
             </div>
-            <div class="modal-footer border-top border-slate-800 p-3">
+            <div class="modal-footer border-top border-secondary-subtle p-3">
                 <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -295,15 +295,15 @@
 {{-- ═══════════════ DELETE MEETING MODAL ═══════════════ --}}
 <div class="modal fade" id="deleteMeetingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content text-white" style="background-color:#0b0f19;border:1px solid #334155;border-radius:16px;">
-            <div class="modal-header border-bottom border-slate-800 p-3">
+        <div class="modal-content text-dark" style="background-color:#0b0f19;border:1px solid #334155;border-radius:16px;">
+            <div class="modal-header border-bottom border-secondary-subtle p-3">
                 <h6 class="modal-title font-outfit text-rose-400">Delete Meeting</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-3 text-secondary small">
                 Are you sure you want to permanently delete this meeting note? This action cannot be undone.
             </div>
-            <div class="modal-footer border-top border-slate-800 p-3">
+            <div class="modal-footer border-top border-secondary-subtle p-3">
                 <button type="button" class="btn btn-secondary btn-sm rounded-3" data-bs-dismiss="modal">Cancel</button>
                 <form id="deleteMeetingForm" method="POST" class="d-inline">
                     @csrf
@@ -338,7 +338,7 @@ $(document).ready(function () {
         order: [[2, 'desc'], [3, 'desc']],
         pageLength: 15,
         language: {
-            processing: '<div class="d-flex align-items-center gap-2 text-slate-400 small"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading meetings...</div>',
+            processing: '<div class="d-flex align-items-center gap-2 text-secondary small"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading meetings...</div>',
             emptyTable: '<div class="text-center text-secondary py-4 italic small">No meetings scheduled yet.</div>',
             zeroRecords: '<div class="text-center text-secondary py-4 italic small">No meetings match your search.</div>',
         },
@@ -362,18 +362,18 @@ $(document).ready(function () {
                         {bg:'rgba(251,146,60,0.12)',color:'#fb923c',border:'rgba(251,146,60,0.3)'},
                     ];
                     const c = colors[row.id % 4];
-                    return `<span class="font-semibold text-white" style="font-size:13px;">${d}</span>`;
+                    return `<span class="font-semibold text-dark" style="font-size:13px;">${d}</span>`;
                 }
             },
             {
                 data: 'meeting_date',
                 name: 'meeting_date',
-                render: d => `<span class="text-slate-300" style="font-size:12px;">${d}</span>`
+                render: d => `<span class="text-secondary" style="font-size:12px;">${d}</span>`
             },
             {
                 data: 'meeting_time',
                 name: 'meeting_time',
-                render: d => `<span class="text-slate-400" style="font-size:12px;">${d}</span>`
+                render: d => `<span class="text-secondary" style="font-size:12px;">${d}</span>`
             },
             {
                 data: 'attendees',
@@ -384,7 +384,7 @@ $(document).ready(function () {
             {
                 data: 'notes_short',
                 name: 'notes',
-                render: d => `<span class="text-slate-400" style="font-size:12px;font-style:italic;">${d}</span>`,
+                render: d => `<span class="text-secondary" style="font-size:12px;font-style:italic;">${d}</span>`,
                 orderable: false
             },
             {

@@ -1,1217 +1,774 @@
 @extends('layouts.manager')
-<!-- resources/views/manager/dashboard.blade.php -->
 
-@section('title', 'Manager Dashboard - Manager Agent')
-@section('page_title', 'Performance Dashboard')
+@section('title', 'Executive Summary Dashboard')
+@section('page_title', 'Executive Summary Dashboard')
 
-@section('content')
-@php
-    $pct = $latestReport ? $latestReport->team_productivity : 0;
-    $offset = 314.16 - ($pct / 100) * 314.16;
-
-    if ($pct >= 80) {
-        $colorText = 'text-emerald-400';
-        $colorStroke = 'stroke-emerald-400';
-        $statusLabel = '🟢 Strong Team Momentum';
-    } elseif ($pct >= 60) {
-        $colorText = 'text-warning';
-        $colorStroke = 'stroke-warning';
-        $statusLabel = '🟡 Moderate Output';
-    } else {
-        $colorText = 'text-rose-400';
-        $colorStroke = 'stroke-rose-400';
-        $statusLabel = '🔴 Alert: High Blockers Found';
-    }
-
-    // Task and meeting stats
-    $totalTasksCount = $totalTasks;
-@endphp
-
-<div class="row g-4 align-items-center mb-4">
-    <div class="col-md-8">
-        <h2 class="h3 font-outfit text-white mb-0">Management Overview</h2>
-        <p class="text-secondary small mb-0">AI-generated performance analytics and evening dashboard reports.</p>
-    </div>
-    <div class="col-md-4 text-md-end">
-        <form method="POST" action="{{ route('manager.generate') }}" id="generate-form" class="d-flex align-items-center justify-content-md-end gap-2">
-            @csrf
-            <input 
-                type="date" 
-                name="date" 
-                class="form-control border-slate-700 bg-slate-900 text-white rounded-3 px-3 py-2" 
-                value="{{ request('date', $targetDate) }}"
-                style="color-scheme: dark; width: 150px; font-size: 13px;"
-                onchange="window.location.href = '{{ route('manager.dashboard') }}?date=' + this.value"
-            >
-            <button type="submit" class="btn accent-btn d-inline-flex align-items-center" onclick="generateReport(event, this)">
-                <span id="generate-icon-container" class="me-2 d-inline-flex align-items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-                    </svg>
-                </span>
-                <span id="generate-text">Generate Evening Report</span>
-            </button>
-        </form>
-    </div>
-</div>
-
-<!-- Metrics Cards Row -->
-<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
-    <!-- Card 1: Team Productivity -->
-    <div class="col">
-        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(99, 102, 241, 0.5); --accent-glow: rgba(99, 102, 241, 0.25); border-left: 4px solid #6366f1 !important;">
-            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.2);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-indigo-400" viewBox="0 0 16 16">
-                    <path d="M11 2a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-                    <path d="M14 14V12a3 3 0 0 0-3-3H5a3 3 0 0 0-3 3v2h12z"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-grow-1">
-                <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em; display: block;">Team Productivity</span>
-                <h3 class="h2 font-outfit mt-1 mb-0 {{ $latestReport ? $colorText : 'text-secondary' }} font-weight-bold">
-                    {{ $latestReport ? $pct . '%' : 'N/A' }}
-                </h3>
-                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Daily evaluated average</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 2: Total Members -->
-    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#membersModal">
-        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(6, 182, 212, 0.5); --accent-glow: rgba(6, 182, 212, 0.25); border-left: 4px solid #06b6d4 !important;">
-            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(6, 182, 212, 0.12); border: 1px solid rgba(6, 182, 212, 0.2);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-cyan-400" viewBox="0 0 16 16">
-                    <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8Zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022ZM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816ZM8.228 11h-1.21a2 2 0 0 1 0-.008c-.001-.246.154-.986.714-1.62.42-.477 1.187-.978 2.502-.978.07 0 .141.001.211.003-.502.5-.838 1.171-.97 1.898-.103.568-.18 1.127-.247 1.705ZM6 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-grow-1">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em;">Total Members</span>
-                    <span class="text-xs font-semibold" style="font-size: 10px; color: #06b6d4; opacity: 0.95;">View Table &rarr;</span>
-                </div>
-                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold">
-                    {{ $totalMembers }}
-                </h3>
-                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Active resources registered</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 3: Total Tasks -->
-    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#tasksModal">
-        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(168, 85, 247, 0.5); --accent-glow: rgba(168, 85, 247, 0.25); border-left: 4px solid #a855f7 !important;">
-            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(168, 85, 247, 0.12); border: 1px solid rgba(168, 85, 247, 0.2);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-purple-400" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-grow-1">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em;">Total Tasks</span>
-                    <span class="text-xs font-semibold" style="font-size: 10px; color: #c084fc; opacity: 0.95;">View List &rarr;</span>
-                </div>
-                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold">
-                    {{ $totalTasks }}
-                </h3>
-                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Assigned workflow items</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 4: Complete / Pending Tasks -->
-    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#tasksModal">
-        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(16, 185, 129, 0.5); --accent-glow: rgba(16, 185, 129, 0.25); border-left: 4px solid #10b981 !important;">
-            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.2);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-emerald-400" viewBox="0 0 16 16">
-                    <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-5.446z"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-grow-1">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em;">Complete / Pending</span>
-                    <span class="text-xs font-semibold" style="font-size: 10px; color: #34d399; opacity: 0.95;">Status &rarr;</span>
-                </div>
-                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold d-flex align-items-baseline gap-1">
-                    <span class="text-emerald-400">{{ $completedTasksCount }}</span>
-                    <span class="text-secondary" style="font-size: 16px;">/</span>
-                    <span class="text-warning" style="font-size: 20px;">{{ $pendingTasksCount }}</span>
-                </h3>
-                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Completed vs Pending Tasks</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 5: Total Commits -->
-    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#commitsModal">
-        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(59, 130, 246, 0.5); --accent-glow: rgba(59, 130, 246, 0.25); border-left: 4px solid #3b82f6 !important;">
-            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.2);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-blue-400" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M6 3.5A1.5 1.5 0 0 1 7.5 2h1A1.5 1.5 0 0 1 10 3.5v1A1.5 1.5 0 0 1 8.5 6h-1A1.5 1.5 0 0 1 6 4.5v-1zM8.5 5a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1zM14 7.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 7.5v-1A1.5 1.5 0 0 1 3.5 5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 1 0-1h1a.5.5 0 0 1 1.5 1.5v1z"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-grow-1">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em;">Total Commits</span>
-                    <span class="text-xs font-semibold" style="font-size: 10px; color: #60a5fa; opacity: 0.95;">View Log &rarr;</span>
-                </div>
-                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold">
-                    {{ $totalCommits }}
-                </h3>
-                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Daily repository updates</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 6: Meetings -->
-    <div class="col" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#meetingsModal">
-        <div class="card glass-card p-3 h-100 hover-card d-flex flex-row align-items-center gap-3" style="--accent-border-hover: rgba(244, 63, 94, 0.5); --accent-glow: rgba(244, 63, 94, 0.25); border-left: 4px solid #f43f5e !important;">
-            <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.2);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-rose-400" viewBox="0 0 16 16">
-                    <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/>
-                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-grow-1">
-                <span class="text-uppercase text-slate-400 font-semibold" style="font-size: 10px; letter-spacing: 0.05em; display: block;">Meetings</span>
-                <h3 class="h2 font-outfit mt-1 mb-0 text-white font-weight-bold">
-                    {{ $totalMeetingsCount }}
-                </h3>
-                <span class="text-slate-300 small d-block mt-0.5" style="font-size: 11px; font-weight: 500;">Daily logged meeting notes</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-@if($latestReport)
-    <div class="row g-4 mb-4">
-        <!-- Circular Progress Ring Card -->
-        <div class="col-lg-4">
-            <div class="card glass-card p-4 h-100 text-center d-flex flex-column align-items-center justify-content-center">
-                <span class="text-uppercase text-secondary small font-weight-bold mb-4">Productivity Index</span>
-                
-                <div class="position-relative d-inline-flex align-items-center justify-content-center" style="width: 180px; height: 180px;">
-                    <svg width="180" height="180" class="position-absolute" style="transform: rotate(-90deg);">
-                        <!-- Background Circle -->
-                        <circle cx="90" cy="90" r="70" stroke="#334155" stroke-width="10" fill="transparent" />
-                        <!-- Value Circle -->
-                        <circle cx="90" cy="90" r="70" class="{{ $colorStroke }}" stroke-width="10" 
-                                stroke-dasharray="439.82" stroke-dashoffset="{{ 439.82 - ($pct / 100) * 439.82 }}" 
-                                stroke-linecap="round" fill="transparent" style="transition: stroke-dashoffset 1s ease-out;" />
-                    </svg>
-                    <div class="d-flex flex-column align-items-center justify-content-center">
-                        <span class="h1 font-outfit text-white mb-0 font-weight-bold">{{ $pct }}%</span>
-                        <span class="text-uppercase text-secondary small mt-1 font-weight-semibold">Rating</span>
-                    </div>
-                </div>
-                
-                <span class="text-secondary small mt-4 font-weight-medium">{{ $statusLabel }}</span>
-            </div>
-        </div>
-
-        <!-- Performing and Warnings Grids -->
-        <div class="col-lg-8">
-            <div class="row g-4 h-100">
-                <div class="col-md-6">
-                    <div class="card glass-card p-4 h-100">
-                        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center justify-content-between">
-                            <span class="d-flex align-items-center">
-                                <span class="d-inline-block bg-success rounded-circle me-2 shadow-lg" style="width: 10px; height: 10px;"></span>
-                                Top Performers
-                            </span>
-                            @if(!empty($latestReport->top_performers))
-                                <span class="badge rounded-pill" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);font-size:9px;">{{ count($latestReport->top_performers) }} entries</span>
-                            @endif
-                        </h4>
-                        
-                        <div style="max-height: 260px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
-                        @if(!empty($latestReport->top_performers) && is_array($latestReport->top_performers))
-                            <ul class="list-unstyled mb-0">
-                                @foreach($latestReport->top_performers as $performer)
-                                    <li class="d-flex align-items-center justify-content-between mb-3 text-white small">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; background-color: rgba(16, 185, 129, 0.1) !important; flex-shrink:0;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
-                                                </svg>
-                                            </div>
-                                            <span class="font-weight-medium">{{ $performer }}</span>
-                                        </div>
-                                        <span class="badge text-success border border-success-subtle bg-success bg-opacity-10 px-2 py-1 text-uppercase" style="font-size: 8px; flex-shrink:0;">Star</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @else
-                            <p class="text-secondary small italic mb-0">No entries logged today.</p>
-                        @endif
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Attention Required List -->
-                <div class="col-md-6">
-                    <div class="card glass-card p-4 h-100">
-                        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center justify-content-between">
-                            <span class="d-flex align-items-center">
-                                <span class="d-inline-block bg-danger rounded-circle me-2 shadow-lg" style="width: 10px; height: 10px;"></span>
-                                Attention Required
-                            </span>
-                            @if(!empty($latestReport->attention_required))
-                                <span class="badge rounded-pill" style="background:rgba(244,63,94,0.12);color:#fb7185;border:1px solid rgba(244,63,94,0.25);font-size:9px;">{{ count($latestReport->attention_required) }} alerts</span>
-                            @endif
-                        </h4>
-
-                        <div style="max-height: 260px; overflow-y: auto; padding-right: 4px;" class="custom-scroll">
-                        @if(!empty($latestReport->attention_required) && is_array($latestReport->attention_required))
-                            <ul class="list-unstyled mb-0">
-                                @foreach($latestReport->attention_required as $needsAttention)
-                                    <li class="d-flex align-items-start mb-3 text-white small">
-                                        <div class="bg-danger-subtle text-danger rounded-circle d-flex align-items-center justify-content-center me-2 mt-0.5" style="width: 24px; height: 24px; flex-shrink: 0; background-color: rgba(244, 63, 94, 0.1) !important;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                                <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
-                                            </svg>
-                                        </div>
-                                        <span class="font-weight-medium align-self-center">{{ $needsAttention }}</span>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @else
-                            <p class="text-secondary small italic mb-0">No alerts logged today.</p>
-                        @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Identified Risks Panel -->
-    <div class="card glass-card p-4 mb-4">
-        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center">
-            <span class="d-inline-block bg-warning rounded-circle me-2 shadow-lg" style="width: 10px; height: 10px;"></span>
-            Identified Risks & Roadblocks
-        </h4>
-        
-        @if(!empty($latestReport->risks) && is_array($latestReport->risks))
-            <ul class="list-unstyled mb-0">
-                @foreach($latestReport->risks as $risk)
-                    <li class="d-flex align-items-start mb-2.5 text-slate-300 small">
-                        <div class="bg-warning rounded-circle me-2.5 mt-1.5 shadow-md shadow-warning-500/50" style="width: 8px; height: 8px; flex-shrink: 0;"></div>
-                        <span class="font-weight-medium">{{ $risk }}</span>
-                    </li>
-                @endforeach
-            </ul>
-        @else
-            <p class="text-secondary small italic mb-0">No risks identified.</p>
-        @endif
-    </div>
-
-    <!-- Full AI Narrative Container -->
-    <div class="card glass-card p-4 mb-4">
-        <div class="d-flex justify-content-between align-items-center pb-3 border-bottom border-slate-800">
-            <h4 class="h5 font-outfit text-white mb-0 d-flex align-items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-primary" viewBox="0 0 16 16">
-                    <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
-                    <path d="M7 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0zM7 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z"/>
-                </svg>
-                Complete Narrative AI Review
-            </h4>
-            <button class="btn btn-sm btn-outline-secondary border-0" type="button" data-bs-toggle="collapse" data-bs-target="#narrativeCollapse" aria-expanded="true" aria-controls="narrativeCollapse">
-                Toggle Collapse
-            </button>
-        </div>
-        
-        <div class="collapse show" id="narrativeCollapse">
-            <div id="narrative-content" class="mt-4 text-slate-300 small max-h-96 overflow-y-auto pr-2" style="line-height: 1.625;" data-raw-text="{{ $latestReport->full_report }}">
-                {!! nl2br(e($latestReport->full_report)) !!}
-            </div>
-        </div>
-    </div>
-@else
-    <!-- Empty State -->
-    <div class="card glass-card p-5 mb-4 text-center border-dashed border-slate-700 py-5">
-        <div class="d-inline-flex align-items-center justify-content-center rounded-4 bg-slate-900 border border-slate-800 text-primary mb-4 shadow" style="width: 64px; height: 64px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.7 4 5.65 5.5 5.65h5c1.5 0 2.5 1.05 2.5 2.412v3.838a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 3 11.9V8.062Zm2.5-.912C4.338 7.15 3.5 7.9 3.5 9v1.5a.5.5 0 0 0 1 0v-1.5c0-.276.224-.5.5-.5h5c.276 0 .5.224.5.5v1.5a.5.5 0 0 0 1 0v-1.5c0-1.1-.838-1.85-2-1.85h-5Z"/>
-            </svg>
-        </div>
-        <h4 class="h5 font-outfit text-white">No performance evaluations found</h4>
-        <p class="text-secondary small mx-auto mt-1 mb-4" style="max-width: 380px;">Click the button in the upper right corner to fetch daily tasks, check-in logs, git commit indices, and generate the report.</p>
-    </div>
-@endif
-
-    <!-- Individual Employee AI Audits Card -->
-    <div class="card glass-card p-4 mb-4">
-        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="me-2 text-primary">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            Individual Employee AI Audits
-        </h4>
-        <p class="text-secondary small mb-4">Generate and view real-time AI-synthesized daily performance reports for individual team members.</p>
-        
-        <div class="row g-3">
-            @foreach($allMembers as $member)
-                <div class="col-md-6 col-lg-4">
-                    <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 d-flex justify-content-between align-items-center hover-card" style="transition: all 0.2s;">
-                        <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
-                             <h6 class="text-white font-outfit font-semibold mb-0.5 text-truncate">{{ $member->name }}</h6>
-                             <span class="text-secondary small text-truncate d-block">{{ $member->role }}</span>
-                        </div>
-                        <button class="btn btn-sm btn-primary py-1.5 px-3 rounded-3 shrink-0" onclick="showEmployeeReport({{ $member->id }}, '{{ addslashes($member->name) }}')">
-                            AI Report
-                        </button>
-                    </div>
-                </div>
-            @endforeach
-            @if($allMembers->isEmpty())
-                <div class="col-12 text-center text-secondary py-3 italic small">No team members registered to audit.</div>
-            @endif
-        </div>
-        
-        <div class="mt-4 d-flex justify-content-center">
-            {!! $allMembers->appends(request()->except('members_page'))->links() !!}
-        </div>
-    </div>
-
-    @php
-        $groupTasks = [];
-        foreach ($groupTasksPaginated as $task) {
-            $members = $task->teamMembers;
-            if ($members->count() > 1) {
-                $sortedMembers = $members->sortBy('id');
-                $memberIds = $sortedMembers->pluck('id')->join(',');
-                $memberNames = $sortedMembers->pluck('name')->join(' & ');
-                
-                if (!isset($groupTasks[$memberIds])) {
-                    $groupTasks[$memberIds] = [
-                        'names' => $memberNames,
-                        'tasks' => collect(),
-                        'roles' => $sortedMembers->pluck('role')->unique()->join(', ')
-                    ];
-                }
-                $groupTasks[$memberIds]['tasks']->push($task);
-            }
-        }
-    @endphp
-
-    <!-- Group Productivity Analytics Card -->
-    <div class="card glass-card p-4 mb-4" style="border-left: 4px solid var(--accent-color) !important;">
-        <h4 class="h5 font-outfit text-white mb-3 d-flex align-items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="me-2 text-accent">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm6 3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
-            </svg>
-            Group Productivity Analytics
-        </h4>
-        <p class="text-secondary small mb-4">Real-time productivity index and checklist completions calculated for developer groups and teams.</p>
-        
-        <div class="row g-3">
-            @forelse($groupTasks as $gId => $gData)
-                @php
-                    $gTasks = $gData['tasks'];
-                    $gTotal = $gTasks->count();
-                    $gCompleted = $gTasks->where('status', 'completed')->count();
-                    $gPct = $gTotal > 0 ? (int)(($gCompleted / $gTotal) * 100) : 100;
-                    
-                    if ($gPct >= 80) {
-                        $progressColor = 'bg-success';
-                        $textColor = 'text-emerald-400';
-                    } elseif ($gPct >= 60) {
-                        $progressColor = 'bg-warning';
-                        $textColor = 'text-warning';
-                    } else {
-                        $progressColor = 'bg-danger';
-                        $textColor = 'text-rose-400';
-                    }
-                @endphp
-                <div class="col-md-6 col-lg-4">
-                    <div class="p-3 rounded-4 border border-slate-800 bg-slate-900/40 hover-card" style="cursor: pointer; transition: all 0.2s; --accent-border-hover: rgba(168, 85, 247, 0.4); --accent-glow: rgba(168, 85, 247, 0.1);" onclick="showGroupReport('{{ $gId }}', '{{ addslashes($gData['names']) }}')">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div style="min-width: 0; flex-grow: 1; margin-right: 12px;">
-                                <h6 class="text-white font-outfit font-semibold mb-0.5 text-truncate" title="{{ $gData['names'] }}">{{ $gData['names'] }}</h6>
-                                <span class="text-slate-400 small text-truncate d-block" style="font-size: 11px;">{{ $gData['roles'] }}</span>
-                            </div>
-                            <span class="font-outfit font-bold {{ $textColor }}" style="font-size: 16px;">{{ $gPct }}%</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 6px; background-color: #1e293b;">
-                            <div class="progress-bar {{ $progressColor }}" role="progressbar" style="width: {{ $gPct }}%" aria-valuenow="{{ $gPct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between text-secondary mb-2" style="font-size: 10px;">
-                            <span>Tasks: {{ $gCompleted }} / {{ $gTotal }} completed</span>
-                            @if($gTasks->first())
-                                <span class="text-slate-400" style="font-size:10px;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" fill="currentColor" viewBox="0 0 16 16" class="me-1 align-middle"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-                                    Due: {{ \Carbon\Carbon::parse($gTasks->first()->due_date)->format('M d, Y') }}
-                                </span>
-                            @endif
-                        </div>
-                        <div class="d-flex justify-content-end align-items-center border-top border-slate-800/60 pt-2">
-                            <span class="text-primary small font-semibold" style="font-size: 11px;">AI Report &rarr;</span>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="col-12 text-center text-slate-400 py-3 italic small">No group tasks logged yet. Assign a task to multiple developers to start tracking team group productivity.</div>
-            @endforelse
-        </div>
-        
-        <div class="mt-4 d-flex justify-content-center">
-            {!! $groupTasksPaginated->appends(request()->except('groups_page'))->links() !!}
-        </div>
-    </div>
-
-<!-- History Table -->
-<div class="card glass-card p-4">
-    <h4 class="h5 font-outfit text-white mb-4 d-flex align-items-center">
-        <span class="d-inline-block bg-primary rounded-circle me-2 shadow-lg" style="width: 10px; height: 10px;"></span>
-        Report History
-    </h4>
-    
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #334155;">
-            <thead class="text-secondary" style="font-size: 11px;">
-                <tr>
-                    <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Report Date</th>
-                    <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Productivity Index</th>
-                    <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider">Status</th>
-                    <th scope="col" class="pb-3 border-slate-800 uppercase font-semibold tracking-wider text-end">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($reports as $report)
-                    @php
-                        $histPct = $report->team_productivity;
-                        if ($histPct >= 80) {
-                            $badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-20';
-                            $textClass = 'text-success';
-                            $label = 'Stable';
-                        } elseif ($histPct >= 60) {
-                            $badgeClass = 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20';
-                            $textClass = 'text-warning';
-                            $label = 'Warning';
-                        } else {
-                            $badgeClass = 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20';
-                            $textClass = 'text-danger';
-                            $label = 'Critical';
-                        }
-                    @endphp
-                    <tr>
-                        <td class="py-3 font-semibold text-slate-100">
-                            <div>{{ $report->report_date->format('M d, Y') }}</div>
-                            <div class="text-secondary small font-normal mt-0.5" style="font-size: 10px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="text-secondary me-1 align-middle" viewBox="0 0 16 16">
-                                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                                </svg>
-                                <span class="align-middle">{{ $report->created_at->format('h:i A') }}</span>
-                            </div>
-                        </td>
-                        <td class="py-3 font-bold {{ $textClass }}">
-                            {{ $histPct }}%
-                            <div class="progress d-none d-sm-inline-flex ms-2 align-self-center" style="width: 60px; height: 5px; background-color: #334155;">
-                                <div class="progress-bar {{ $histPct >= 80 ? 'bg-success' : ($histPct >= 60 ? 'bg-warning' : 'bg-danger') }}" role="progressbar" style="width: {{ $histPct }}%" aria-valuenow="{{ $histPct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                        </td>
-                        <td class="py-3">
-                            <span class="badge rounded-pill {{ $badgeClass }} px-2.5 py-1" style="font-size: 10px;">{{ $label }}</span>
-                        </td>
-                        <td class="py-3 text-end">
-                            <a href="{{ route('manager.report-detail', $report->id) }}" class="text-primary font-semibold text-decoration-none small">View Details</a>
-                        </td>
-                    </tr>
-                @endforeach
-                @if($reports->isEmpty())
-                    <tr>
-                        <td colspan="4" class="text-center py-5 text-secondary italic small">No performance history logged yet.</td>
-                    </tr>
-                @endif
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Custom Styles for Hover Effects -->
 @section('styles')
 <style>
-    .hover-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    .hover-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.4), 0 4px 10px -4px rgba(168, 85, 247, 0.1);
-        border-color: rgba(168, 85, 247, 0.4) !important;
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
     }
-    .btn-xs {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-        border-radius: 0.25rem;
+    .skeleton {
+        position: relative;
+        overflow: hidden;
+        background-color: #f1f5f9;
+        color: transparent !important;
+        border-color: transparent !important;
+        pointer-events: none;
     }
-    .hover-slate-800:hover {
-        background-color: rgba(255, 255, 255, 0.06);
+    .skeleton::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+        background-image: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.2) 20%,
+            rgba(255, 255, 255, 0.5) 60%,
+            rgba(255, 255, 255, 0)
+        );
+        animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+        100% {
+            transform: translateX(100%);
+        }
+    }
+    .toast-container {
+        z-index: 1055;
     }
 </style>
 @endsection
 
-<!-- Team Members Modal -->
-<div class="modal fade" id="membersModal" tabindex="-1" aria-labelledby="membersModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
-                <h5 class="modal-title font-outfit text-white" id="membersModalLabel">Team Members Registry</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <!-- Add Member Collapse Form -->
-                <button type="button" class="btn btn-sm btn-primary mb-3" data-bs-toggle="collapse" data-bs-target="#addMemberCollapse" aria-expanded="false" aria-controls="addMemberCollapse">
-                    + Add Team Member
+@section('content')
+@php
+    $rangeLabel = 'Today';
+    if (isset($rangeType)) {
+        if ($rangeType === 'week_wise') $rangeLabel = 'This Week';
+        elseif ($rangeType === 'month_wise') $rangeLabel = 'This Month';
+        elseif ($rangeType === 'year_wise') $rangeLabel = 'This Year';
+        elseif ($rangeType === 'all_time') $rangeLabel = 'All Time';
+        elseif ($rangeType === 'custom_range') $rangeLabel = 'Custom Range';
+    }
+@endphp
+<div class="row mb-4">
+    <div class="col-12 d-flex flex-column flex-xl-row justify-content-between align-items-start align-items-xl-center gap-3">
+        <div>
+            <h2 class="h3 font-outfit text-dark mb-1">Executive Summary Dashboard</h2>
+            <p class="text-secondary small mb-0">High-level KPIs, organization performance, and AI-driven insights.</p>
+        </div>
+        <div class="d-flex flex-nowrap align-items-center gap-2 overflow-auto w-100 w-xl-auto" style="padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none;">
+            <style>
+                .d-flex.overflow-auto::-webkit-scrollbar { display: none; }
+            </style>
+            <!-- Date Picker UI (Leaderboard Style) -->
+            <form action="{{ route('manager.dashboard') }}" method="GET" class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border border-secondary-subtle m-0 flex-shrink-0" id="filterForm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="text-secondary" viewBox="0 0 16 16"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>
+                <select name="range_type" id="rangeType" class="form-select form-select-sm border-0 shadow-none bg-transparent fw-semibold text-dark p-0 pe-3" style="cursor: pointer; outline: none; box-shadow: none; min-width: 90px;" onchange="toggleCustomDates()">
+                    <option value="all_time" {{ (isset($rangeType) && $rangeType === 'all_time') ? 'selected' : '' }}>All Time</option>
+                    <option value="date_wise" {{ (isset($rangeType) && $rangeType === 'date_wise') ? 'selected' : '' }}>Daily</option>
+                    <option value="week_wise" {{ (isset($rangeType) && $rangeType === 'week_wise') ? 'selected' : '' }}>Weekly</option>
+                    <option value="month_wise" {{ (isset($rangeType) && $rangeType === 'month_wise') ? 'selected' : '' }}>Monthly</option>
+                    <option value="year_wise" {{ (isset($rangeType) && $rangeType === 'year_wise') ? 'selected' : '' }}>Yearly</option>
+                    <option value="custom_range" {{ (isset($rangeType) && $rangeType === 'custom_range') ? 'selected' : '' }}>Custom Range</option>
+                </select>
+
+                <div id="customDateContainer" class="d-flex align-items-center gap-2" style="display: {{ (isset($rangeType) && $rangeType === 'custom_range') ? 'flex' : 'none' }} !important;">
+                    <input type="date" name="start_date" id="startDateFilter" class="form-control form-control-sm border-0 text-secondary bg-light rounded-pill px-3" value="{{ $startDate ?? $targetDate }}">
+                    <span class="text-muted small">to</span>
+                    <input type="date" name="end_date" id="endDateFilter" class="form-control form-control-sm border-0 text-secondary bg-light rounded-pill px-3" value="{{ $endDate ?? $targetDate }}">
+                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">Apply</button>
+                </div>
+            </form>
+            
+            <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-pill bg-white text-nowrap shadow-sm border-secondary-subtle px-3 py-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#productivityCalendarModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+                  <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                </svg>
+                Calendar
+            </button>
+            
+            <button class="btn btn-outline-primary d-inline-flex align-items-center rounded-pill bg-white text-nowrap shadow-sm px-3 py-2 flex-shrink-0" onclick="window.print()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+                    <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
+                    <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                </svg>
+                Export
+            </button>
+            
+            <div class="dropdown flex-shrink-0">
+                <button class="btn btn-primary d-inline-flex align-items-center rounded-pill text-nowrap shadow-sm px-3 py-2 dropdown-toggle" type="button" id="generateReportDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background: linear-gradient(135deg, var(--accent-color), #6366f1); border: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+                      <path fill-rule="evenodd" d="M14.5 3h-13a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+                      <path d="M3 8.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5zm0-5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/>
+                    </svg>
+                    Generate Report
                 </button>
-                <div class="collapse mb-3" id="addMemberCollapse">
-                    <div class="card p-3" style="background-color: #1e293b; border: 1px solid #334155;">
-                        <form action="{{ route('manager.store-team-member') }}" method="POST">
-                            @csrf
-                            <div class="row g-2">
-                                <div class="col-md-3">
-                                    <input type="text" name="name" class="form-control form-control-sm" placeholder="Name" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <input type="text" name="role" class="form-control form-control-sm" placeholder="Role (e.g., Backend Dev)" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="Email" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <input type="text" name="gitlab_id" class="form-control form-control-sm" placeholder="GitLab Username">
-                                </div>
-                                <div class="col-12 text-end mt-2">
-                                    <button type="submit" class="btn btn-sm btn-success">Save Member</button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Search Input -->
-                <div class="mb-3">
-                    <input type="text" id="membersModalSearch" class="form-control form-control-sm" placeholder="Search members by name, email, or role..." oninput="onMembersSearchChange(this.value)">
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
-                        <thead class="text-secondary" style="font-size: 11px;">
-                            <tr>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">#</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Name</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Role</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Email</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">GitLab ID</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="membersModalTableBody">
-                            <!-- Populated via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div id="membersModalPagination" class="d-flex justify-content-between align-items-center mt-3 text-secondary small">
-                    <!-- Populated via AJAX -->
-                </div>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3" aria-labelledby="generateReportDropdown">
+                    <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('reportType').value='daily'; document.getElementById('reportForm').submit();"><i class="bi bi-file-earmark-text me-2 text-secondary"></i>Daily Report</a></li>
+                    <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('reportType').value='monthly'; document.getElementById('reportForm').submit();"><i class="bi bi-file-earmark-bar-graph me-2 text-secondary"></i>Monthly Summary</a></li>
+                    <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('reportType').value='executive'; document.getElementById('reportForm').submit();"><i class="bi bi-file-earmark-check me-2 text-secondary"></i>Executive Summary</a></li>
+                </ul>
             </div>
-            <div class="modal-footer border-top border-slate-800 p-4">
-                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+            
+            <form id="reportForm" method="POST" action="{{ route('manager.generate') }}" class="d-none">
+                @csrf
+                <input type="hidden" name="date" value="{{ $targetDate ?? \Carbon\Carbon::today()->toDateString() }}">
+                <input type="hidden" name="type" id="reportType" value="executive">
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-4 mb-4">
+    <!-- Org Performance -->
+    <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 rounded-4 h-100 p-3 hover-lift kpi-card">
+            <span class="text-uppercase text-secondary font-semibold" style="font-size: 11px;">Org Performance</span>
+            <h3 id="kpi-org-performance" class="font-outfit text-dark mt-2 mb-0" data-value="{{ $latestReport ? $latestReport->team_productivity : 0 }}">{{ $latestReport ? $latestReport->team_productivity . '%' : 'N/A' }}</h3>
+            <span id="kpi-org-trend" class="text-success small d-flex align-items-center mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="me-1" viewBox="0 0 16 16"><path d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
+                +2.4% vs last week
+            </span>
+        </div>
+    </div>
+    <!-- Total Employees -->
+    <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 rounded-4 h-100 p-3 hover-lift kpi-card">
+            <span class="text-uppercase text-secondary font-semibold" style="font-size: 11px;">Total Employees</span>
+            <h3 id="kpi-total-employees" class="font-outfit text-dark mt-2 mb-0" data-value="{{ $totalMembers }}">{{ $totalMembers }}</h3>
+            <span class="text-secondary small mt-1 d-block">Active registered members</span>
+        </div>
+    </div>
+    <!-- Tasks Completion -->
+    <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 rounded-4 h-100 p-3 hover-lift kpi-card">
+            <span id="label-tasks-completed" class="text-uppercase text-secondary font-semibold" style="font-size: 11px;">Tasks Completed ({{ $rangeLabel }})</span>
+            <h3 id="kpi-tasks-completed" class="font-outfit text-dark mt-2 mb-0">{{ $completedTasksCount }} / {{ $totalTasks }}</h3>
+            <div class="progress mt-2" style="height: 4px;">
+                @php $taskPct = $totalTasks > 0 ? ($completedTasksCount / $totalTasks) * 100 : 0; @endphp
+                <div id="kpi-tasks-progress" class="progress-bar bg-primary" role="progressbar" style="width: {{ $taskPct }}%; transition: width 1s ease-in-out;"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Git Commits -->
+    <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 rounded-4 h-100 p-3 hover-lift kpi-card">
+            <span id="label-git-commits" class="text-uppercase text-secondary font-semibold" style="font-size: 11px;">Git Commits ({{ $rangeLabel }})</span>
+            <h3 id="kpi-git-commits" class="font-outfit text-dark mt-2 mb-0" data-value="{{ $totalCommits }}">{{ $totalCommits }}</h3>
+            <span class="text-secondary small mt-1 d-block">Pushes across all repositories</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <!-- Trend Chart -->
+    <div class="col-lg-8">
+        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100">
+            <h5 class="font-outfit text-dark mb-4">Performance Trend (Last 7 Days)</h5>
+            <div style="height: 300px; width: 100%;">
+                <canvas id="performanceTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- Workload Distribution -->
+    <div class="col-lg-4">
+        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100">
+            <h5 class="font-outfit text-dark mb-4">Workload Distribution</h5>
+            <div style="height: 250px; width: 100%; display: flex; justify-content: center;">
+                <canvas id="workloadChart"></canvas>
+            </div>
+            <div class="mt-4 text-center">
+                <span class="small text-secondary">Breakdown of pending tasks by team.</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Total Tasks Modal -->
-<div class="modal fade" id="tasksModal" tabindex="-1" aria-labelledby="tasksModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
-                <h5 class="modal-title font-outfit text-white" id="tasksModalLabel">Workflow Tasks Ledger</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <!-- Add Task Collapse Form -->
-                <button type="button" class="btn btn-sm btn-primary mb-3" data-bs-toggle="collapse" data-bs-target="#addTaskCollapse" aria-expanded="false" aria-controls="addTaskCollapse">
-                    + Add New Task
-                </button>
-                <div class="collapse mb-3" id="addTaskCollapse">
-                    <div class="card p-3" style="background-color: #1e293b; border: 1px solid #334155;">
-                        <form action="{{ route('manager.store-task') }}" method="POST">
-                            @csrf
-                            <div class="row g-2 align-items-center">
-                                <div class="col-md-3">
-                                    <input type="text" name="title" class="form-control form-control-sm" placeholder="Task Title" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <input type="text" name="email" class="form-control form-control-sm" placeholder="Assignee Email(s) (comma separated)" required>
-                                </div>
-                                <div class="col-md-2">
-                                    <select name="status" class="form-select form-select-sm" required>
-                                        <option value="pending">Pending</option>
-                                        <option value="in_progress">In Progress</option>
-                                        <option value="completed">Completed</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <input type="date" name="due_date" class="form-control form-control-sm" required>
-                                </div>
-                                <div class="col-md-2 text-end">
-                                    <button type="submit" class="btn btn-sm btn-success w-100">Save Task</button>
-                                </div>
-                            </div>
-                        </form>
+<!-- AI Recommendations Panel (Placeholder for Phase 2) -->
+<div class="card bg-white shadow-sm border-0 rounded-4 mb-4" style="border-left: 4px solid var(--accent-color) !important;">
+    <div class="card-body p-4">
+        <h5 class="font-outfit text-dark d-flex align-items-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-primary me-2" viewBox="0 0 16 16">
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+            </svg>
+            AI Recommendations & Alerts
+        </h5>
+        <div class="row g-3">
+            <!-- Burnout Risks -->
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border border-secondary-subtle h-100 d-flex flex-column">
+                    <div><span class="badge bg-danger mb-2">Identified Risks</span></div>
+                    <div class="custom-scroll flex-grow-1 pe-2" style="max-height: 200px; overflow-y: auto;">
+                        @if($latestReport && !empty($latestReport->risks))
+                            <ul class="small text-secondary mb-0 ps-3">
+                                @foreach($latestReport->risks as $risk)
+                                    <li>{{ is_array($risk) ? ($risk['risk'] ?? 'Unknown Risk') : $risk }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="small text-secondary mb-0">No immediate burnout or workload risks identified.</p>
+                        @endif
                     </div>
                 </div>
-
-                <!-- Search Input -->
-                <div class="mb-3">
-                    <input type="text" id="tasksModalSearch" class="form-control form-control-sm" placeholder="Search tasks by title or developer..." oninput="onTasksSearchChange(this.value)">
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
-                        <thead class="text-secondary" style="font-size: 11px;">
-                            <tr>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">#</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Task Title</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Assigned Employee(s)</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Status</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Due Date</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tasksModalTableBody">
-                            <!-- Populated via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div id="tasksModalPagination" class="d-flex justify-content-between align-items-center mt-3 text-secondary small">
-                    <!-- Populated via AJAX -->
+            </div>
+            <!-- Attention Required -->
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border border-secondary-subtle h-100 d-flex flex-column">
+                    <div><span class="badge bg-warning mb-2 text-dark">Attention Required</span></div>
+                    <div class="custom-scroll flex-grow-1 pe-2" style="max-height: 200px; overflow-y: auto;">
+                        @if($latestReport && !empty($latestReport->attention_required))
+                            <ul class="small text-secondary mb-0 ps-3">
+                                @foreach($latestReport->attention_required as $item)
+                                    <li>{{ is_array($item) ? ($item['name'] ?? 'Unknown') : $item }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="small text-secondary mb-0">No active project or team delays currently flagged.</p>
+                        @endif
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer border-top border-slate-800 p-4">
-                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+            <!-- Top Performers -->
+            <div class="col-md-4">
+                <div class="p-3 bg-light rounded-3 border border-secondary-subtle h-100 d-flex flex-column">
+                    <div><span class="badge bg-success mb-2">Top Performers</span></div>
+                    <div class="custom-scroll flex-grow-1 pe-2" style="max-height: 200px; overflow-y: auto;">
+                        @if($latestReport && !empty($latestReport->top_performers))
+                            <ul class="small text-secondary mb-0 ps-3">
+                                @foreach($latestReport->top_performers as $perf)
+                                    <li>{{ is_array($perf) ? ($perf['name'] ?? 'Unknown') : $perf }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="small text-secondary mb-0">No standout performance evaluated for today yet.</p>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Git Commits Modal -->
-<div class="modal fade" id="commitsModal" tabindex="-1" aria-labelledby="commitsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
-                <h5 class="modal-title font-outfit text-white" id="commitsModalLabel">Version Control Commit Log</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Team Performance Overview Row -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="font-outfit text-dark mb-0">Team Performance Overview</h5>
+                <a href="{{ route('manager.teams.index') }}" class="small text-primary text-decoration-none">View All Teams</a>
             </div>
-            <div class="modal-body p-4">
-                <!-- Add Commit Collapse Form -->
-                <button type="button" class="btn btn-sm btn-primary mb-3" data-bs-toggle="collapse" data-bs-target="#addCommitCollapse" aria-expanded="false" aria-controls="addCommitCollapse">
-                    + Add New Commit
-                </button>
-                <div class="collapse mb-3" id="addCommitCollapse">
-                    <div class="card p-3" style="background-color: #1e293b; border: 1px solid #334155;">
-                        <form action="{{ route('manager.store-commit') }}" method="POST">
-                            @csrf
-                            <div class="row g-2">
-                                <div class="col-md-2">
-                                    <input type="text" name="commit_hash" class="form-control form-control-sm" placeholder="Hash (e.g. d51a672)" required>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="border-0 rounded-start-2 py-3 px-4 font-semibold text-secondary" style="font-size: 13px;">Team Name</th>
+                            <th class="border-0 py-3 px-4 font-semibold text-secondary" style="font-size: 13px;">Lead/Manager</th>
+                            <th class="border-0 py-3 px-4 font-semibold text-secondary" style="font-size: 13px;">Avg. Productivity</th>
+                            <th class="border-0 py-3 px-4 font-semibold text-secondary" style="font-size: 13px;">Task Completion</th>
+                            <th class="border-0 rounded-end-2 py-3 px-4 font-semibold text-secondary text-center" style="font-size: 13px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        <tr onclick="window.location='{{ route('manager.teams.show', 'frontend') }}'" style="cursor: pointer;" class="hover-light">
+                            <td class="px-4 py-3 border-secondary-subtle">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm0 1h12a1 1 0 0 1 1 1v1H1V3a1 1 0 0 1 1-1zM1 6h14v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6zm2 2v2h2V8H3zm4 0v2h2V8H7z"/></svg>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 text-dark" style="font-size: 14px;">Frontend Team</h6>
+                                        <span class="text-secondary" style="font-size: 12px;">5 Members</span>
+                                    </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <input type="text" name="repository_name" class="form-control form-control-sm" placeholder="Repository Name" value="manager-agent" required>
+                            </td>
+                            <td class="px-4 py-3 border-secondary-subtle text-dark" style="font-size: 14px;">Rahul Sharma</td>
+                            <td class="px-4 py-3 border-secondary-subtle">
+                                <div class="d-flex align-items-center">
+                                    <span class="text-dark font-semibold me-2" style="font-size: 14px;">88%</span>
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 88%"></div>
+                                    </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="Developer Email" required>
+                            </td>
+                            <td class="px-4 py-3 border-secondary-subtle text-dark" style="font-size: 14px;">92% <span class="text-secondary small">(115/125)</span></td>
+                            <td class="px-4 py-3 border-secondary-subtle text-center">
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-3 py-1">Excellent</span>
+                            </td>
+                        </tr>
+                        <tr onclick="window.location='{{ route('manager.teams.show', 'backend') }}'" style="cursor: pointer;" class="hover-light">
+                            <td class="px-4 py-3 border-secondary-subtle">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M4 11a1 1 0 1 1 2 0v1a1 1 0 1 1-2 0v-1zm5-4a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0V7zM4 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0V3z"/><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/></svg>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 text-dark" style="font-size: 14px;">Backend Team</h6>
+                                        <span class="text-secondary" style="font-size: 12px;">7 Members</span>
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <input type="text" name="message" class="form-control form-control-sm" placeholder="Commit Message" required>
+                            </td>
+                            <td class="px-4 py-3 border-secondary-subtle text-dark" style="font-size: 14px;">Priya Desai</td>
+                            <td class="px-4 py-3 border-secondary-subtle">
+                                <div class="d-flex align-items-center">
+                                    <span class="text-dark font-semibold me-2" style="font-size: 14px;">76%</span>
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 76%"></div>
+                                    </div>
                                 </div>
-                                <div class="col-md-4 mt-2">
-                                    <input type="datetime-local" name="committed_at" class="form-control form-control-sm" required>
+                            </td>
+                            <td class="px-4 py-3 border-secondary-subtle text-dark" style="font-size: 14px;">78% <span class="text-secondary small">(85/109)</span></td>
+                            <td class="px-4 py-3 border-secondary-subtle text-center">
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 rounded-pill px-3 py-1">Good</span>
+                            </td>
+                        </tr>
+                        <tr onclick="window.location='{{ route('manager.teams.show', 'qa') }}'" style="cursor: pointer;" class="hover-light">
+                            <td class="px-4 py-3 border-bottom-0">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-danger bg-opacity-10 text-danger rounded-3 d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M6.854 4.646a.5.5 0 0 1 0 .708L5.207 7l1.647 1.646a.5.5 0 0 1-.708.708l-2-2a.5.5 0 0 1 0-.708l2-2a.5.5 0 0 1 .708 0zM9.146 4.646a.5.5 0 0 0 0 .708L10.793 7l-1.647 1.646a.5.5 0 0 0 .708.708l2-2a.5.5 0 0 0 0-.708l-2-2a.5.5 0 0 0-.708 0z"/></svg>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 text-dark" style="font-size: 14px;">QA & Testing</h6>
+                                        <span class="text-secondary" style="font-size: 12px;">4 Members</span>
+                                    </div>
                                 </div>
-                                <div class="col-md-8 text-end mt-2">
-                                    <button type="submit" class="btn btn-sm btn-success">Save Commit</button>
+                            </td>
+                            <td class="px-4 py-3 border-bottom-0 text-dark" style="font-size: 14px;">Amit Kumar</td>
+                            <td class="px-4 py-3 border-bottom-0">
+                                <div class="d-flex align-items-center">
+                                    <span class="text-dark font-semibold me-2" style="font-size: 14px;">94%</span>
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 94%"></div>
+                                    </div>
                                 </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Search Input -->
-                <div class="mb-3">
-                    <input type="text" id="commitsModalSearch" class="form-control form-control-sm" placeholder="Search commits by message, hash, repository, or developer..." oninput="onCommitsSearchChange(this.value)">
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
-                        <thead class="text-secondary" style="font-size: 11px;">
-                            <tr>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">#</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Commit Hash</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Repository Name</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Developer</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">GitLab ID</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Message</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Committed At</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="commitsModalTableBody">
-                            <!-- Populated via AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div id="commitsModalPagination" class="d-flex justify-content-between align-items-center mt-3 text-secondary small">
-                    <!-- Populated via AJAX -->
-                </div>
-            </div>
-            <div class="modal-footer border-top border-slate-800 p-4">
-                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+                            </td>
+                            <td class="px-4 py-3 border-bottom-0 text-dark" style="font-size: 14px;">98% <span class="text-secondary small">(210/215)</span></td>
+                            <td class="px-4 py-3 border-bottom-0 text-center">
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-3 py-1">Exceptional</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Meetings Modal -->
-<div class="modal fade" id="meetingsModal" tabindex="-1" aria-labelledby="meetingsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content text-white" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
-                <h5 class="modal-title font-outfit text-white" id="meetingsModalLabel">Scheduled Meetings Ledger</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Attendance & Active Projects Row -->
+<div class="row g-4">
+    <!-- Attendance Overview -->
+    <div class="col-lg-6">
+        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="font-outfit text-dark mb-0">Attendance Overview ({{ $rangeLabel }})</h5>
+                <a href="{{ route('manager.attendance-registry') }}" class="small text-primary text-decoration-none">View All</a>
             </div>
-            <div class="modal-body p-4">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-hover-bg: rgba(255, 255, 255, 0.02); --bs-table-border-color: #1e293b;">
-                        <thead class="text-secondary" style="font-size: 11px;">
-                            <tr>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">#</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Meeting Title</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Date</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Time</th>
-                                <th scope="col" class="pb-3 uppercase font-semibold tracking-wider">Group / Team Members</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($allMeetings as $meeting)
-                                <tr>
-                                    <td class="py-3 text-secondary">{{ $loop->iteration }}</td>
-                                    <td class="py-3 font-semibold text-slate-100">{{ $meeting->title }}</td>
-                                    <td class="py-3 text-slate-300">{{ \Carbon\Carbon::parse($meeting->meeting_date)->format('M d, Y') }}</td>
-                                    <td class="py-3 text-slate-300">{{ $meeting->meeting_time ? \Carbon\Carbon::parse($meeting->meeting_time)->format('h:i A') : '—' }}</td>
-                                    <td class="py-3">
-                                        <div class="d-flex flex-wrap gap-1">
-                                            @forelse($meeting->teamMembers as $m)
-                                                <span class="badge bg-indigo-500 bg-opacity-10 text-indigo-400 border border-indigo-500 border-opacity-20 px-2 py-1" style="font-size: 10px;">{{ $m->name }}</span>
-                                            @empty
-                                                <span class="text-secondary small italic">All Members / General</span>
-                                            @endforelse
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center py-4 text-secondary italic">No meetings scheduled in log.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+            <div class="d-flex justify-content-around align-items-center mb-3">
+                <div class="text-center">
+                    <h3 class="text-success mb-0 font-outfit">{{ $presentPct }}%</h3>
+                    <span class="small text-secondary">Present</span>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-warning mb-0 font-outfit">{{ $latePct }}%</h3>
+                    <span class="small text-secondary">Late</span>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-danger mb-0 font-outfit">{{ $absentPct }}%</h3>
+                    <span class="small text-secondary">Absent</span>
                 </div>
             </div>
-            <div class="modal-footer border-top border-slate-800 p-4">
-                <button type="button" class="btn btn-secondary rounded-3" data-bs-dismiss="modal">Close</button>
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: {{ $presentPct }}%"></div>
+                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ $latePct }}%"></div>
+                <div class="progress-bar bg-danger" role="progressbar" style="width: {{ $absentPct }}%"></div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Latest Report Narrative -->
+    <div class="col-lg-6">
+        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100">
+            <h5 class="font-outfit text-dark mb-3">Latest AI Performance Report</h5>
+            @if($latestReport)
+                <p class="text-secondary small mb-0" style="line-height: 1.6; max-height: 120px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;">
+                    {{ strip_tags($latestReport->full_report) }}
+                </p>
+                <div class="mt-3">
+                    <a href="{{ route('manager.report-detail', $latestReport->id) }}" class="btn btn-sm btn-outline-primary">Read Full Report</a>
+                </div>
+            @else
+                <p class="text-secondary small">No AI reports generated yet.</p>
+                <form method="POST" action="{{ route('manager.generate') }}">
+                    @csrf
+                    <input type="hidden" name="date" value="{{ date('Y-m-d') }}">
+                    <button type="submit" class="btn btn-sm btn-primary">Generate Report Now</button>
+                </form>
+            @endif
         </div>
     </div>
 </div>
 
-<!-- Employee AI Report Modal -->
-<div class="modal fade" id="employeeReportModal" tabindex="-1" aria-labelledby="employeeReportModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content text-white shadow-2xl" style="background-color: #0b0f19; border: 1px solid #334155; border-radius: 20px;">
-            <div class="modal-header border-bottom border-slate-800 p-4">
-                <div>
-                    <h5 class="modal-title font-outfit text-white mb-0.5" id="employeeReportModalLabel">Employee Evening AI Audit</h5>
-                    <span id="employee-report-meta" class="text-secondary small">Generating report...</span>
+<!-- Productivity Calendar Modal -->
+<div class="modal fade" id="productivityCalendarModal" tabindex="-1" aria-labelledby="productivityCalendarModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+        <h5 class="modal-title font-outfit text-dark" id="productivityCalendarModalLabel">Monthly Productivity Calendar</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+            <h6 class="mb-0 text-secondary font-semibold d-none d-md-block">Viewing Month:</h6>
+            <form action="{{ route('manager.dashboard') }}" method="GET" class="d-flex align-items-center">
+                @php
+                    $prevMonth = \Carbon\Carbon::parse($targetDate)->subMonth()->format('Y-m-d');
+                    $nextMonth = \Carbon\Carbon::parse($targetDate)->addMonth()->format('Y-m-d');
+                @endphp
+                <div class="d-flex align-items-center bg-light rounded-2 px-2 border border-secondary-subtle">
+                    <a href="{{ route('manager.dashboard', ['date' => $prevMonth, 'show_calendar' => 1]) }}" class="btn btn-sm btn-link text-secondary text-decoration-none px-2"><i class="bi bi-chevron-left"></i></a>
+                    <span class="text-secondary small me-1"><i class="bi bi-calendar-event"></i></span>
+                    <input type="month" class="form-control form-control-sm border-0 bg-transparent text-dark shadow-none px-1" value="{{ \Carbon\Carbon::parse($targetDate)->format('Y-m') }}" onchange="document.getElementById('modalDateInput').value = this.value + '-01'; this.form.submit()">
+                    <a href="{{ route('manager.dashboard', ['date' => $nextMonth, 'show_calendar' => 1]) }}" class="btn btn-sm btn-link text-secondary text-decoration-none px-2"><i class="bi bi-chevron-right"></i></a>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <input type="hidden" name="date" id="modalDateInput" value="{{ $targetDate }}">
+                <input type="hidden" name="show_calendar" value="1">
+            </form>
+        </div>
+        
+        <div class="calendar-wrapper">
+            <div class="d-grid text-center font-semibold text-secondary small mb-2" style="grid-template-columns: repeat(7, 1fr);">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
             </div>
-            <div class="modal-body p-4" style="background-color: #0f172a; min-height: 250px;">
-                <div id="employee-report-spinner" class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="text-secondary mt-3 mb-0">Analyzing today's activity log...</p>
-                </div>
-                <div id="employee-report-content" class="text-slate-300 small d-none" style="line-height: 1.625;">
-                    <!-- Rendered markdown content goes here -->
-                </div>
-            </div>
-            <div class="modal-footer border-top border-slate-800 p-4">
-                <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Close</button>
+            <div class="d-grid" style="grid-template-columns: repeat(7, 1fr); gap: 10px;">
+                @php
+                    $parsedDate = \Carbon\Carbon::parse($targetDate);
+                    $startOfMonth = $parsedDate->copy()->startOfMonth();
+                    $endOfMonth = $parsedDate->copy()->endOfMonth();
+                    $startDayOfWeek = $startOfMonth->dayOfWeek; // 0 (Sun) to 6 (Sat)
+                    $daysInMonth = $endOfMonth->day;
+                    
+                    // Fill empty slots before start of month
+                    for ($i = 0; $i < $startDayOfWeek; $i++) {
+                        echo '<div class="p-3 rounded-3" style="background-color: #f8fafc; border: 1px dashed #e2e8f0;"></div>';
+                    }
+                    
+                    for ($day = 1; $day <= $daysInMonth; $day++) {
+                        $currentDateStr = $parsedDate->copy()->day($day)->format('Y-m-d');
+                        $hasReport = isset($monthReports) && isset($monthReports[$currentDateStr]);
+                        $score = $hasReport ? $monthReports[$currentDateStr]->team_productivity : null;
+                        
+                        $bgColor = '#f8fafc';
+                        $textColor = '#64748b';
+                        $scoreHtml = '<span class="small opacity-50">-</span>';
+                        $borderColor = '#e2e8f0';
+                        
+                        if ($hasReport) {
+                            if ($score >= 80) {
+                                $bgColor = '#dcfce7';
+                                $textColor = '#166534';
+                                $borderColor = '#bbf7d0';
+                            } elseif ($score >= 60) {
+                                $bgColor = '#fef9c3';
+                                $textColor = '#854d0e';
+                                $borderColor = '#fef08a';
+                            } else {
+                                $bgColor = '#fee2e2';
+                                $textColor = '#991b1b';
+                                $borderColor = '#fecaca';
+                            }
+                            $scoreHtml = '<span class="font-bold" style="font-size: 1.1rem;">'.$score.'%</span>';
+                        }
+                        
+                        $isTargetDate = ($currentDateStr === $targetDate);
+                        $targetStyle = $isTargetDate ? 'border: 2px solid var(--accent-color);' : 'border: 1px solid '.$borderColor.';';
+                        
+                        echo '<a href="'.route('manager.dashboard', ['date' => $currentDateStr]).'" class="text-decoration-none p-2 rounded-3 text-center position-relative d-flex flex-column justify-content-between hover-card" style="min-height: 80px; background-color: '.$bgColor.'; '.$targetStyle.' transition: all 0.2s;">';
+                        echo '<div class="text-end small font-semibold mb-1" style="color: '.$textColor.';">'.$day.'</div>';
+                        echo '<div style="color: '.$textColor.';">'.$scoreHtml.'</div>';
+                        echo '</a>';
+                    }
+                    
+                    // Fill empty slots after end of month
+                    $endDayOfWeek = $endOfMonth->dayOfWeek; // 0 to 6
+                    $remainingSlots = 6 - $endDayOfWeek;
+                    for ($i = 0; $i < $remainingSlots; $i++) {
+                        echo '<div class="p-3 rounded-3" style="background-color: #f8fafc; border: 1px dashed #e2e8f0;"></div>';
+                    }
+                @endphp
             </div>
         </div>
+        
+        <div class="mt-4 d-flex justify-content-center gap-4 text-secondary small">
+            <div class="d-flex align-items-center"><span class="d-inline-block rounded-circle me-2" style="width: 10px; height: 10px; background-color: #dcfce7; border: 1px solid #bbf7d0;"></span> 80%+ (Excellent)</div>
+            <div class="d-flex align-items-center"><span class="d-inline-block rounded-circle me-2" style="width: 10px; height: 10px; background-color: #fef9c3; border: 1px solid #fef08a;"></span> 60-79% (Average)</div>
+            <div class="d-flex align-items-center"><span class="d-inline-block rounded-circle me-2" style="width: 10px; height: 10px; background-color: #fee2e2; border: 1px solid #fecaca;"></span> < 60% (Needs Attention)</div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    function generateReport(event, btn) {
-        event.preventDefault();
-        btn.disabled = true;
+    let trendChartInstance = null;
+    let workloadChartInstance = null;
 
-        const textSpan = document.getElementById('generate-text');
-        const iconContainer = document.getElementById('generate-icon-container');
-
-        textSpan.innerText = "Analyzing team data...";
-        iconContainer.innerHTML = `
-            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        `;
-
-        const form = document.getElementById('generate-form');
-        const formData = new FormData(form);
-
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            }
-            return response.json().then(data => {
-                throw new Error(data.message || 'Server error occurred.');
-            });
-        })
-        .then(data => {
-            // Successfully generated report, reload the page
-            window.location.reload();
-        })
-        .catch(error => {
-            console.error('Error generating report:', error);
-            alert('Failed to generate report: ' + error.message);
-            btn.disabled = false;
-            textSpan.innerText = "Generate Evening Report";
-            iconContainer.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-                </svg>
-            `;
-        });
-    }
-
-    // Toggle view/edit mode for inline table fields
-    function toggleEditMode(rowId, type) {
-        const row = document.getElementById(`${type}-row-${rowId}`);
-        if (!row) return;
-        row.querySelectorAll('.view-mode').forEach(el => el.classList.toggle('d-none'));
-        row.querySelectorAll('.edit-mode').forEach(el => el.classList.toggle('d-none'));
-    }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script>
     document.addEventListener('DOMContentLoaded', function() {
-        const narrativeContent = document.getElementById('narrative-content');
-        if (narrativeContent && typeof marked !== 'undefined') {
-            narrativeContent.innerHTML = marked.parse(narrativeContent.getAttribute('data-raw-text'));
+        // Prepare data for the Trend Chart
+        @php
+            $dates = [];
+            $scores = [];
+            // Assuming $reports is ordered by latest first, we reverse it for the chart
+            $orderedReports = $reports->reverse()->values();
+            foreach($orderedReports as $r) {
+                $dates[] = $r->report_date->format('M d');
+                $scores[] = $r->team_productivity;
+            }
+        @endphp
+
+        const trendCtx = document.getElementById('performanceTrendChart').getContext('2d');
+        trendChartInstance = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($dates) !!},
+                datasets: [{
+                    label: 'Productivity Score',
+                    data: {!! json_encode($scores) !!},
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#3b82f6',
+                    pointBorderWidth: 2,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { borderDash: [5, 5], color: '#e2e8f0' },
+                        ticks: { color: '#64748b' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#64748b' }
+                    }
+                }
+            }
+        });
+
+        // Prepare data for Doughnut Chart (Mocked data for now, ideally fetched from DB)
+        const workloadCtx = document.getElementById('workloadChart').getContext('2d');
+        workloadChartInstance = new Chart(workloadCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {!! json_encode($workloadLabelsInit) !!},
+                datasets: [{
+                    data: {!! json_encode($workloadDataInit) !!},
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#8b5cf6'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { padding: 20, usePointStyle: true, color: '#64748b' }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // Event listener for filter form submit (specifically for custom range Apply button)
+        const filterForm = document.getElementById('filterForm');
+        if (filterForm) {
+            filterForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                fetchDashboardData();
+            });
         }
     });
 
-    // Show AI report for employee
-    function showEmployeeReport(memberId, memberName) {
-        const modalEl = document.getElementById('employeeReportModal');
-        const modal = new bootstrap.Modal(modalEl);
-        
-        // Reset/Update Modal Header Title
-        document.getElementById('employeeReportModalLabel').innerText = 'Employee Evening AI Audit';
-        
-        const metaEl = document.getElementById('employee-report-meta');
-        const spinnerEl = document.getElementById('employee-report-spinner');
-        const contentEl = document.getElementById('employee-report-content');
-        
-        metaEl.innerText = `${memberName} — Preparing report...`;
-        spinnerEl.classList.remove('d-none');
-        contentEl.classList.add('d-none');
-        contentEl.innerHTML = '';
-        
-        modal.show();
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const filterDate = urlParams.get('date') || urlParams.get('filter_date') || '';
-        const targetUrl = `{{ url('/manager-agent/employee-report') }}/${memberId}${filterDate ? '?date=' + filterDate : ''}`;
-        
-        fetch(targetUrl, {
-            method: 'GET',
+    @if(request('show_calendar'))
+    document.addEventListener('DOMContentLoaded', function() {
+        var myModal = new bootstrap.Modal(document.getElementById('productivityCalendarModal'), {
+            keyboard: true
+        });
+        myModal.show();
+    });
+    @endif
+
+    function toggleCustomDates() {
+        const select = document.getElementById('rangeType');
+        const customContainer = document.getElementById('customDateContainer');
+        if (select.value === 'custom_range') {
+            customContainer.style.setProperty('display', 'flex', 'important');
+        } else {
+            customContainer.style.setProperty('display', 'none', 'important');
+            fetchDashboardData();
+        }
+    }
+
+    function fetchDashboardData() {
+        // Show Skeleton Loaders
+        document.querySelectorAll('.kpi-card').forEach(el => el.classList.add('skeleton'));
+        if (document.getElementById('performanceTrendChart')) {
+            document.getElementById('performanceTrendChart').parentElement.classList.add('skeleton');
+        }
+
+        const form = document.getElementById('filterForm');
+        const url = new URL(form.action);
+        const params = new URLSearchParams(new FormData(form));
+
+        fetch(`${url.pathname}?${params.toString()}`, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
                 'Accept': 'application/json'
             }
         })
         .then(response => {
-            if (response.ok) {
-                return response.json();
-            }
-            return response.json().then(data => {
-                throw new Error(data.message || 'Failed to fetch employee report.');
-            });
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
         })
         .then(data => {
-            metaEl.innerText = `${data.name} (${data.role}) — Report for ${data.date}`;
-            spinnerEl.classList.add('d-none');
-            contentEl.classList.remove('d-none');
-            
-            // Render using marked library
-            if (typeof marked !== 'undefined') {
-                contentEl.innerHTML = marked.parse(data.report);
+            if(data.success) {
+                // Update Labels
+                const tasksLabel = document.getElementById('label-tasks-completed');
+                if(tasksLabel) tasksLabel.innerText = `Tasks Completed (${data.rangeLabel})`;
+                
+                const gitLabel = document.getElementById('label-git-commits');
+                if(gitLabel) gitLabel.innerText = `Git Commits (${data.rangeLabel})`;
+
+                // Animate KPI Numbers
+                animateValue('kpi-org-performance', data.orgPerformance, true);
+                animateValue('kpi-total-employees', data.totalMembers, false);
+                
+                const tasksEl = document.getElementById('kpi-tasks-completed');
+                if(tasksEl) tasksEl.innerText = `${data.completedTasksCount} / ${data.totalTasks}`;
+                
+                const progressEl = document.getElementById('kpi-tasks-progress');
+                if(progressEl) progressEl.style.width = `${data.taskPct}%`;
+                
+                animateValue('kpi-git-commits', data.totalCommits, false);
+
+                // Update Chart Data
+                if (trendChartInstance && data.chartData) {
+                    trendChartInstance.data.labels = data.chartData.labels;
+                    trendChartInstance.data.datasets[0].data = data.chartData.scores;
+                    trendChartInstance.update();
+                }
+
+                if (workloadChartInstance && data.workload) {
+                    workloadChartInstance.data.labels = data.workload.labels;
+                    workloadChartInstance.data.datasets[0].data = data.workload.data;
+                    workloadChartInstance.update();
+                }
             } else {
-                contentEl.innerHTML = data.report.replace(/\n/g, '<br>');
+                throw new Error(data.message || 'Error parsing data');
             }
         })
         .catch(error => {
-            console.error('Error fetching employee report:', error);
-            metaEl.innerText = `${memberName} — Generation Failed`;
-            spinnerEl.classList.add('d-none');
-            contentEl.classList.remove('d-none');
-            contentEl.innerHTML = `
-                <div class="alert alert-danger border-0 p-3 text-white" style="background-color: rgba(244, 63, 94, 0.15); border-left: 4px solid #f43f5e !important;">
-                    <strong>Error:</strong> ${error.message}
-                </div>
-            `;
+            console.error('Error fetching dashboard data:', error);
+            showToast('Failed to load dashboard data. Please try again.');
+        })
+        .finally(() => {
+            // Remove Skeleton Loaders
+            setTimeout(() => {
+                document.querySelectorAll('.kpi-card').forEach(el => el.classList.remove('skeleton'));
+                if (document.getElementById('performanceTrendChart')) {
+                    document.getElementById('performanceTrendChart').parentElement.classList.remove('skeleton');
+                }
+            }, 300); // Slight delay for visual smoothness
         });
     }
 
-    // Show AI report for group
-    function showGroupReport(gId, groupName) {
-        const modalEl = document.getElementById('employeeReportModal');
-        const modal = new bootstrap.Modal(modalEl);
+    function animateValue(id, end, isPercentage) {
+        const obj = document.getElementById(id);
+        if (!obj) return;
         
-        // Reset/Update Modal Header Title
-        document.getElementById('employeeReportModalLabel').innerText = 'Group Evening AI Audit';
-        
-        const metaEl = document.getElementById('employee-report-meta');
-        const spinnerEl = document.getElementById('employee-report-spinner');
-        const contentEl = document.getElementById('employee-report-content');
-        
-        metaEl.innerText = `${groupName} — Preparing group report...`;
-        spinnerEl.classList.remove('d-none');
-        contentEl.classList.add('d-none');
-        contentEl.innerHTML = '';
-        
-        modal.show();
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const filterDate = urlParams.get('date') || urlParams.get('filter_date') || '';
-        const targetUrl = `{{ url('/manager-agent/group-report') }}?ids=${gId}${filterDate ? '&date=' + filterDate : ''}`;
-        
-        fetch(targetUrl, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            }
-            return response.json().then(data => {
-                throw new Error(data.message || 'Failed to fetch group report.');
-            });
-        })
-        .then(data => {
-            metaEl.innerText = `${data.group_name} — Report for ${data.date}`;
-            spinnerEl.classList.add('d-none');
-            contentEl.classList.remove('d-none');
-            
-            // Render using marked library
-            if (typeof marked !== 'undefined') {
-                contentEl.innerHTML = marked.parse(data.report);
-            } else {
-                contentEl.innerHTML = data.report.replace(/\n/g, '<br>');
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching group report:', error);
-            metaEl.innerText = `${groupName} — Generation Failed`;
-            spinnerEl.classList.add('d-none');
-            contentEl.classList.remove('d-none');
-            contentEl.innerHTML = `
-                <div class="alert alert-danger border-0 p-3 text-white" style="background-color: rgba(244, 63, 94, 0.15); border-left: 4px solid #f43f5e !important;">
-                    <strong>Error:</strong> ${error.message}
-                </div>
-            `;
-        });
-    }
+        let endStr = String(end).replace('%','');
+        let endVal = parseFloat(endStr);
+        let startVal = parseFloat(obj.getAttribute('data-value') || 0);
 
-    // AJAX Pagination and search for dashboard modals
-    let membersSearch = '';
-    let tasksSearch = '';
-    let commitsSearch = '';
-
-    document.getElementById('membersModal').addEventListener('shown.bs.modal', function () {
-        loadMembers(1);
-    });
-    document.getElementById('tasksModal').addEventListener('shown.bs.modal', function () {
-        loadTasks(1);
-    });
-    document.getElementById('commitsModal').addEventListener('shown.bs.modal', function () {
-        loadCommits(1);
-    });
-
-    let searchTimeout;
-    function onMembersSearchChange(value) {
-        membersSearch = value;
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => loadMembers(1), 300);
-    }
-    function onTasksSearchChange(value) {
-        tasksSearch = value;
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => loadTasks(1), 300);
-    }
-    function onCommitsSearchChange(value) {
-        commitsSearch = value;
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => loadCommits(1), 300);
-    }
-
-    function loadMembers(page) {
-        const tbody = document.getElementById('membersModalTableBody');
-        const pagEl = document.getElementById('membersModalPagination');
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...</td></tr>';
-        
-        fetch(`{{ url('/manager-agent/api/members') }}?page=${page}&search=${encodeURIComponent(membersSearch)}`)
-            .then(res => res.json())
-            .then(res => {
-                let html = '';
-                res.data.forEach((member, index) => {
-                    const i = (res.current_page - 1) * 10 + index + 1;
-                    html += `
-                        <tr id="member-row-${member.id}">
-                            <td class="py-3 text-secondary">${i}</td>
-                            <td class="py-3"><span class="font-semibold text-slate-100">${member.name}</span></td>
-                            <td class="py-3"><span class="text-slate-300">${member.role}</span></td>
-                            <td class="py-3"><span class="text-slate-400">${member.email}</span></td>
-                            <td class="py-3"><span class="font-mono text-purple-400">${member.gitlab_id || 'N/A'}</span></td>
-                            <td class="py-3 text-end">
-                                <a href="{{ route('manager.employees.index') }}?search=${encodeURIComponent(member.email)}" class="btn btn-xs btn-outline-info">Manage</a>
-                            </td>
-                        </tr>
-                    `;
-                });
-                if (res.data.length === 0) {
-                    html = '<tr><td colspan="6" class="text-center py-4 text-secondary italic">No team members found.</td></tr>';
-                }
-                tbody.innerHTML = html;
-                renderPagination(pagEl, res.current_page, res.last_page, 'loadMembers');
-            });
-    }
-
-    function loadTasks(page) {
-        const tbody = document.getElementById('tasksModalTableBody');
-        const pagEl = document.getElementById('tasksModalPagination');
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...</td></tr>';
-
-        fetch(`{{ url('/manager-agent/api/tasks') }}?page=${page}&search=${encodeURIComponent(tasksSearch)}`)
-            .then(res => res.json())
-            .then(res => {
-                let html = '';
-                res.data.forEach((task, index) => {
-                    const i = (res.current_page - 1) * 10 + index + 1;
-                    let badge = '';
-                    if (task.status === 'completed') {
-                        badge = '<span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Completed</span>';
-                    } else if (task.status === 'in_progress') {
-                        badge = '<span class="badge rounded-pill bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 px-2.5 py-1" style="font-size: 10px;">In Progress</span>';
-                    } else {
-                        badge = '<span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20 px-2.5 py-1" style="font-size: 10px;">Pending</span>';
-                    }
-                    html += `
-                        <tr id="task-row-${task.id}">
-                            <td class="py-3 text-secondary">${i}</td>
-                            <td class="py-3"><span class="font-semibold text-slate-100">${task.title}</span></td>
-                            <td class="py-3"><span class="badge bg-indigo-500 bg-opacity-10 text-indigo-400 border border-indigo-500 border-opacity-20 px-2 py-0.5" style="font-size: 10px;">${task.member_name}</span></td>
-                            <td class="py-3">${badge}</td>
-                            <td class="py-3 text-slate-400">${task.due_date}</td>
-                            <td class="py-3 text-end">
-                                <a href="{{ route('manager.task-entry') }}?search=${encodeURIComponent(task.title)}" class="btn btn-xs btn-outline-info">Manage</a>
-                            </td>
-                        </tr>
-                    `;
-                });
-                if (res.data.length === 0) {
-                    html = '<tr><td colspan="6" class="text-center py-4 text-secondary italic">No tasks found.</td></tr>';
-                }
-                tbody.innerHTML = html;
-                renderPagination(pagEl, res.current_page, res.last_page, 'loadTasks');
-            });
-    }
-
-    function loadCommits(page) {
-        const tbody = document.getElementById('commitsModalTableBody');
-        const pagEl = document.getElementById('commitsModalPagination');
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...</td></tr>';
-
-        fetch(`{{ url('/manager-agent/api/commits') }}?page=${page}&search=${encodeURIComponent(commitsSearch)}`)
-            .then(res => res.json())
-            .then(res => {
-                let html = '';
-                res.data.forEach((commit, index) => {
-                    const i = (res.current_page - 1) * 10 + index + 1;
-                    html += `
-                        <tr id="commit-row-${commit.id}">
-                            <td class="py-3 text-secondary">${i}</td>
-                            <td class="py-3 font-mono text-primary" style="font-size: 13px;">${commit.commit_hash.substring(0, 7)}</td>
-                            <td class="py-3 text-slate-300 font-semibold">${commit.repository_name || 'N/A'}</td>
-                            <td class="py-3 text-slate-300">${commit.member_name}</td>
-                            <td class="py-3 font-mono text-purple-400" style="font-size: 12px;">git_user_${commit.team_member_id}</td>
-                            <td class="py-3 text-slate-100" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${commit.message}</td>
-                            <td class="py-3 text-slate-400" style="font-size: 12px;">${commit.committed_at}</td>
-                            <td class="py-3 text-end">
-                                <a href="{{ route('manager.commits.index') }}?search=${encodeURIComponent(commit.commit_hash)}" class="btn btn-xs btn-outline-info">Manage</a>
-                            </td>
-                        </tr>
-                    `;
-                });
-                if (res.data.length === 0) {
-                    html = '<tr><td colspan="8" class="text-center py-4 text-secondary italic">No commits found.</td></tr>';
-                }
-                tbody.innerHTML = html;
-                renderPagination(pagEl, res.current_page, res.last_page, 'loadCommits');
-            });
-    }
-
-    function renderPagination(el, currentPage, lastPage, funcName) {
-        if (lastPage <= 1) {
-            el.innerHTML = '<div></div><div></div>';
+        if (isNaN(endVal)) {
+            obj.innerText = end; // Fallback for 'N/A'
             return;
         }
-        let html = `<div>Page ${currentPage} of ${lastPage}</div>`;
-        html += '<div class="btn-group">';
-        if (currentPage > 1) {
-            html += `<button type="button" class="btn btn-xs btn-outline-secondary" onclick="${funcName}(${currentPage - 1})">Prev</button>`;
-        } else {
-            html += `<button type="button" class="btn btn-xs btn-outline-secondary" disabled>Prev</button>`;
+
+        const duration = 800; // ms
+        let startTimestamp = null;
+        
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const current = Math.floor(progress * (endVal - startVal) + startVal);
+            
+            obj.innerText = current + (isPercentage ? '%' : '');
+            
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                obj.setAttribute('data-value', endVal);
+                // Ensure final value is exact (e.g. keeping decimals if present)
+                let finalVal = endVal % 1 !== 0 ? endVal.toFixed(1) : endVal;
+                obj.innerText = finalVal + (isPercentage ? '%' : '');
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+
+    function showToast(message) {
+        const toastHtml = `
+            <div class="toast align-items-center text-white bg-danger border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+            </div>`;
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(container);
         }
-        if (currentPage < lastPage) {
-            html += `<button type="button" class="btn btn-xs btn-outline-secondary" onclick="${funcName}(${currentPage + 1})">Next</button>`;
-        } else {
-            html += `<button type="button" class="btn btn-xs btn-outline-secondary" disabled>Next</button>`;
-        }
-        html += '</div>';
-        el.innerHTML = html;
+        container.innerHTML = toastHtml;
+        setTimeout(() => { container.innerHTML = ''; }, 4000);
     }
 </script>
 @endsection

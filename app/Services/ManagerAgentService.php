@@ -18,13 +18,13 @@ class ManagerAgentService
     /**
      * Fetch tasks with team member names for given date, capped to prevent memory and token overflow.
      */
-    public function readTasks(string $date, int $limit = 5): array
+    public function readTasks(Carbon $startDate, Carbon $endDate, int $limit = 5): array
     {
-        $total = Task::whereDate('due_date', $date)->count();
-        $completed = Task::whereDate('due_date', $date)->where('status', 'completed')->count();
+        $total = Task::whereBetween('due_date', [$startDate->toDateString(), $endDate->toDateString()])->count();
+        $completed = Task::whereBetween('due_date', [$startDate->toDateString(), $endDate->toDateString()])->where('status', 'completed')->count();
         
         $items = Task::with('teamMember')
-            ->whereDate('due_date', $date)
+            ->whereBetween('due_date', [$startDate->toDateString(), $endDate->toDateString()])
             ->latest('id')
             ->limit($limit)
             ->get()
@@ -49,12 +49,12 @@ class ManagerAgentService
     /**
      * Fetch commits with team member names for given date, capped to prevent memory and token overflow.
      */
-    public function readGitCommits(string $date, int $limit = 5): array
+    public function readGitCommits(Carbon $startDate, Carbon $endDate, int $limit = 5): array
     {
-        $total = GitCommit::whereDate('committed_at', $date)->count();
+        $total = GitCommit::whereBetween('committed_at', [$startDate->startOfDay(), $endDate->endOfDay()])->count();
 
         $items = GitCommit::with('teamMember')
-            ->whereDate('committed_at', $date)
+            ->whereBetween('committed_at', [$startDate->startOfDay(), $endDate->endOfDay()])
             ->latest('id')
             ->limit($limit)
             ->get()
@@ -79,15 +79,15 @@ class ManagerAgentService
     /**
      * Fetch attendance with team member names for given date, capped to prevent memory and token overflow.
      */
-    public function readAttendance(string $date, int $limit = 5): array
+    public function readAttendance(Carbon $startDate, Carbon $endDate, int $limit = 5): array
     {
-        $present = AttendanceLog::whereDate('date', $date)->where('status', 'present')->count();
-        $late = AttendanceLog::whereDate('date', $date)->where('status', 'late')->count();
-        $absent = AttendanceLog::whereDate('date', $date)->where('status', 'absent')->count();
+        $present = AttendanceLog::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])->where('status', 'present')->count();
+        $late = AttendanceLog::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])->where('status', 'late')->count();
+        $absent = AttendanceLog::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])->where('status', 'absent')->count();
 
         // Get late/absent logs first (exceptions) as they are most important for managerial action
         $items = AttendanceLog::with('teamMember')
-            ->whereDate('date', $date)
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
             ->orderByRaw("CASE WHEN status = 'absent' THEN 1 WHEN status = 'late' THEN 2 ELSE 3 END")
             ->limit($limit)
             ->get()
@@ -112,9 +112,9 @@ class ManagerAgentService
     /**
      * Fetch meeting notes for given date.
      */
-    public function readMeetingNotes(string $date): array
+    public function readMeetingNotes(Carbon $startDate, Carbon $endDate): array
     {
-        return MeetingNote::whereDate('meeting_date', $date)
+        return MeetingNote::whereBetween('meeting_date', [$startDate->toDateString(), $endDate->toDateString()])
             ->get()
             ->map(fn($note) => [
                 'id' => $note->id,
@@ -128,7 +128,7 @@ class ManagerAgentService
     /**
      * Send all data to LLM API (Ollama).
      */
-    public function analyzeWithLLM(array $tasks, array $commits, array $attendance, array $meetings): array
+    public function analyzeWithLLM(array $tasks, array $commits, array $attendance, array $meetings, string $reportType = 'daily'): array
     {
         $taskItems = $tasks['sample_items'] ?? [];
         $commitItems = $commits['sample_items'] ?? [];
@@ -189,18 +189,28 @@ class ManagerAgentService
 
         $dataJson = json_encode($dataContext, JSON_PRETTY_PRINT);
 
-        $prompt = "You are the Manager Agent, a production-grade AI system designed to analyze daily team activities, git commits, attendance logs, tasks, meeting notes, and historical performance reports.\n"
-            . "Your goal is to act as an objective, strategic manager. Evaluate the daily team metrics and produce a comprehensive, professional, and structured report.\n"
+        $prompt = "You are the Manager Agent, a production-grade AI system designed to analyze {$reportType} team activities, git commits, attendance logs, tasks, meeting notes, and historical performance reports.\n"
+            . "Your goal is to act as an objective, strategic manager. Evaluate the {$reportType} team metrics and produce a comprehensive, professional, and structured report.\n"
             . "You must output ONLY a valid JSON object matching the requested schema. Do not output any Markdown wrapping, code block markers, or additional text. Ensure all JSON fields are populated correctly.\n\n"
             . "Requested JSON Schema:\n"
             . "{\n"
-            . "  \"team_productivity\": (integer between 0 and 100, representing overall team productivity for the day),\n"
-            . "  \"top_performers\": (array of strings, names of the team members who showed exceptional contribution today),\n"
-            . "  \"attention_required\": (array of strings, listing members or issues needing direct managerial intervention, e.g. \"Shipra (Absent)\", \"Rahul (Overdue task: optimize queries)\"),\n"
+            . "  \"team_productivity\": (integer between 0 and 100, representing overall team productivity for the {$reportType}),\n"
+            . "  \"top_performers\": (array of strings, names of the team members who showed exceptional contribution),\n"
+            . "  \"attention_required\": (array of strings, listing members or issues needing direct managerial intervention),\n"
             . "  \"risks\": (array of strings, detailing any project risks, blockers, delayed timelines, or resource shortages),\n"
-            . "  \"full_report\": (string, a VERY SHORT markdown executive report. Mandatory: mention the calculated team_productivity percentage score. Keep it extremely brief, under 4 sentences total to save generation time.)\n"
+            . "  \"workload_analysis\": {\n"
+            . "      \"imbalanced_members\": (array of strings, members with too much or too little work),\n"
+            . "      \"resource_allocation_recommendation\": (string, advice on how to redistribute work)\n"
+            . "  },\n"
+            . "  \"recommendations\": {\n"
+            . "      \"promotion_recommendations\": (array of strings, names and reasons for potential promotion),\n"
+            . "      \"reward_recommendations\": (array of strings, names and reasons for bonuses/rewards),\n"
+            . "      \"training_recommendations\": (array of strings, names and specific areas needing training),\n"
+            . "      \"hiring_recommendations\": (string, specific roles or skills the team currently lacks based on workload)\n"
+            . "  },\n"
+            . "  \"full_report\": (string, a VERY SHORT markdown executive report. Mandatory: mention the calculated team_productivity percentage score. Keep it extremely brief.)\n"
             . "}\n\n"
-            . "Analyze the following team activities context and generate a daily report matching the schema exactly:\n\n"
+            . "Analyze the following team activities context and generate a {$reportType} report matching the schema exactly:\n\n"
             . "Context:\n{$dataJson}";
 
         $responseText = $this->callLLM($prompt, true);
@@ -222,7 +232,7 @@ class ManagerAgentService
         }
 
         // Validate required schema elements
-        $requiredKeys = ['team_productivity', 'top_performers', 'attention_required', 'risks', 'full_report'];
+        $requiredKeys = ['team_productivity', 'top_performers', 'attention_required', 'risks', 'full_report', 'workload_analysis', 'recommendations'];
         foreach ($requiredKeys as $key) {
             if (!array_key_exists($key, $decoded)) {
                 throw new \Exception("Missing required key '{$key}' in LLM JSON response.");
@@ -394,39 +404,63 @@ class ManagerAgentService
     }
 
     /**
-     * Generate daily report, save, and return.
+     * Generate report (daily, weekly, monthly, executive), save, and return.
      */
-    public function generateDailyReport(?string $date = null): array
+    public function generateReport(string $type = 'daily', ?string $startDateStr = null, ?string $endDateStr = null): array
     {
-        @set_time_limit(60);
-        @ini_set('max_execution_time', '60');
+        @set_time_limit(120);
+        @ini_set('max_execution_time', '120');
 
-        $targetDate = $date ?: Carbon::today()->toDateString();
+        $endDate = $endDateStr ? Carbon::parse($endDateStr) : Carbon::today();
+        
+        switch ($type) {
+            case 'weekly':
+                $startDate = $startDateStr ? Carbon::parse($startDateStr) : $endDate->copy()->subDays(7);
+                break;
+            case 'monthly':
+                $startDate = $startDateStr ? Carbon::parse($startDateStr) : $endDate->copy()->subDays(30);
+                break;
+            case 'executive':
+                $startDate = $startDateStr ? Carbon::parse($startDateStr) : clone $endDate;
+                break;
+            case 'daily':
+            default:
+                $startDate = clone $endDate;
+                break;
+        }
 
-        // 1. Fetch all data for the given date
-        $tasks = $this->readTasks($targetDate);
-        $commits = $this->readGitCommits($targetDate);
-        $attendance = $this->readAttendance($targetDate);
-        $meetings = $this->readMeetingNotes($targetDate);
+        // 1. Fetch all data for the given date range
+        $tasks = $this->readTasks($startDate, $endDate);
+        $commits = $this->readGitCommits($startDate, $endDate);
+        $attendance = $this->readAttendance($startDate, $endDate);
+        $meetings = $this->readMeetingNotes($startDate, $endDate);
 
         try {
             // 2. Call LLM API (Ollama) to analyze
-            $reportData = $this->analyzeWithLLM($tasks, $commits, $attendance, $meetings);
+            $reportData = $this->analyzeWithLLM($tasks, $commits, $attendance, $meetings, $type);
         } catch (\Throwable $e) {
             // Log the error
             Log::error("ManagerAgentService report generation error: " . $e->getMessage());
 
             // 3. Robust Fallback in case of API failure or missing keys
-            $reportData = $this->generateFallbackReport($tasks, $commits, $attendance, $meetings, $targetDate);
+            $reportData = $this->generateFallbackReport($tasks, $commits, $attendance, $meetings, $startDate, $endDate, $type);
         }
 
         // 4. Save to performance_reports table
         $report = PerformanceReport::create([
-            'report_date' => $targetDate,
+            'report_type' => $type,
+            'report_date' => $endDate->toDateString(),
             'team_productivity' => (int) ($reportData['team_productivity'] ?? 80),
             'top_performers' => $reportData['top_performers'] ?? [],
             'attention_required' => $reportData['attention_required'] ?? [],
             'risks' => $reportData['risks'] ?? [],
+            'workload_analysis' => $reportData['workload_analysis'] ?? ['imbalanced_members' => [], 'resource_allocation_recommendation' => 'N/A'],
+            'recommendations' => $reportData['recommendations'] ?? [
+                'promotion_recommendations' => [],
+                'reward_recommendations' => [],
+                'training_recommendations' => [],
+                'hiring_recommendations' => 'N/A'
+            ],
             'full_report' => $reportData['full_report'] ?? 'Standard report could not be generated.',
         ]);
 
@@ -436,7 +470,7 @@ class ManagerAgentService
     /**
      * Generate a realistic local report when the API is unavailable.
      */
-    protected function generateFallbackReport(array $tasks, array $commits, array $attendance, array $meetings, string $date): array
+    protected function generateFallbackReport(array $tasks, array $commits, array $attendance, array $meetings, Carbon $startDate, Carbon $endDate, string $reportType): array
     {
         // 1. Calculate productivity based on attendance and task status
         $totalMembers = TeamMember::count() ?: 1;
@@ -489,7 +523,7 @@ class ManagerAgentService
         
         // Find overdue tasks in sample
         foreach ($taskItems as $task) {
-            if (in_array($task['status'], ['pending', 'in_progress']) && Carbon::parse($task['due_date'])->lt(Carbon::parse($date))) {
+            if (in_array($task['status'], ['pending', 'in_progress']) && Carbon::parse($task['due_date'])->lt($endDate)) {
                 $desc = $task['member_name'] . ' (Overdue task: ' . $task['title'] . ')';
                 if (!in_match_name($attentionList, $task['member_name'])) {
                     $attentionList[] = $desc;
@@ -518,10 +552,10 @@ class ManagerAgentService
         }
 
         // 5. Generate detailed text report
-        $formattedDate = Carbon::parse($date)->format('F j, Y');
+        $formattedDate = $endDate->format('F j, Y');
         $commitsCount = $commits['total_count'];
         
-        $fullReport = "### Manager Agent Performance Report for {$formattedDate}\n\n";
+        $fullReport = "### Manager Agent {$reportType} Performance Report for {$formattedDate}\n\n";
         $fullReport .= "#### Executive Summary\n";
         $fullReport .= "Today, the team recorded a productivity index of **{$productivity}%**. ";
         $fullReport .= "A total of **{$commitsCount} git commits** were pushed to the repository, and **{$completedTasks} / {$totalTasks} tasks** were completed.\n\n";

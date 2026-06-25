@@ -41,8 +41,10 @@ class ChatbotController extends Controller
 
         $question = $request->input('question');
         
+        $chatHistory = session('chat_history', []);
+
         // Retrieve response from the chatbot service
-        $answer = $this->chatbotService->answerQuestion($question);
+        $answer = $this->chatbotService->answerQuestion($question, $chatHistory);
 
         // Fetch existing history and append current exchange
         $chatHistory = session('chat_history', []);

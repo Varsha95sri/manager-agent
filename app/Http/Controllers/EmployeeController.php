@@ -28,8 +28,11 @@ class EmployeeController extends Controller
         }
 
         $employees = $query->orderBy('name')->paginate(10)->withQueryString();
+        
+        $departments = \App\Models\Department::orderBy('name')->get();
+        $skills = \App\Models\Skill::orderBy('category')->orderBy('name')->get();
 
-        return view('manager.employees', compact('employees'));
+        return view('manager.employees', compact('employees', 'departments', 'skills'));
     }
 
     /**
@@ -50,9 +53,21 @@ class EmployeeController extends Controller
             'task_assign_date' => 'nullable|date',
             'due_date' => 'nullable|date',
             'login_timing' => 'nullable|string|max:255',
+            'department_id' => 'nullable|exists:departments,id',
+            'skills' => 'nullable|array',
+            'skills.*.id' => 'required|exists:skills,id',
+            'skills.*.proficiency' => 'required|integer|min:1|max:5',
         ]);
 
-        TeamMember::create($validated);
+        $employee = TeamMember::create($validated);
+
+        if ($request->has('skills')) {
+            $syncData = [];
+            foreach ($request->input('skills') as $skillData) {
+                $syncData[$skillData['id']] = ['proficiency' => $skillData['proficiency']];
+            }
+            $employee->skills()->sync($syncData);
+        }
 
         return redirect()->route('manager.employees.index')->with('success', 'Employee created successfully!');
     }
@@ -75,10 +90,24 @@ class EmployeeController extends Controller
             'task_assign_date' => 'nullable|date',
             'due_date' => 'nullable|date',
             'login_timing' => 'nullable|string|max:255',
+            'department_id' => 'nullable|exists:departments,id',
+            'skills' => 'nullable|array',
+            'skills.*.id' => 'required|exists:skills,id',
+            'skills.*.proficiency' => 'required|integer|min:1|max:5',
         ]);
 
         $employee = TeamMember::findOrFail($id);
         $employee->update($validated);
+
+        if ($request->has('skills')) {
+            $syncData = [];
+            foreach ($request->input('skills') as $skillData) {
+                $syncData[$skillData['id']] = ['proficiency' => $skillData['proficiency']];
+            }
+            $employee->skills()->sync($syncData);
+        } else {
+            $employee->skills()->detach();
+        }
 
         return redirect()->route('manager.employees.index')->with('success', 'Employee updated successfully!');
     }
@@ -110,7 +139,7 @@ class EmployeeController extends Controller
         $columns = [
             'Name', 'Email', 'Role', 'GitLab ID', 'Task Title', 
             'Task Commit', 'Attendance', 'Meeting Date', 'Meeting Title', 
-            'Task Assign Date', 'Due Date', 'Login Timing'
+            'Task Assign Date', 'Due Date', 'Login Timing', 'Performance Score', 'Performance Grade'
         ];
 
         $callback = function() use ($columns) {
@@ -132,6 +161,8 @@ class EmployeeController extends Controller
                     $employee->task_assign_date,
                     $employee->due_date,
                     $employee->login_timing,
+                    $employee->performance_score ?? 0,
+                    $employee->performance_grade ?? 'N/A',
                 ]);
             });
 

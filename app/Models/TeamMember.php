@@ -26,6 +26,10 @@ class TeamMember extends Model
         'task_assign_date',
         'due_date',
         'login_timing',
+        'performance_score',
+        'performance_grade',
+        'department_id',
+        'team_id',
     ];
 
     public function tasks(): HasMany
@@ -53,8 +57,40 @@ class TeamMember extends Model
         return $this->hasMany(Commit::class, 'employee_id');
     }
 
+    public function mergeRequests(): HasMany
+    {
+        return $this->hasMany(GitLabMergeRequest::class, 'employee_id');
+    }
+
+    public function issues(): HasMany
+    {
+        return $this->hasMany(GitLabIssue::class, 'employee_id');
+    }
+
+    public function performanceReports()
+    {
+        return $this->hasMany(PerformanceReport::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'team_member_skills')
+            ->withPivot('proficiency')
+            ->withTimestamps();
+    }
+
     public function attendanceLogs(): HasMany
     {
         return $this->hasMany(AttendanceLog::class);
+    }
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
     }
 }

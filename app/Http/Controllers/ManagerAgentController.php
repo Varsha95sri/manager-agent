@@ -36,45 +36,183 @@ class ManagerAgentController extends Controller
     public function index(Request $request)
     {
         try {
-            $targetDate = $request->input('date', Carbon::today()->toDateString());
+            $rangeType = $request->input('range_type', 'all_time');
+            $baseDate = Carbon::parse($request->input('date', Carbon::today()->toDateString()));
+            $today = Carbon::today();
+            
+            $startDate = $baseDate->copy()->toDateString();
+            $endDate = $baseDate->copy()->toDateString();
+            
+            if ($rangeType === 'date_wise') {
+                $startDate = $baseDate->toDateString();
+                $endDate = $startDate;
+            } elseif ($rangeType === 'week_wise') {
+                $startDate = $baseDate->copy()->startOfWeek()->toDateString();
+                $endDate = $baseDate->copy()->endOfWeek()->toDateString();
+            } elseif ($rangeType === 'month_wise') {
+                $startDate = $baseDate->copy()->startOfMonth()->toDateString();
+                $endDate = $baseDate->copy()->endOfMonth()->toDateString();
+            } elseif ($rangeType === 'year_wise') {
+                $startDate = $baseDate->copy()->startOfYear()->toDateString();
+                $endDate = $baseDate->copy()->endOfYear()->toDateString();
+            } elseif ($rangeType === 'all_time') {
+                $startDate = '2000-01-01'; // A date far enough in the past
+                $endDate = $today->copy()->toDateString();
+            } elseif ($rangeType === 'custom_range') {
+                $startDate = $request->input('start_date', $today->toDateString());
+                $endDate = $request->input('end_date', $today->toDateString());
+            }
+            
+            $targetDate = $baseDate->toDateString(); // Use baseDate for calendar view so it defaults to today/selected date
+            $startDateTime = $startDate . ' 00:00:00';
+            $endDateTime = $endDate . ' 23:59:59';
             
             $totalMembers = TeamMember::count();
             
-            // Count stats specifically for targetDate (or fallback to today)
-            $totalTasks = Task::whereDate('due_date', $targetDate)->count();
-            $totalCommits = GitCommit::whereDate('committed_at', $targetDate)->count();
+            // Count stats for the date range
+            $totalTasks = Task::whereBetween('due_date', [$startDate, $endDate])->count();
+            $totalCommits = GitCommit::whereBetween('committed_at', [$startDateTime, $endDateTime])->count();
             
-            $latestReport = PerformanceReport::whereDate('report_date', $targetDate)->latest()->first();
+            $latestReport = PerformanceReport::whereBetween('report_date', [$startDate, $endDate])->latest()->first();
             if (!$latestReport) {
-                $latestReport = PerformanceReport::whereDate('report_date', '<=', $targetDate)
+                $latestReport = PerformanceReport::whereDate('report_date', '<=', $endDate)
                     ->orderBy('report_date', 'desc')
                     ->first();
             }
             
-            $reports = PerformanceReport::latest()->take(7)->get();
+            // Get the latest 7 reports, ensuring we only take the most recent one per day
+            $reports = PerformanceReport::orderBy('created_at', 'desc')
+                ->get()
+                ->unique(function ($item) {
+                    return \Carbon\Carbon::parse($item->report_date)->format('Y-m-d');
+                })
+                ->take(7)
+                ->values();
 
-            // Calculate task and meeting stats specifically for target date directly in SQL to avoid memory overflow
-            $completedTasksCount = Task::whereDate('due_date', $targetDate)->where('status', 'completed')->count();
-            $pendingTasksCount = Task::whereDate('due_date', $targetDate)->where('status', 'pending')->count();
-            $totalMeetingsCount = MeetingNote::whereDate('meeting_date', $targetDate)->count();
+            // Calculate task and meeting stats
+            $completedTasksCount = Task::whereBetween('due_date', [$startDate, $endDate])->where('status', 'completed')->count();
+            $pendingTasksCount = Task::whereBetween('due_date', [$startDate, $endDate])->where('status', 'pending')->count();
+            $totalMeetingsCount = MeetingNote::whereBetween('meeting_date', [$startDate, $endDate])->count();
+
+            // Calculate attendance stats
+            $presentCount = AttendanceLog::whereBetween('date', [$startDate, $endDate])->where('status', 'present')->count();
+            $lateCount = AttendanceLog::whereBetween('date', [$startDate, $endDate])->where('status', 'late')->count();
+            $leaveCount = AttendanceLog::whereBetween('date', [$startDate, $endDate])->where('status', 'leave')->count();
+            
+            // Attendance percentage across the range
+            $presentPct = 0;
+            $latePct = 0;
+            $absentPct = 0;
+            
+            $daysInRange = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+            $totalPossibleAttendances = $totalMembers * $daysInRange;
+            
+            if ($totalPossibleAttendances > 0) {
+                $presentPct = round(($presentCount / $totalPossibleAttendances) * 100);
+                $latePct = round(($lateCount / $totalPossibleAttendances) * 100);
+                $leavePct = round(($leaveCount / $totalPossibleAttendances) * 100);
+                $absentPct = max(0, 100 - $presentPct - $latePct - $leavePct);
+            }
+
+            // Fetch reports for the entire month for the calendar view
+            $parsedDate = Carbon::parse($targetDate);
+            $monthReports = PerformanceReport::whereMonth('report_date', $parsedDate->month)
+                ->whereYear('report_date', $parsedDate->year)
+                ->get(['report_date', 'team_productivity'])
+                ->keyBy(function($item) {
+                    return Carbon::parse($item->report_date)->format('Y-m-d');
+                });
 
             // Paginate team members for the AI audits (9 per page)
             $allMembers = TeamMember::orderBy('name')->paginate(9, ['*'], 'members_page')->withQueryString();
 
             // Paginate group tasks (6 per page) for targetDate
-            $groupTasksPaginated = Task::whereDate('due_date', $targetDate)
+            $groupTasksPaginated = Task::whereBetween('due_date', [$startDate, $endDate])
                 ->has('teamMembers', '>', 1)
                 ->with('teamMembers')
                 ->latest()
                 ->paginate(6, ['*'], 'groups_page')
                 ->withQueryString();
 
-            // Limit meeting notes to target date to keep it lightweight
+            // Limit meeting notes
             $allMeetings = MeetingNote::with('teamMembers')
-                ->whereDate('meeting_date', $targetDate)
+                ->whereBetween('meeting_date', [$startDate, $endDate])
                 ->orderBy('meeting_time', 'desc')
                 ->take(10)
                 ->get();
+
+            if ($request->ajax()) {
+                $labels = $reports->reverse()->pluck('report_date')->map(function ($date) {
+                    return Carbon::parse($date)->format('M d');
+                })->toArray();
+                
+                $scores = $reports->reverse()->pluck('team_productivity')->toArray();
+
+                $workloadLabels = [];
+                $workloadData = [];
+                $teams = \App\Models\Team::with('teamMembers')->get();
+                foreach($teams as $team) {
+                    $memberIds = $team->teamMembers->pluck('id');
+                    $pendingCount = \App\Models\Task::whereIn('team_member_id', $memberIds)
+                                        ->where('status', 'pending')
+                                        ->whereBetween('due_date', [$startDate, $endDate])
+                                        ->count();
+                    if ($pendingCount > 0) {
+                        $workloadLabels[] = $team->name;
+                        $workloadData[] = $pendingCount;
+                    }
+                }
+                if (empty($workloadLabels)) {
+                    $workloadLabels = ['No Pending Tasks'];
+                    $workloadData = [1];
+                }
+
+                $rangeLabel = 'Today';
+                if ($rangeType === 'week_wise') $rangeLabel = 'This Week';
+                elseif ($rangeType === 'month_wise') $rangeLabel = 'This Month';
+                elseif ($rangeType === 'year_wise') $rangeLabel = 'This Year';
+                elseif ($rangeType === 'all_time') $rangeLabel = 'All Time';
+                elseif ($rangeType === 'custom_range') $rangeLabel = 'Custom Range';
+                elseif ($rangeType === 'date_wise') $rangeLabel = 'Daily';
+
+                return response()->json([
+                    'success' => true,
+                    'totalMembers' => $totalMembers,
+                    'totalTasks' => $totalTasks,
+                    'totalCommits' => $totalCommits,
+                    'completedTasksCount' => $completedTasksCount,
+                    'taskPct' => $totalTasks > 0 ? round(($completedTasksCount / $totalTasks) * 100) : 0,
+                    'orgPerformance' => $latestReport ? $latestReport->team_productivity . '%' : 'N/A',
+                    'rangeLabel' => $rangeLabel,
+                    'chartData' => [
+                        'labels' => $labels,
+                        'scores' => $scores
+                    ],
+                    'workload' => [
+                        'labels' => $workloadLabels,
+                        'data' => $workloadData
+                    ]
+                ]);
+            }
+
+            $workloadLabelsInit = [];
+            $workloadDataInit = [];
+            $teamsInit = \App\Models\Team::with('teamMembers')->get();
+            foreach($teamsInit as $team) {
+                $memberIds = $team->teamMembers->pluck('id');
+                $pendingCount = \App\Models\Task::whereIn('team_member_id', $memberIds)
+                                    ->where('status', 'pending')
+                                    ->whereBetween('due_date', [$startDate, $endDate])
+                                    ->count();
+                if ($pendingCount > 0) {
+                    $workloadLabelsInit[] = $team->name;
+                    $workloadDataInit[] = $pendingCount;
+                }
+            }
+            if (empty($workloadLabelsInit)) {
+                $workloadLabelsInit = ['No Pending Tasks'];
+                $workloadDataInit = [1];
+            }
 
             return view('manager.dashboard', compact(
                 'totalMembers',
@@ -88,7 +226,16 @@ class ManagerAgentController extends Controller
                 'totalMeetingsCount',
                 'groupTasksPaginated',
                 'allMeetings',
-                'targetDate'
+                'targetDate',
+                'monthReports',
+                'presentPct',
+                'latePct',
+                'absentPct',
+                'rangeType',
+                'startDate',
+                'endDate',
+                'workloadLabelsInit',
+                'workloadDataInit'
             ));
         } catch (\Throwable $e) {
             dd([
@@ -242,17 +389,21 @@ class ManagerAgentController extends Controller
     }
 
     /**
-     * Generate the daily performance report.
+     * Generate the performance report.
      */
     public function generate(Request $request)
     {
         try {
-            $date = $request->input('date');
-            $this->agentService->generateDailyReport($date);
+            $type = $request->input('type', 'daily');
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date') ?: $request->input('date');
+
+            $this->agentService->generateReport($type, $startDate, $endDate);
+
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Daily performance report generated successfully!']);
+                return response()->json(['success' => true, 'message' => ucfirst($type) . ' performance report generated successfully!']);
             }
-            return redirect()->route('manager.dashboard')->with('success', 'Daily performance report generated successfully!');
+            return redirect()->route('manager.dashboard')->with('success', ucfirst($type) . ' performance report generated successfully!');
         } catch (\Throwable $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -340,11 +491,51 @@ class ManagerAgentController extends Controller
     /**
      * Display dedicated task entry and overview panel.
      */
-    public function taskEntry(): View
+    public function taskEntry(Request $request): View
     {
-        $tasks = Task::with(['teamMember', 'teamMembers'])->orderBy('due_date', 'desc')->paginate(15);
+        $startDate = $request->input('start_date', \Carbon\Carbon::today()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', \Carbon\Carbon::today()->endOfMonth()->toDateString());
+
+        // Base query for the date range
+        $tasksQuery = Task::whereBetween('due_date', [$startDate, $endDate]);
+
+        $tasks = (clone $tasksQuery)->with(['teamMember', 'teamMembers'])->orderBy('due_date', 'desc')->paginate(15);
         $allTeamMembers = TeamMember::orderBy('name')->get();
-        return view('manager.tasks', compact('tasks', 'allTeamMembers'));
+
+        $totalTasks = (clone $tasksQuery)->count();
+        $completedTasks = (clone $tasksQuery)->where('status', 'completed')->count();
+        
+        $completedDelayed = (clone $tasksQuery)->where('status', 'completed')
+            ->whereRaw('COALESCE(completed_at, updated_at) > due_date')
+            ->count();
+            
+        $onTimeCompleted = $completedTasks - $completedDelayed;
+        
+        $pendingDelayed = (clone $tasksQuery)->where('status', '!=', 'completed')
+            ->where('due_date', '<', now())
+            ->count();
+            
+        $delayedTasks = $completedDelayed + $pendingDelayed;
+
+        // Calculate average completion hours in database
+        $avgHoursRaw = (clone $tasksQuery)->where('status', 'completed')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, COALESCE(completed_at, updated_at))) as avg_hours')
+            ->value('avg_hours');
+        $avgCompletionHours = round((float)$avgHoursRaw, 1);
+        
+        // Productivity Score: Heavy weight on completing on time, slight penalty for delayed
+        if ($totalTasks > 0) {
+            $score = (($onTimeCompleted * 1.0) + ($completedTasks - $onTimeCompleted) * 0.5) / $totalTasks * 100;
+            $productivityScore = round(min(100, max(0, $score)));
+        } else {
+            $productivityScore = 0;
+        }
+
+        return view('manager.tasks', compact(
+            'tasks', 'allTeamMembers', 'totalTasks', 'completedTasks', 
+            'delayedTasks', 'avgCompletionHours', 'productivityScore',
+            'startDate', 'endDate'
+        ));
     }
 
     /**
@@ -371,7 +562,7 @@ class ManagerAgentController extends Controller
     {
         if ($request->filled('email')) {
             $emails = array_map('trim', explode(',', $request->input('email')));
-            $foundIds = TeamMember::whereIn('email', $emails)->pluck('id')->toArray();
+            $foundIds = \App\Models\TeamMember::whereIn('email', $emails)->pluck('id')->toArray();
             if (!empty($foundIds)) {
                 $request->merge([
                     'team_member_id' => $foundIds[0],
@@ -387,7 +578,14 @@ class ManagerAgentController extends Controller
             'title' => 'required|string|max:255',
             'status' => 'required|in:pending,in_progress,completed',
             'due_date' => 'required|date',
+            'priority' => 'nullable|in:low,medium,high,critical',
+            'dependency_id' => 'nullable|exists:tasks,id',
+            'effort_estimation' => 'nullable|numeric|min:0',
         ]);
+
+        if (empty($validated['priority'])) {
+            $validated['priority'] = 'medium';
+        }
 
         $ids = [];
         if (!empty($validated['team_member_ids'])) {
@@ -400,18 +598,63 @@ class ManagerAgentController extends Controller
             return redirect()->back()->withErrors(['team_member_id' => 'At least one employee must be assigned.']);
         }
 
-        $primaryId = $ids[0];
+        $task = \App\Models\Task::create($validated);
+        $task->teamMembers()->attach($ids);
 
-        $task = Task::create([
-            'team_member_id' => $primaryId,
-            'title' => $validated['title'],
-            'status' => $validated['status'],
-            'due_date' => $validated['due_date'],
+        return redirect()->back()->with('success', 'Daily task logged and assigned successfully!');
+    }
+
+    /**
+     * Update an existing task.
+     */
+    public function updateTask(Request $request, $id): RedirectResponse
+    {
+        $task = \App\Models\Task::findOrFail($id);
+
+        if ($request->filled('email')) {
+            $emails = array_map('trim', explode(',', $request->input('email')));
+            $foundIds = \App\Models\TeamMember::whereIn('email', $emails)->pluck('id')->toArray();
+            if (!empty($foundIds)) {
+                $request->merge([
+                    'team_member_id' => $foundIds[0],
+                    'team_member_ids' => $foundIds
+                ]);
+            }
+        }
+
+        $validated = $request->validate([
+            'team_member_id' => 'nullable|exists:team_members,id',
+            'team_member_ids' => 'nullable|array',
+            'team_member_ids.*' => 'exists:team_members,id',
+            'title' => 'required|string|max:255',
+            'status' => 'required|in:pending,in_progress,completed',
+            'due_date' => 'required|date',
+            'priority' => 'nullable|in:low,medium,high,critical',
+            'dependency_id' => 'nullable|exists:tasks,id',
+            'effort_estimation' => 'nullable|numeric|min:0',
+            'actual_time' => 'nullable|numeric|min:0',
         ]);
 
-        $task->teamMembers()->sync($ids);
+        if ($validated['status'] === 'completed' && $task->status !== 'completed') {
+            $validated['completed_at'] = now();
+        } elseif ($validated['status'] !== 'completed') {
+            $validated['completed_at'] = null;
+        }
 
-        return redirect()->back()->with('success', 'Task recorded successfully!')->with('active_tab', 'tasks');
+        $task->update($validated);
+
+        $ids = [];
+        if (!empty($validated['team_member_ids'])) {
+            $ids = $validated['team_member_ids'];
+        } elseif (!empty($validated['team_member_id'])) {
+            $ids = [$validated['team_member_id']];
+        }
+        
+        if (!empty($ids)) {
+            $task->teamMembers()->sync($ids);
+        }
+
+        return redirect()->back()->with('success', 'Task updated successfully!');
     }
 
     /**
@@ -454,8 +697,10 @@ class ManagerAgentController extends Controller
         $validated = $request->validate([
             'team_member_id' => 'required|exists:team_members,id',
             'date' => 'required|date',
-            'status' => 'required|in:present,absent,late',
+            'status' => 'required|in:present,absent,late,leave',
             'check_in' => 'nullable|string',
+            'check_out' => 'nullable|string',
+            'leave_type' => 'nullable|string',
         ]);
 
         AttendanceLog::create($validated);
@@ -588,57 +833,7 @@ class ManagerAgentController extends Controller
         return redirect()->back()->with('success', 'Team member deleted successfully!');
     }
 
-    /**
-     * Update task.
-     */
-    public function updateTask(Request $request, $id): RedirectResponse
-    {
-        if ($request->filled('email')) {
-            $emails = array_map('trim', explode(',', $request->input('email')));
-            $foundIds = TeamMember::whereIn('email', $emails)->pluck('id')->toArray();
-            if (!empty($foundIds)) {
-                $request->merge([
-                    'team_member_id' => $foundIds[0],
-                    'team_member_ids' => $foundIds
-                ]);
-            }
-        }
 
-        $validated = $request->validate([
-            'team_member_id' => 'nullable|exists:team_members,id',
-            'team_member_ids' => 'nullable|array',
-            'team_member_ids.*' => 'exists:team_members,id',
-            'title' => 'required|string|max:255',
-            'status' => 'required|in:pending,in_progress,completed',
-            'due_date' => 'required|date',
-        ]);
-
-        $task = Task::findOrFail($id);
-
-        $ids = [];
-        if (!empty($validated['team_member_ids'])) {
-            $ids = $validated['team_member_ids'];
-        } elseif (!empty($validated['team_member_id'])) {
-            $ids = [$validated['team_member_id']];
-        }
-
-        if (empty($ids)) {
-            return redirect()->back()->withErrors(['team_member_ids' => 'At least one employee must be assigned.']);
-        }
-
-        $primaryId = $ids[0];
-
-        $task->update([
-            'team_member_id' => $primaryId,
-            'title' => $validated['title'],
-            'status' => $validated['status'],
-            'due_date' => $validated['due_date'],
-        ]);
-
-        $task->teamMembers()->sync($ids);
-
-        return redirect()->back()->with('success', 'Task updated successfully!');
-    }
 
     /**
      * Delete task.
@@ -798,41 +993,48 @@ class ManagerAgentController extends Controller
     /**
      * Display dedicated attendance registry and statistics.
      */
-    public function attendanceRegistry(Request $request): View
+    public function attendanceRegistry(Request $request, \App\Services\AttendanceAnalyticsService $analyticsService): View
     {
-        $date = $request->input('date', Carbon::today()->toDateString());
+        $startDateRaw = $request->input('start_date', Carbon::today()->toDateString());
+        $endDateRaw = $request->input('end_date', Carbon::today()->toDateString());
+        
+        $startDate = str_replace(' ', '-', $startDateRaw);
+        $endDate = str_replace(' ', '-', $endDateRaw);
         
         // Paginate team members
         $teamMembers = TeamMember::orderBy('name')->paginate(15)->withQueryString();
         
-        // Get all attendance logs for the selected date for ONLY the paginated team members
         $memberIds = $teamMembers->pluck('id');
+        
+        // Analytics for each member in the selected range
+        $monthlyAnalytics = [];
+        foreach ($teamMembers as $member) {
+            $monthlyAnalytics[$member->id] = $analyticsService->getMemberAnalytics($member->id, $startDate, $endDate);
+        }
+        
+        $teamTrends = $analyticsService->getTeamTrends($startDate, $endDate);
+        
+        // Raw Logs logic for the selected range (Paginated independently)
         $attendanceLogs = AttendanceLog::with('teamMember')
-            ->whereDate('date', $date)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->orderBy('date', 'desc')
+            ->paginate(15, ['*'], 'logs_page')
+            ->withQueryString();
+            
+        // Map logs by team_member_id and then date for easy lookup in view (Only for the 15 summarized members!)
+        $summaryLogs = AttendanceLog::whereBetween('date', [$startDate, $endDate])
             ->whereIn('team_member_id', $memberIds)
             ->get();
             
-        // Map logs by team_member_id for easy lookup in view
-        $logsMap = $attendanceLogs->keyBy('team_member_id');
+        $logsMap = [];
+        foreach ($summaryLogs as $log) {
+            $logsMap[$log->team_member_id][$log->date] = $log;
+        }
         
-        // Calculate stats using SQL counts instead of collection loops
-        $totalMembers = TeamMember::count();
-        $totalPresent = AttendanceLog::whereDate('date', $date)->where('status', 'present')->count();
-        $totalLate = AttendanceLog::whereDate('date', $date)->where('status', 'late')->count();
-        $totalAbsent = AttendanceLog::whereDate('date', $date)->where('status', 'absent')->count();
-        
-        $allTeamMembers = TeamMember::orderBy('name')->get();
+        $allTeamMembers = collect([]); // Handled via AJAX to prevent memory exhaustion
         
         return view('manager.attendance', compact(
-            'teamMembers',
-            'date',
-            'attendanceLogs',
-            'logsMap',
-            'totalPresent',
-            'totalLate',
-            'totalAbsent',
-            'totalMembers',
-            'allTeamMembers'
+            'teamMembers', 'startDate', 'endDate', 'monthlyAnalytics', 'teamTrends', 'allTeamMembers', 'logsMap', 'attendanceLogs'
         ));
     }
 
@@ -842,8 +1044,10 @@ class ManagerAgentController extends Controller
     public function updateAttendance(Request $request, $id): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => 'required|in:present,absent,late',
+            'status' => 'required|in:present,absent,late,leave',
             'check_in' => 'nullable|string',
+            'check_out' => 'nullable|string',
+            'leave_type' => 'nullable|string',
         ]);
 
         $log = AttendanceLog::findOrFail($id);

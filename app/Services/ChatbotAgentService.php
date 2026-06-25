@@ -18,25 +18,39 @@ class ChatbotAgentService
     /**
      * Answer manager question using database context and Claude API.
      */
-    public function answerQuestion(string $question): string
+    public function answerQuestion(string $question, array $chatHistory = []): string
     {
-        // 1. Gather live database context
-        $context = $this->buildDatabaseContext();
+        // 1. Gather live database context using the question to pull relevant details
+        $context = $this->buildDatabaseContext($question);
 
         try {
+            // Format chat history
+            $historyText = "";
+            if (!empty($chatHistory)) {
+                $historyText = "=== PREVIOUS CONVERSATION HISTORY ===\n";
+                // Get last 6 messages (3 interactions) to save tokens
+                $recentHistory = array_slice($chatHistory, -6);
+                foreach ($recentHistory as $msg) {
+                    $role = $msg['role'] === 'user' ? 'Manager' : 'Assistant';
+                    $historyText .= "{$role}: {$msg['text']}\n";
+                }
+                $historyText .= "=====================================\n\n";
+            }
+
             // Build the prompt for logging
             $prompt = "You are a Manager Assistant AI. You have access to this real-time database snapshot:\n\n"
                 . $context . "\n\n"
+                . $historyText
                 . "Use this information to answer the manager's question accurately. Keep answers professional, insightful, and concise.\n"
                 . "MANDATORY BEHAVIOR: If the manager asks about or inputs a specific employee's/team member's name (e.g. \"Alice\", \"Rahul\", etc.), compile a detailed performance report for that specific employee. "
                 . "Summarize how much work they completed, how many commits they made today, which tasks are assigned to them (with due dates and statuses), their attendance check-in status today, and evaluate their contribution compared to others.\n"
                 . "If the database snapshot does not contain enough information to answer, state that honestly.\n\n"
-                . "Question: " . $question;
+                . "Manager Question: " . $question;
 
             Log::info("AI Chatbot Prompt:\n" . $prompt);
 
             // 2. Call local Ollama API with the context
-            $answer = $this->queryOllama($context, $question);
+            $answer = $this->queryOllama($context, $question, $historyText);
             
             Log::info("AI Chatbot Response:\n" . $answer);
             return $answer;
@@ -52,126 +66,202 @@ class ChatbotAgentService
     }
 
     /**
-     * Compile database tables into a single context text block.
+     * Compile comprehensive database tables and aggregates into a single context text block.
+     * @param string $question The manager's question for dynamic context retrieval
      */
-    protected function buildDatabaseContext(): string
+    protected function buildDatabaseContext(string $question = ''): string
     {
         $todayStr = Carbon::today()->toDateString();
+        $q = strtolower($question);
+        $contextText = "LIVE DATABASE TEAM CONTEXT (As of " . Carbon::now()->toDateTimeString() . "):\n\n";
 
-        // Query team members counts & preview (limit to 30)
-        $totalMembersCount = TeamMember::count();
-        $members = TeamMember::orderBy('id')->take(30)->get();
-        $membersText = "Total Team Members Count: {$totalMembersCount}\n"
-            . "Latest Registered Team Members (Preview):\n";
+        // 1. Team Members & Role/Team Aggregation
+        $members = TeamMember::orderBy('name')->get();
+        $totalMembersCount = $members->count();
+        $roleStats = [];
+        $membersText = "Total Team Members Count: {$totalMembersCount}\nLatest Registered Team Members (Preview):\n";
         foreach ($members as $m) {
-            $membersText .= "- ID {$m->id}: {$m->name} (Role: {$m->role}, Email: {$m->email})\n";
+            $score = $m->performance_score ?? 0;
+            $grade = $m->performance_grade ?? 'N/A';
+            $role = $m->role ?? 'Unassigned';
+            $membersText .= "- ID {$m->id}: {$m->name} (Role/Team: {$role}, Score: {$score}, Grade: {$grade})\n";
+            
+            if (!isset($roleStats[$role])) {
+                $roleStats[$role] = ['count' => 0, 'total_score' => 0];
+            }
+            $roleStats[$role]['count']++;
+            $roleStats[$role]['total_score'] += $score;
         }
 
-        // Query tasks counts & preview (limit to 30)
+        $teamComparisonText = "=== TEAM / DEPARTMENT COMPARISON ===\n";
+        foreach ($roleStats as $role => $stats) {
+            $avgScore = $stats['count'] > 0 ? round($stats['total_score'] / $stats['count'], 1) : 0;
+            $teamComparisonText .= "- Team {$role}: {$stats['count']} members, Average Score: {$avgScore}\n";
+        }
+
+        // 2. Task Metrics & Workload
         $tasksCount = Task::count();
         $completedTasks = Task::where('status', 'completed')->count();
-        $inProgressTasks = Task::where('status', 'in_progress')->count();
         $pendingTasks = Task::where('status', 'pending')->count();
         $overdueTasksCount = Task::where('status', '!=', 'completed')->whereDate('due_date', '<', Carbon::today())->count();
         
-        $detailedTasks = Task::with('teamMember')
-            ->whereDate('due_date', Carbon::today())
-            ->orWhere(function($query) {
-                $query->where('status', '!=', 'completed')
-                      ->whereDate('due_date', '<', Carbon::today());
-            })
-            ->latest('due_date')
-            ->take(30)
-            ->get();
-
-        $tasksText = "Total Tasks Count: {$tasksCount}\n"
-            . "- Completed: {$completedTasks}\n"
-            . "- In Progress: {$inProgressTasks}\n"
-            . "- Pending: {$pendingTasks}\n"
-            . "- Overdue Count: {$overdueTasksCount}\n\n"
-            . "Active/Overdue Tasks (Preview):\n";
+        $detailedTasks = Task::with('teamMember')->where('status', '!=', 'completed')->get();
+        $workloadByMember = [];
+        $workloadByRole = [];
         foreach ($detailedTasks as $t) {
-            $memberName = $t->teamMember?->name ?? 'Unassigned';
-            $tasksText .= "- [{$memberName}] \"{$t->title}\" (Status: {$t->status}, Due Date: {$t->due_date})\n";
+            $mName = $t->teamMember?->name ?? 'Unassigned';
+            $mRole = $t->teamMember?->role ?? 'Unassigned';
+            $workloadByMember[$mName] = ($workloadByMember[$mName] ?? 0) + 1;
+            $workloadByRole[$mRole] = ($workloadByRole[$mRole] ?? 0) + 1;
+        }
+        arsort($workloadByMember);
+        arsort($workloadByRole);
+        
+        $tasksText = "=== TASK METRICS & WORKLOAD ===\n"
+            . "Total Tasks: {$tasksCount} | Completed: {$completedTasks} | Pending: {$pendingTasks} | Overdue: {$overdueTasksCount}\n"
+            . "Most Overloaded Employees (Pending Tasks):\n";
+        foreach (array_slice($workloadByMember, 0, 5) as $name => $count) {
+            $tasksText .= "- {$name}: {$count} tasks\n";
+        }
+        $tasksText .= "Delayed/Pending Tasks by Team:\n";
+        foreach (array_slice($workloadByRole, 0, 5) as $role => $count) {
+            $tasksText .= "- {$role}: {$count} tasks\n";
         }
 
-        // Query today's commits (preview latest 50 to avoid prompt overflow)
-        $commits = GitCommit::with('teamMember')
-            ->whereDate('committed_at', $todayStr)
-            ->latest('committed_at')
-            ->take(50)
-            ->get();
-        $commitsText = "Today's Commits (Showing latest 50):\n";
-        foreach ($commits as $c) {
-            $commitsText .= "- [Hash: " . substr($c->commit_hash, 0, 7) . "] {$c->teamMember?->name}: \"{$c->message}\"\n";
-        }
-        if ($commits->isEmpty()) {
-            $commitsText = "No commits pushed today.\n";
+        // 3. Organization Historical Trend (Last 6 Months)
+        $sixMonthsAgo = Carbon::now()->subMonths(6);
+        $historicalReports = PerformanceReport::whereDate('report_date', '>=', $sixMonthsAgo)
+            ->orderBy('report_date', 'asc')
+            ->get()
+            ->groupBy(function($val) {
+                return Carbon::parse($val->report_date)->format('Y-m');
+            });
+            
+        $trendText = "=== ORGANIZATION HISTORICAL TREND (Last 6 Months) ===\n";
+        if ($historicalReports->isEmpty()) {
+            $trendText .= "Not enough historical data available.\n";
+        } else {
+            foreach ($historicalReports as $month => $reports) {
+                $avgProd = round($reports->avg('team_productivity'), 1);
+                $trendText .= "- {$month}: {$avgProd}% average productivity\n";
+            }
         }
 
-        // Query today's attendance logs (summarized to avoid overflow)
+        // 4. Today's Commits & Attendance
+        $commitsCount = GitCommit::whereDate('committed_at', $todayStr)->count();
         $attendance = AttendanceLog::with('teamMember')->whereDate('date', $todayStr)->get();
         $presentCount = $attendance->where('status', 'present')->count();
         $lateCount = $attendance->where('status', 'late')->count();
         $absentCount = $attendance->where('status', 'absent')->count();
         
-        $attText = "Today's Attendance Summary:\n"
-            . "- Present: {$presentCount}\n"
-            . "- Late: {$lateCount}\n"
-            . "- Absent: {$absentCount}\n\n"
-            . "Absent Members List (Preview):\n";
-            
-        $absentMembers = $attendance->where('status', 'absent')->take(20);
-        foreach ($absentMembers as $att) {
-            $attText .= "- {$att->teamMember?->name} (Absent)\n";
-        }
-        if ($attendance->isEmpty()) {
-            $attText = "No attendance logged today.\n";
+        $dailyText = "=== TODAY'S OPERATIONS ===\n"
+            . "Total Git Commits Today: {$commitsCount}\n"
+            . "Attendance Summary -> Present: {$presentCount}, Late: {$lateCount}, Absent: {$absentCount}\n";
+        $absentMembers = $attendance->where('status', 'absent');
+        if ($absentMembers->isNotEmpty()) {
+            $dailyText .= "Absent Members:\n";
+            foreach ($absentMembers as $att) {
+                $dailyText .= "- {$att->teamMember?->name}\n";
+            }
         }
 
-        // Query today's meeting notes
-        $meetings = MeetingNote::whereDate('meeting_date', $todayStr)->get();
-        $meetingsText = "";
-        foreach ($meetings as $m) {
-            $meetingsText .= "- \"{$m->title}\": {$m->notes}\n";
+        // 5. Active Projects & Health
+        $projects = \App\Models\Project::whereNotIn('status', ['completed', 'archived'])->get();
+        $projectsText = "=== ACTIVE PROJECTS ===\n";
+        foreach ($projects as $p) {
+            $projectsText .= "- \"{$p->name}\" (Health: {$p->health_score}%, Status: {$p->status}, Deadline: {$p->deadline})\n";
         }
-        if ($meetings->isEmpty()) {
-            $meetingsText = "No meetings recorded today.\n";
+        if ($projects->isEmpty()) {
+            $projectsText .= "No active projects found.\n";
         }
 
-        // Query latest performance report
+        // 6. Latest Performance Report (For direct daily summaries)
         $latestReport = PerformanceReport::latest()->first();
-        $reportText = "No performance reports found in database yet.\n";
+        $reportText = "=== LATEST EVALUATED REPORT ===\nNo performance reports found in database yet.\n";
         if ($latestReport) {
             $perfDate = Carbon::parse($latestReport->report_date)->format('Y-m-d');
             $performers = implode(', ', $latestReport->top_performers);
             $attention = implode(', ', $latestReport->attention_required);
             $risks = implode(' | ', $latestReport->risks);
-            
             $reportText = "Date: {$perfDate}\nProductivity Score: {$latestReport->team_productivity}%\nTop Performers: {$performers}\nRequires Attention: {$attention}\nIdentified Risks: {$risks}\n";
         }
 
-        return "LIVE DATABASE TEAM CONTEXT (As of " . Carbon::now()->toDateTimeString() . "):\n\n"
+        $finalContext = $contextText 
             . "=== TEAM MEMBERS ===\n{$membersText}\n"
-            . "=== TASK METRICS & TASKS LIST ===\n{$tasksText}\n"
-            . "=== TODAY'S GIT COMMITS ===\n{$commitsText}\n"
-            . "=== TODAY'S ATTENDANCE ===\n{$attText}\n"
-            . "=== TODAY'S MEETING NOTES ===\n{$meetingsText}\n"
-            . "=== LATEST EVALUATED REPORT ===\n{$reportText}";
+            . "{$teamComparisonText}\n"
+            . "{$tasksText}\n"
+            . "{$trendText}\n"
+            . "{$dailyText}\n"
+            . "{$projectsText}\n"
+            . "{$reportText}\n";
+
+        // Dynamic Context Expansion (RAG-lite)
+        $dynamicContext = "\n=== DYNAMIC CONTEXT (Based on User Query) ===\n";
+        $addedDynamic = false;
+
+        // Organization/Leaderboard Intent
+        if (str_contains($q, 'top') || str_contains($q, 'best') || str_contains($q, 'lowest') || str_contains($q, 'perform') || str_contains($q, 'promot')) {
+            $topMembers = TeamMember::orderBy('performance_score', 'desc')->take(10)->get();
+            $bottomMembers = TeamMember::orderBy('performance_score', 'asc')->take(10)->get();
+            $dynamicContext .= "Top 10 Performers:\n";
+            foreach ($topMembers as $m) {
+                $dynamicContext .= "- {$m->name} (Score: {$m->performance_score})\n";
+            }
+            $dynamicContext .= "Lowest 10 Performers:\n";
+            foreach ($bottomMembers as $m) {
+                $dynamicContext .= "- {$m->name} (Score: {$m->performance_score})\n";
+            }
+            $addedDynamic = true;
+        }
+
+        // Employee Comparison Intent
+        $allMembers = TeamMember::all();
+        $mentionedMembers = [];
+        foreach ($allMembers as $member) {
+            $firstName = strtolower(explode(' ', $member->name)[0]);
+            if (str_contains($q, strtolower($member->name)) || (strlen($firstName) > 2 && str_contains($q, $firstName))) {
+                $mentionedMembers[] = $member;
+            }
+        }
+        
+        if (!empty($mentionedMembers)) {
+            foreach ($mentionedMembers as $member) {
+                $empTasks = Task::where('team_member_id', $member->id)->get();
+                $empCommits = GitCommit::where('team_member_id', $member->id)->orderBy('committed_at', 'desc')->take(5)->get();
+                $empAttendance = AttendanceLog::where('team_member_id', $member->id)->orderBy('date', 'desc')->take(7)->get();
+                
+                $dynamicContext .= "Detailed History for {$member->name}:\n";
+                $dynamicContext .= "- Tasks: " . $empTasks->where('status', 'completed')->count() . " completed out of " . $empTasks->count() . "\n";
+                if ($empTasks->where('status', '!=', 'completed')->isNotEmpty()) {
+                    $dynamicContext .= "- Pending Tasks: " . implode(', ', $empTasks->where('status', '!=', 'completed')->pluck('title')->toArray()) . "\n";
+                }
+                $dynamicContext .= "- Recent Commits: " . $empCommits->count() . "\n";
+                $dynamicContext .= "- Recent Attendance: " . implode(', ', $empAttendance->map(fn($a) => $a->date . ': ' . $a->status)->toArray()) . "\n";
+            }
+            $addedDynamic = true;
+        }
+
+        if ($addedDynamic) {
+            $finalContext .= $dynamicContext;
+        }
+
+        return $finalContext;
     }
 
     /**
      * Query local Ollama API.
      */
-    protected function queryOllama(string $context, string $question): string
+    protected function queryOllama(string $context, string $question, string $historyText = ""): string
     {
-        $prompt = "You are a Manager Assistant AI. You have access to this real-time database snapshot:\n\n"
+        $prompt = "You are an Executive AI Assistant for managers. You have access to the following real-time database snapshot:\n\n"
             . $context . "\n\n"
+            . $historyText
             . "Use this information to answer the manager's question accurately. Keep answers professional, insightful, and concise.\n"
-            . "MANDATORY BEHAVIOR: If the manager asks about or inputs a specific employee's/team member's name (e.g. \"Alice\", \"Rahul\", etc.), compile a detailed performance report for that specific employee. "
-            . "Summarize how much work they completed, how many commits they made today, which tasks are assigned to them (with due dates and statuses), their attendance check-in status today, and evaluate their contribution compared to others.\n"
-            . "If the database snapshot does not contain enough information to answer, state that honestly.\n\n"
-            . "Question: " . $question;
+            . "MANDATORY BEHAVIOR:\n"
+            . "1. Always justify your answers with the provided data metrics (Attendance, GitLab, Tasks, Performance Scores).\n"
+            . "2. If the manager asks about specific employees, summarize their tasks, commits, attendance, and contribution.\n"
+            . "3. If the database snapshot does not contain enough information to answer, state 'Data not available' honestly. Do not hallucinate.\n\n"
+            . "Manager Question: " . $question;
 
         return $this->callLLM($prompt);
     }
@@ -264,8 +354,8 @@ class ChatbotAgentService
                     ],
                     'stream' => false,
                     'options' => [
-                        'temperature' => 0.2,
-                        'num_predict' => 1024,
+                        'temperature' => 0.1,
+                        'num_predict' => 2048,
                     ]
                 ];
                 if ($requireJson) {
@@ -294,8 +384,8 @@ class ChatbotAgentService
                 ],
                 'stream' => false,
                 'options' => [
-                    'temperature' => 0.2,
-                    'num_predict' => 1024,
+                    'temperature' => 0.1,
+                    'num_predict' => 2048,
                 ]
             ];
             if ($requireJson) {
