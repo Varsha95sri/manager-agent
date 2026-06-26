@@ -163,8 +163,12 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/run-migrations', function () {
-    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-    return 'Migrations run successfully. Please remove this route after use.';
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return 'Migrations run successfully. Please remove this route after use.';
+    } catch (\Exception $e) {
+        return 'Error running migration: ' . $e->getMessage();
+    }
 });
 
 require __DIR__.'/auth.php';
