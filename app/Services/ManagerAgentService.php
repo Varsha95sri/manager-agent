@@ -480,9 +480,11 @@ class ManagerAgentService
             $reportData = $this->generateFallbackReport($tasks, $commits, $attendance, $meetings, $startDate, $endDate, $type);
         }
 
+        $dbType = in_array($type, ['daily', 'weekly', 'monthly', 'executive']) ? $type : 'daily';
+
         // 4. Save to performance_reports table
         $report = PerformanceReport::create([
-            'report_type' => $type,
+            'report_type' => $dbType,
             'report_date' => $endDate->toDateString(),
             'team_productivity' => (int) ($reportData['team_productivity'] ?? 80),
             'top_performers' => $reportData['top_performers'] ?? [],
