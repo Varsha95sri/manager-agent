@@ -630,6 +630,8 @@ class ManagerAgentController extends Controller
             return redirect()->back()->withErrors(['team_member_id' => 'At least one employee must be assigned.']);
         }
 
+        $validated['team_member_id'] = $ids[0];
+
         $task = \App\Models\Task::create($validated);
         $task->teamMembers()->attach($ids);
 
