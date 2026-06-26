@@ -162,6 +162,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/manager-agent/attendance-import', [\App\Http\Controllers\ManagerAgentController::class, 'importAttendance'])->name('manager.attendance.import');
 });
 
-
+Route::get('/run-migrations', function () {
+    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+    return 'Migrations run successfully. Please remove this route after use.';
+});
 
 require __DIR__.'/auth.php';
