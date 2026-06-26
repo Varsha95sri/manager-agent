@@ -352,84 +352,37 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr onclick="window.location='{{ route('manager.teams.show', 'frontend') }}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
-                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-end-0 rounded-start-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                        <i class="bi bi-window-sidebar fs-5"></i>
+                        @forelse($dashboardTeams ?? [] as $team)
+                            <tr onclick="window.location='{{ route('manager.teams.show', $team->slug) }}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                <td class="px-4 py-3 bg-white border border-secondary-subtle border-end-0 rounded-start-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-people fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 text-dark fw-bold" style="font-size: 15px;">{{ $team->name }}</h6>
+                                            <span class="text-secondary fw-medium" style="font-size: 12px;">{{ $team->teamMembers->count() }} Members</span>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h6 class="mb-0 text-dark fw-bold" style="font-size: 15px;">Frontend Team</h6>
-                                        <span class="text-secondary fw-medium" style="font-size: 12px;">5 Members</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">Rahul Sharma</td>
-                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle">
-                                <div class="d-flex align-items-center">
-                                    <span class="text-dark fw-bolder me-3" style="font-size: 15px; width: 35px;">88%</span>
-                                    <div class="progress flex-grow-1 rounded-pill bg-success-subtle" style="height: 6px;">
-                                        <div class="progress-bar rounded-pill" role="progressbar" style="width: 88%; background: linear-gradient(90deg, #10b981, #34d399);"></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">92% <span class="text-secondary small fw-normal ms-1">(115/125)</span></td>
-                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-start-0 rounded-end-4 text-center">
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-3 py-2 fw-semibold">Excellent</span>
-                            </td>
-                        </tr>
-                        <tr onclick="window.location='{{ route('manager.teams.show', 'backend') }}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
-                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-end-0 rounded-start-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                        <i class="bi bi-server fs-5"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0 text-dark fw-bold" style="font-size: 15px;">Backend Team</h6>
-                                        <span class="text-secondary fw-medium" style="font-size: 12px;">7 Members</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">Priya Desai</td>
-                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle">
-                                <div class="d-flex align-items-center">
-                                    <span class="text-dark fw-bolder me-3" style="font-size: 15px; width: 35px;">76%</span>
-                                    <div class="progress flex-grow-1 rounded-pill bg-warning-subtle" style="height: 6px;">
-                                        <div class="progress-bar rounded-pill" role="progressbar" style="width: 76%; background: linear-gradient(90deg, #f59e0b, #fcd34d);"></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">78% <span class="text-secondary small fw-normal ms-1">(85/109)</span></td>
-                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-start-0 rounded-end-4 text-center">
-                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 rounded-pill px-3 py-2 fw-semibold">Good</span>
-                            </td>
-                        </tr>
-                        <tr onclick="window.location='{{ route('manager.teams.show', 'qa') }}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
-                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-end-0 rounded-start-4">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                        <i class="bi bi-bug fs-5"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0 text-dark fw-bold" style="font-size: 15px;">QA & Testing</h6>
-                                        <span class="text-secondary fw-medium" style="font-size: 12px;">4 Members</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">Amit Kumar</td>
-                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle">
-                                <div class="d-flex align-items-center">
-                                    <span class="text-dark fw-bolder me-3" style="font-size: 15px; width: 35px;">94%</span>
-                                    <div class="progress flex-grow-1 rounded-pill bg-success-subtle" style="height: 6px;">
-                                        <div class="progress-bar rounded-pill" role="progressbar" style="width: 94%; background: linear-gradient(90deg, #10b981, #34d399);"></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">98% <span class="text-secondary small fw-normal ms-1">(210/215)</span></td>
-                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-start-0 rounded-end-4 text-center">
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-3 py-2 fw-semibold">Exceptional</span>
-                            </td>
-                        </tr>
+                                </td>
+                                <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">{{ $team->leader->name ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle">
+                                    <span class="text-secondary" style="font-size: 14px;">N/A</span>
+                                </td>
+                                <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">
+                                    <span class="text-secondary" style="font-size: 14px;">N/A</span>
+                                </td>
+                                <td class="px-4 py-3 bg-white border border-secondary-subtle border-start-0 rounded-end-4 text-center">
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-20 rounded-pill px-3 py-2 fw-semibold">Pending</span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-secondary">
+                                    No teams found. Please add a team to see performance overview.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

@@ -207,8 +207,8 @@ class ManagerAgentController extends Controller
 
             $workloadLabelsInit = [];
             $workloadDataInit = [];
-            $teamsInit = \App\Models\Team::with('teamMembers')->get();
-            foreach($teamsInit as $team) {
+            $dashboardTeams = \App\Models\Team::with(['teamMembers', 'leader'])->get();
+            foreach($dashboardTeams as $team) {
                 $memberIds = $team->teamMembers->pluck('id');
                 $pendingCount = \App\Models\Task::whereIn('team_member_id', $memberIds)
                                     ->where('status', 'pending')
@@ -245,7 +245,8 @@ class ManagerAgentController extends Controller
                 'startDate',
                 'endDate',
                 'workloadLabelsInit',
-                'workloadDataInit'
+                'workloadDataInit',
+                'dashboardTeams'
             ));
         } catch (\Throwable $e) {
             dd([
@@ -538,9 +539,14 @@ class ManagerAgentController extends Controller
         $delayedTasks = $completedDelayed + $pendingDelayed;
 
         // Calculate average completion hours in database
-        if (config('database.default') === 'sqlite') {
+        $dbDriver = config('database.default');
+        if ($dbDriver === 'sqlite') {
             $avgHoursRaw = (clone $tasksQuery)->where('status', 'completed')
                 ->selectRaw('AVG((julianday(COALESCE(completed_at, updated_at)) - julianday(created_at)) * 24) as avg_hours')
+                ->value('avg_hours');
+        } elseif ($dbDriver === 'pgsql') {
+            $avgHoursRaw = (clone $tasksQuery)->where('status', 'completed')
+                ->selectRaw('AVG(EXTRACT(EPOCH FROM (COALESCE(completed_at, updated_at) - created_at)) / 3600) as avg_hours')
                 ->value('avg_hours');
         } else {
             $avgHoursRaw = (clone $tasksQuery)->where('status', 'completed')

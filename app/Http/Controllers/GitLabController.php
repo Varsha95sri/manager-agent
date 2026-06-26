@@ -98,13 +98,16 @@ class GitLabController extends Controller
         ]);
 
         // When a filter is applied, we don't want to exclude people who have 0 commits but we DO want to order them properly. 
-        // We'll keep the HAVING clause just so we don't show developers with absolutely zero activity in that period.
+        // To be cross-database compatible (Postgres doesn't like havingRaw on aliases without proper grouping),
+        // we'll fetch the results and filter/sort in PHP since the number of employees is typically small.
         $developerContributions = $developerContributionsQuery
-            ->groupBy('team_members.id')
-            ->havingRaw('commits_count > 0 OR merge_requests_count > 0 OR issues_count > 0')
-            ->orderByDesc('commits_count')
+            ->get()
+            ->filter(function($member) {
+                return $member->commits_count > 0 || $member->merge_requests_count > 0 || $member->issues_count > 0;
+            })
+            ->sortByDesc('commits_count')
             ->take(10)
-            ->get();
+            ->values();
 
         $customStart = $request->input('custom_start_date');
         $customEnd = $request->input('custom_end_date');
