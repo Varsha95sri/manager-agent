@@ -92,6 +92,15 @@
                 <span class="text-indigo-300 small">Connected to live Database: Members, Commits, Attendance logs are loaded in prompt context.</span>
             </div>
 
+            @if(isset($insights) && $insights->count() > 0)
+            <div class="bg-primary bg-opacity-10 border-bottom border-primary p-3">
+                <h6 class="text-primary mb-2 font-outfit"><i class="fa-solid fa-bolt text-warning me-2"></i>Proactive AI Insights (Daily Summary)</h6>
+                <div class="small text-dark markdown-content" data-raw-text="{{ $insights->first()->content }}">
+                    {{-- Markdown rendering --}}
+                </div>
+            </div>
+            @endif
+
             <!-- Chat Message Box -->
             <div class="card-body p-4">
                 <div class="chat-container" id="chatContainer">

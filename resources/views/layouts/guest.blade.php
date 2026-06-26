@@ -15,13 +15,13 @@
         <!-- Custom Styling for Premium Dark Theme -->
         <style>
             :root {
-                --bg-color: #0f172a;
-                --card-bg: #1e293b;
-                --text-color: #ffffff;
-                --accent-color: #a855f7;
-                --accent-hover: #b55fe6;
-                --border-color: #334155;
-                --text-muted: #94a3b8;
+                --bg-color: #f8fafc;
+                --card-bg: #ffffff;
+                --text-color: #1e293b;
+                --accent-color: #4f46e5;
+                --accent-hover: #4338ca;
+                --border-color: #e2e8f0;
+                --text-muted: #64748b;
             }
 
             body {
@@ -40,9 +40,9 @@
 
             .auth-card {
                 background-color: var(--card-bg);
-                border: 1px solid rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(0, 0, 0, 0.05);
                 border-radius: 24px;
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
                 width: 100%;
                 max-width: 440px;
                 padding: 2.5rem 2rem;
@@ -84,7 +84,7 @@
                 font-family: 'Outfit', sans-serif;
                 font-size: 1.5rem;
                 font-weight: 800;
-                color: #ffffff;
+                color: #1e293b;
                 margin: 0;
             }
 
@@ -108,8 +108,8 @@
             input[type="text"],
             input[type="email"],
             input[type="password"] {
-                background-color: #0b0f19 !important;
-                color: #ffffff !important;
+                background-color: #f1f5f9 !important;
+                color: #1e293b !important;
                 border: 1px solid var(--border-color) !important;
                 border-radius: 12px !important;
                 padding: 0.75rem 1rem !important;
@@ -187,7 +187,7 @@
     <body>
         <div class="logo-container">
             <div class="logo-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-white" viewBox="0 0 16 16">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-dark" viewBox="0 0 16 16">
                     <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.7 4 5.65 5.5 5.65h5c1.5 0 2.5 1.05 2.5 2.412v3.838a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 3 11.9V8.062Zm2.5-.912C4.338 7.15 3.5 7.9 3.5 9v1.5a.5.5 0 0 0 1 0v-1.5c0-.276.224-.5.5-.5h5c.276 0 .5.224.5.5v1.5a.5.5 0 0 0 1 0v-1.5c0-1.1-.838-1.85-2-1.85h-5Z"/>
                     <path d="M8 2a3 3 0 0 0-3 3 .5.5 0 0 0 1 0 2 2 0 1 1 4 0 .5.5 0 0 0 1 0 3 3 0 0 0-3-3Z"/>
                 </svg>

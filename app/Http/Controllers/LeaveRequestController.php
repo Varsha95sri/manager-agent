@@ -10,11 +10,48 @@ use Illuminate\Http\RedirectResponse;
 
 class LeaveRequestController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $leaves = LeaveRequest::with('employee')->orderBy('created_at', 'desc')->paginate(15);
+        $rangeType = $request->input('range_type', 'all_time');
+        $baseDate = \Carbon\Carbon::parse($request->input('date', \Carbon\Carbon::today()->toDateString()));
+        $today = \Carbon\Carbon::today();
+        
+        $startDate = $baseDate->copy()->toDateString();
+        $endDate = $baseDate->copy()->toDateString();
+        
+        if ($rangeType === 'date_wise') {
+            $startDate = $baseDate->toDateString();
+            $endDate = $startDate;
+        } elseif ($rangeType === 'week_wise') {
+            $startDate = $baseDate->copy()->startOfWeek()->toDateString();
+            $endDate = $baseDate->copy()->endOfWeek()->toDateString();
+        } elseif ($rangeType === 'month_wise') {
+            $startDate = $baseDate->copy()->startOfMonth()->toDateString();
+            $endDate = $baseDate->copy()->endOfMonth()->toDateString();
+        } elseif ($rangeType === 'year_wise') {
+            $startDate = $baseDate->copy()->startOfYear()->toDateString();
+            $endDate = $baseDate->copy()->endOfYear()->toDateString();
+        } elseif ($rangeType === 'custom_range') {
+            $startDate = $request->input('start_date', $today->toDateString());
+            $endDate = $request->input('end_date', $today->toDateString());
+        }
+
+        $query = LeaveRequest::with('employee')->orderBy('created_at', 'desc');
+        
+        if ($rangeType !== 'all_time') {
+             $query->where(function($q) use ($startDate, $endDate) {
+                 $q->whereBetween('start_date', [$startDate, $endDate])
+                   ->orWhereBetween('end_date', [$startDate, $endDate])
+                   ->orWhere(function($q2) use ($startDate, $endDate) {
+                       $q2->where('start_date', '<=', $startDate)
+                          ->where('end_date', '>=', $endDate);
+                   });
+             });
+        }
+
+        $leaves = $query->paginate(15)->withQueryString();
         $employees = TeamMember::orderBy('name')->get();
-        return view('manager.leaves', compact('leaves', 'employees'));
+        return view('manager.leaves', compact('leaves', 'employees', 'rangeType'));
     }
 
     public function store(Request $request): RedirectResponse

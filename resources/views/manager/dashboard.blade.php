@@ -45,6 +45,23 @@
     .toast-container {
         z-index: 1055;
     }
+    .premium-shadow {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01) !important;
+    }
+    .icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .glass-pill {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
 </style>
 @endsection
 
@@ -59,20 +76,24 @@
         elseif ($rangeType === 'custom_range') $rangeLabel = 'Custom Range';
     }
 @endphp
-<div class="row mb-4">
-    <div class="col-12 d-flex flex-column flex-xl-row justify-content-between align-items-start align-items-xl-center gap-3">
+<div class="row mb-5">
+    <div class="col-12 d-flex flex-column flex-xxl-row justify-content-between align-items-start align-items-xxl-center gap-4">
         <div>
-            <h2 class="h3 font-outfit text-dark mb-1">Executive Summary Dashboard</h2>
-            <p class="text-secondary small mb-0">High-level KPIs, organization performance, and AI-driven insights.</p>
+            <h2 class="h2 font-outfit text-dark fw-bold mb-2">Executive Summary Dashboard</h2>
+            <p class="text-secondary mb-0 fs-6">High-level KPIs, organization performance, and AI-driven insights.</p>
         </div>
-        <div class="d-flex flex-nowrap align-items-center gap-2 overflow-auto w-100 w-xl-auto" style="padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none;">
-            <style>
-                .d-flex.overflow-auto::-webkit-scrollbar { display: none; }
-            </style>
-            <!-- Date Picker UI (Leaderboard Style) -->
-            <form action="{{ route('manager.dashboard') }}" method="GET" class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border border-secondary-subtle m-0 flex-shrink-0" id="filterForm">
+        <div class="d-flex flex-wrap align-items-center gap-3 w-100 w-xxl-auto">
+              <!-- Quick Search Date -->
+              <form action="{{ route('manager.dashboard') }}" method="GET" class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill premium-shadow border border-secondary-subtle m-0 flex-grow-1 flex-md-grow-0" id="quickDateForm">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="text-primary flex-shrink-0" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
+                  <input type="hidden" name="range_type" value="date_wise">
+                  <input type="date" name="date" class="form-control border-0 text-dark bg-transparent p-0 shadow-none w-100" style="outline: none;" onchange="fetchDashboardData('quickDateForm')" value="{{ $targetDate ?? '' }}">
+              </form>
+              
+              <!-- Date Picker UI -->
+            <form action="{{ route('manager.dashboard') }}" method="GET" class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill premium-shadow border border-secondary-subtle m-0 flex-grow-1 flex-md-grow-0" id="filterForm" onsubmit="event.preventDefault(); fetchDashboardData('filterForm');">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="text-secondary" viewBox="0 0 16 16"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>
-                <select name="range_type" id="rangeType" class="form-select form-select-sm border-0 shadow-none bg-transparent fw-semibold text-dark p-0 pe-3" style="cursor: pointer; outline: none; box-shadow: none; min-width: 90px;" onchange="toggleCustomDates()">
+                <select name="range_type" id="rangeType" class="form-select border-0 shadow-none bg-transparent fw-semibold text-dark p-0 pe-3" style="cursor: pointer; outline: none; min-width: 100px;" onchange="toggleCustomDates()">
                     <option value="all_time" {{ (isset($rangeType) && $rangeType === 'all_time') ? 'selected' : '' }}>All Time</option>
                     <option value="date_wise" {{ (isset($rangeType) && $rangeType === 'date_wise') ? 'selected' : '' }}>Daily</option>
                     <option value="week_wise" {{ (isset($rangeType) && $rangeType === 'week_wise') ? 'selected' : '' }}>Weekly</option>
@@ -81,43 +102,32 @@
                     <option value="custom_range" {{ (isset($rangeType) && $rangeType === 'custom_range') ? 'selected' : '' }}>Custom Range</option>
                 </select>
 
-                <div id="customDateContainer" class="d-flex align-items-center gap-2" style="display: {{ (isset($rangeType) && $rangeType === 'custom_range') ? 'flex' : 'none' }} !important;">
-                    <input type="date" name="start_date" id="startDateFilter" class="form-control form-control-sm border-0 text-secondary bg-light rounded-pill px-3" value="{{ $startDate ?? $targetDate }}">
+                <div id="customDateContainer" class="align-items-center gap-2" style="display: {{ (isset($rangeType) && $rangeType === 'custom_range') ? 'flex' : 'none' }} !important;">
+                    <input type="date" name="start_date" id="startDateFilter" class="form-control border-0 text-secondary bg-light rounded-pill px-3" value="{{ $startDate ?? $targetDate }}">
                     <span class="text-muted small">to</span>
-                    <input type="date" name="end_date" id="endDateFilter" class="form-control form-control-sm border-0 text-secondary bg-light rounded-pill px-3" value="{{ $endDate ?? $targetDate }}">
-                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">Apply</button>
+                    <input type="date" name="end_date" id="endDateFilter" class="form-control border-0 text-secondary bg-light rounded-pill px-3" value="{{ $endDate ?? $targetDate }}">
+                    <button type="submit" class="btn btn-primary rounded-pill px-3">Apply</button>
                 </div>
             </form>
             
-            <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center rounded-pill bg-white text-nowrap shadow-sm border-secondary-subtle px-3 py-2 flex-shrink-0" data-bs-toggle="modal" data-bs-target="#productivityCalendarModal">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+            <button type="button" class="btn btn-light d-inline-flex align-items-center rounded-pill premium-shadow border-secondary-subtle px-4 py-2 hover-lift text-dark fw-semibold" data-bs-toggle="modal" data-bs-target="#productivityCalendarModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-primary" viewBox="0 0 16 16">
                   <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
                 </svg>
                 Calendar
             </button>
             
-            <button class="btn btn-outline-primary d-inline-flex align-items-center rounded-pill bg-white text-nowrap shadow-sm px-3 py-2 flex-shrink-0" onclick="window.print()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+            <button class="btn btn-light d-inline-flex align-items-center rounded-pill premium-shadow border-secondary-subtle px-4 py-2 hover-lift text-dark fw-semibold" onclick="window.print()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2 text-primary" viewBox="0 0 16 16">
                     <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
                     <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
                 </svg>
                 Export
             </button>
             
-            <div class="dropdown flex-shrink-0">
-                <button class="btn btn-primary d-inline-flex align-items-center rounded-pill text-nowrap shadow-sm px-3 py-2 dropdown-toggle" type="button" id="generateReportDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background: linear-gradient(135deg, var(--accent-color), #6366f1); border: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-2" viewBox="0 0 16 16">
-                      <path fill-rule="evenodd" d="M14.5 3h-13a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
-                      <path d="M3 8.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5zm0-5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/>
-                    </svg>
-                    Generate Report
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 rounded-3" aria-labelledby="generateReportDropdown">
-                    <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('reportType').value='daily'; document.getElementById('reportForm').submit();"><i class="bi bi-file-earmark-text me-2 text-secondary"></i>Daily Report</a></li>
-                    <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('reportType').value='monthly'; document.getElementById('reportForm').submit();"><i class="bi bi-file-earmark-bar-graph me-2 text-secondary"></i>Monthly Summary</a></li>
-                    <li><a class="dropdown-item py-2" href="#" onclick="event.preventDefault(); document.getElementById('reportType').value='executive'; document.getElementById('reportForm').submit();"><i class="bi bi-file-earmark-check me-2 text-secondary"></i>Executive Summary</a></li>
-                </ul>
-            </div>
+            <button type="button" id="btn-evening" class="btn btn-primary d-inline-flex align-items-center rounded-pill premium-shadow border-0 px-4 py-2 hover-lift fw-semibold" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;" onclick="submitReportForm('evening', 'reportForm', this)">
+                <i class="bi bi-moon-stars me-2"></i> Generate Evening Report
+            </button>
             
             <form id="reportForm" method="POST" action="{{ route('manager.generate') }}" class="d-none">
                 @csrf
@@ -129,129 +139,191 @@
 </div>
 
 <!-- KPI Cards -->
-<div class="row g-4 mb-4">
+<div class="row g-4 mb-5">
     <!-- Org Performance -->
     <div class="col-md-3">
-        <div class="card bg-white shadow-sm border-0 rounded-4 h-100 p-3 hover-lift kpi-card">
-            <span class="text-uppercase text-secondary font-semibold" style="font-size: 11px;">Org Performance</span>
-            <h3 id="kpi-org-performance" class="font-outfit text-dark mt-2 mb-0" data-value="{{ $latestReport ? $latestReport->team_productivity : 0 }}">{{ $latestReport ? $latestReport->team_productivity . '%' : 'N/A' }}</h3>
-            <span id="kpi-org-trend" class="text-success small d-flex align-items-center mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="me-1" viewBox="0 0 16 16"><path d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
+        <div class="card bg-white premium-shadow border-0 rounded-4 h-100 p-4 hover-lift kpi-card position-relative overflow-hidden">
+            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), transparent); pointer-events: none;"></div>
+            <div class="d-flex justify-content-between align-items-start mb-3 position-relative z-1">
+                <span class="text-uppercase text-secondary fw-bold tracking-wider" style="font-size: 11px;">Org Performance</span>
+                <div class="icon-circle bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-activity fs-4"></i>
+                </div>
+            </div>
+            <h2 id="kpi-org-performance" class="font-outfit text-dark fw-bolder mb-1 position-relative z-1" style="font-size: 2.2rem;" data-value="{{ $latestReport ? $latestReport->team_productivity : 0 }}">{{ $latestReport ? $latestReport->team_productivity . '%' : 'N/A' }}</h2>
+            <span id="kpi-org-trend" class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill px-2 py-1 small d-inline-flex align-items-center position-relative z-1">
+                <i class="bi bi-arrow-up-right me-1"></i>
                 +2.4% vs last week
             </span>
         </div>
     </div>
     <!-- Total Employees -->
     <div class="col-md-3">
-        <div class="card bg-white shadow-sm border-0 rounded-4 h-100 p-3 hover-lift kpi-card">
-            <span class="text-uppercase text-secondary font-semibold" style="font-size: 11px;">Total Employees</span>
-            <h3 id="kpi-total-employees" class="font-outfit text-dark mt-2 mb-0" data-value="{{ $totalMembers }}">{{ $totalMembers }}</h3>
-            <span class="text-secondary small mt-1 d-block">Active registered members</span>
+        <div class="card bg-white premium-shadow border-0 rounded-4 h-100 p-4 hover-lift kpi-card position-relative overflow-hidden">
+            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), transparent); pointer-events: none;"></div>
+            <div class="d-flex justify-content-between align-items-start mb-3 position-relative z-1">
+                <span class="text-uppercase text-secondary fw-bold tracking-wider" style="font-size: 11px;">Total Employees</span>
+                <div class="icon-circle bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-people fs-4"></i>
+                </div>
+            </div>
+            <h2 id="kpi-total-employees" class="font-outfit text-dark fw-bolder mb-1 position-relative z-1" style="font-size: 2.2rem;" data-value="{{ $totalMembers }}">{{ $totalMembers }}</h2>
+            <span class="text-secondary small mt-1 d-block position-relative z-1">Active registered members</span>
         </div>
     </div>
     <!-- Tasks Completion -->
     <div class="col-md-3">
-        <div class="card bg-white shadow-sm border-0 rounded-4 h-100 p-3 hover-lift kpi-card">
-            <span id="label-tasks-completed" class="text-uppercase text-secondary font-semibold" style="font-size: 11px;">Tasks Completed ({{ $rangeLabel }})</span>
-            <h3 id="kpi-tasks-completed" class="font-outfit text-dark mt-2 mb-0">{{ $completedTasksCount }} / {{ $totalTasks }}</h3>
-            <div class="progress mt-2" style="height: 4px;">
+        <div class="card bg-white premium-shadow border-0 rounded-4 h-100 p-4 hover-lift kpi-card position-relative overflow-hidden">
+            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent); pointer-events: none;"></div>
+            <div class="d-flex justify-content-between align-items-start mb-3 position-relative z-1">
+                <span id="label-tasks-completed" class="text-uppercase text-secondary fw-bold tracking-wider" style="font-size: 11px;">Tasks Completed ({{ $rangeLabel }})</span>
+                <div class="icon-circle bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-check2-all fs-4"></i>
+                </div>
+            </div>
+            <h2 id="kpi-tasks-completed" class="font-outfit text-dark fw-bolder mb-2 position-relative z-1" style="font-size: 2.2rem;">{{ $completedTasksCount }}<span class="fs-5 text-secondary fw-normal"> / {{ $totalTasks }}</span></h2>
+            <div class="progress mt-auto position-relative z-1 bg-secondary-subtle rounded-pill" style="height: 6px;">
                 @php $taskPct = $totalTasks > 0 ? ($completedTasksCount / $totalTasks) * 100 : 0; @endphp
-                <div id="kpi-tasks-progress" class="progress-bar bg-primary" role="progressbar" style="width: {{ $taskPct }}%; transition: width 1s ease-in-out;"></div>
+                <div id="kpi-tasks-progress" class="progress-bar rounded-pill" role="progressbar" style="width: {{ $taskPct }}%; background: linear-gradient(90deg, #f59e0b, #fcd34d); transition: width 1s ease-in-out;"></div>
             </div>
         </div>
     </div>
     <!-- Git Commits -->
     <div class="col-md-3">
-        <div class="card bg-white shadow-sm border-0 rounded-4 h-100 p-3 hover-lift kpi-card">
-            <span id="label-git-commits" class="text-uppercase text-secondary font-semibold" style="font-size: 11px;">Git Commits ({{ $rangeLabel }})</span>
-            <h3 id="kpi-git-commits" class="font-outfit text-dark mt-2 mb-0" data-value="{{ $totalCommits }}">{{ $totalCommits }}</h3>
-            <span class="text-secondary small mt-1 d-block">Pushes across all repositories</span>
+        <div class="card bg-white premium-shadow border-0 rounded-4 h-100 p-4 hover-lift kpi-card position-relative overflow-hidden">
+            <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), transparent); pointer-events: none;"></div>
+            <div class="d-flex justify-content-between align-items-start mb-3 position-relative z-1">
+                <span id="label-git-commits" class="text-uppercase text-secondary fw-bold tracking-wider" style="font-size: 11px;">Git Commits ({{ $rangeLabel }})</span>
+                <div class="icon-circle bg-purple bg-opacity-10" style="color: #8b5cf6;">
+                    <i class="bi bi-git fs-4"></i>
+                </div>
+            </div>
+            <h2 id="kpi-git-commits" class="font-outfit text-dark fw-bolder mb-1 position-relative z-1" style="font-size: 2.2rem;" data-value="{{ $totalCommits }}">{{ $totalCommits }}</h2>
+            <span class="text-secondary small mt-1 d-block position-relative z-1">Pushes across all repositories</span>
         </div>
     </div>
 </div>
 
 <!-- Charts Row -->
-<div class="row g-4 mb-4">
+<div class="row g-4 mb-5">
     <!-- Trend Chart -->
     <div class="col-lg-8">
-        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100">
-            <h5 class="font-outfit text-dark mb-4">Performance Trend (Last 7 Days)</h5>
-            <div style="height: 300px; width: 100%;">
+        <div class="card bg-white premium-shadow border-0 rounded-4 p-4 h-100">
+            <h5 class="font-outfit text-dark fw-bold mb-4">Performance Trend <span class="fw-normal text-secondary fs-6">(Last 7 Days)</span></h5>
+            <div style="height: 320px; width: 100%;">
                 <canvas id="performanceTrendChart"></canvas>
             </div>
         </div>
     </div>
     <!-- Workload Distribution -->
     <div class="col-lg-4">
-        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100">
-            <h5 class="font-outfit text-dark mb-4">Workload Distribution</h5>
-            <div style="height: 250px; width: 100%; display: flex; justify-content: center;">
+        <div class="card bg-white premium-shadow border-0 rounded-4 p-4 h-100">
+            <h5 class="font-outfit text-dark fw-bold mb-4">Workload Distribution</h5>
+            <div style="height: 260px; width: 100%; display: flex; justify-content: center; position: relative;">
                 <canvas id="workloadChart"></canvas>
             </div>
             <div class="mt-4 text-center">
-                <span class="small text-secondary">Breakdown of pending tasks by team.</span>
+                <span class="small text-secondary fw-semibold bg-light px-3 py-1 rounded-pill">Breakdown of pending tasks by team</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- AI Recommendations Panel (Placeholder for Phase 2) -->
-<div class="card bg-white shadow-sm border-0 rounded-4 mb-4" style="border-left: 4px solid var(--accent-color) !important;">
-    <div class="card-body p-4">
-        <h5 class="font-outfit text-dark d-flex align-items-center mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="text-primary me-2" viewBox="0 0 16 16">
-                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-            </svg>
-            AI Recommendations & Alerts
-        </h5>
-        <div class="row g-3">
+<!-- AI Recommendations Panel -->
+<div class="card bg-white premium-shadow border-0 rounded-4 mb-5 position-relative overflow-hidden" style="border-left: 5px solid #6366f1 !important;">
+    <div class="card-body p-4 position-relative z-1">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="font-outfit text-dark fw-bold d-flex align-items-center mb-0">
+                <div class="icon-circle bg-primary bg-opacity-10 text-primary me-3" style="width: 40px; height: 40px;">
+                    <i class="bi bi-stars fs-5"></i>
+                </div>
+                AI Insights & Action Items
+            </h5>
+        </div>
+        
+        <div class="row g-4">
             <!-- Burnout Risks -->
             <div class="col-md-4">
-                <div class="p-3 bg-light rounded-3 border border-secondary-subtle h-100 d-flex flex-column">
-                    <div><span class="badge bg-danger mb-2">Identified Risks</span></div>
-                    <div class="custom-scroll flex-grow-1 pe-2" style="max-height: 200px; overflow-y: auto;">
+                <div class="p-4 bg-white rounded-4 premium-shadow border border-danger-subtle h-100 d-flex flex-column position-relative overflow-hidden">
+                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(180deg, rgba(239, 68, 68, 0.05), transparent); pointer-events: none;"></div>
+                    <div class="d-flex align-items-center mb-3 position-relative z-1">
+                        <span class="badge bg-danger rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center shadow-sm">
+                            <i class="bi bi-exclamation-octagon me-2"></i> Risks Identified
+                        </span>
+                    </div>
+                    <div class="custom-scroll flex-grow-1 position-relative z-1" style="max-height: 220px; overflow-y: auto; padding-right: 8px;">
                         @if($latestReport && !empty($latestReport->risks))
-                            <ul class="small text-secondary mb-0 ps-3">
+                            <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
                                 @foreach($latestReport->risks as $risk)
-                                    <li>{{ is_array($risk) ? ($risk['risk'] ?? 'Unknown Risk') : $risk }}</li>
+                                    <li class="bg-light p-2 rounded-3 border border-secondary-subtle text-secondary small d-flex align-items-start">
+                                        <i class="bi bi-arrow-right-short text-danger mt-1 me-1"></i>
+                                        <span>{{ is_array($risk) ? ($risk['risk'] ?? 'Unknown Risk') : $risk }}</span>
+                                    </li>
                                 @endforeach
                             </ul>
                         @else
-                            <p class="small text-secondary mb-0">No immediate burnout or workload risks identified.</p>
+                            <div class="text-center py-4">
+                                <i class="bi bi-shield-check text-success fs-1 opacity-50 mb-2"></i>
+                                <p class="small text-secondary mb-0 fw-medium">No immediate burnout or workload risks identified.</p>
+                            </div>
                         @endif
                     </div>
                 </div>
             </div>
             <!-- Attention Required -->
             <div class="col-md-4">
-                <div class="p-3 bg-light rounded-3 border border-secondary-subtle h-100 d-flex flex-column">
-                    <div><span class="badge bg-warning mb-2 text-dark">Attention Required</span></div>
-                    <div class="custom-scroll flex-grow-1 pe-2" style="max-height: 200px; overflow-y: auto;">
+                <div class="p-4 bg-white rounded-4 premium-shadow border border-warning-subtle h-100 d-flex flex-column position-relative overflow-hidden">
+                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(180deg, rgba(245, 158, 11, 0.05), transparent); pointer-events: none;"></div>
+                    <div class="d-flex align-items-center mb-3 position-relative z-1">
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center shadow-sm">
+                            <i class="bi bi-exclamation-triangle me-2"></i> Attention Required
+                        </span>
+                    </div>
+                    <div class="custom-scroll flex-grow-1 position-relative z-1" style="max-height: 220px; overflow-y: auto; padding-right: 8px;">
                         @if($latestReport && !empty($latestReport->attention_required))
-                            <ul class="small text-secondary mb-0 ps-3">
+                            <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
                                 @foreach($latestReport->attention_required as $item)
-                                    <li>{{ is_array($item) ? ($item['name'] ?? 'Unknown') : $item }}</li>
+                                    <li class="bg-light p-2 rounded-3 border border-secondary-subtle text-secondary small d-flex align-items-start">
+                                        <i class="bi bi-arrow-right-short text-warning mt-1 me-1"></i>
+                                        <span>{{ is_array($item) ? ($item['name'] ?? 'Unknown') : $item }}</span>
+                                    </li>
                                 @endforeach
                             </ul>
                         @else
-                            <p class="small text-secondary mb-0">No active project or team delays currently flagged.</p>
+                            <div class="text-center py-4">
+                                <i class="bi bi-check-circle text-success fs-1 opacity-50 mb-2"></i>
+                                <p class="small text-secondary mb-0 fw-medium">No active project or team delays currently flagged.</p>
+                            </div>
                         @endif
                     </div>
                 </div>
             </div>
             <!-- Top Performers -->
             <div class="col-md-4">
-                <div class="p-3 bg-light rounded-3 border border-secondary-subtle h-100 d-flex flex-column">
-                    <div><span class="badge bg-success mb-2">Top Performers</span></div>
-                    <div class="custom-scroll flex-grow-1 pe-2" style="max-height: 200px; overflow-y: auto;">
+                <div class="p-4 bg-white rounded-4 premium-shadow border border-success-subtle h-100 d-flex flex-column position-relative overflow-hidden">
+                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(180deg, rgba(16, 185, 129, 0.05), transparent); pointer-events: none;"></div>
+                    <div class="d-flex align-items-center mb-3 position-relative z-1">
+                        <span class="badge bg-success rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center shadow-sm">
+                            <i class="bi bi-trophy me-2"></i> Top Performers
+                        </span>
+                    </div>
+                    <div class="custom-scroll flex-grow-1 position-relative z-1" style="max-height: 220px; overflow-y: auto; padding-right: 8px;">
                         @if($latestReport && !empty($latestReport->top_performers))
-                            <ul class="small text-secondary mb-0 ps-3">
+                            <ul class="list-unstyled mb-0 d-flex flex-column gap-2">
                                 @foreach($latestReport->top_performers as $perf)
-                                    <li>{{ is_array($perf) ? ($perf['name'] ?? 'Unknown') : $perf }}</li>
+                                    <li class="bg-light p-2 rounded-3 border border-secondary-subtle text-secondary small d-flex align-items-center">
+                                        <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
+                                            <i class="bi bi-star-fill" style="font-size: 10px;"></i>
+                                        </div>
+                                        <span class="fw-medium">{{ is_array($perf) ? ($perf['name'] ?? 'Unknown') : $perf }}</span>
+                                    </li>
                                 @endforeach
                             </ul>
                         @else
-                            <p class="small text-secondary mb-0">No standout performance evaluated for today yet.</p>
+                            <div class="text-center py-4">
+                                <i class="bi bi-hourglass text-secondary fs-1 opacity-50 mb-2"></i>
+                                <p class="small text-secondary mb-0 fw-medium">No standout performance evaluated for today yet.</p>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -261,101 +333,101 @@
 </div>
 
 <!-- Team Performance Overview Row -->
-<div class="row g-4 mb-4">
+<div class="row g-4 mb-5">
     <div class="col-12">
-        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 h-100">
+        <div class="card bg-white premium-shadow border-0 rounded-4 p-4 h-100">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="font-outfit text-dark mb-0">Team Performance Overview</h5>
-                <a href="{{ route('manager.teams.index') }}" class="small text-primary text-decoration-none">View All Teams</a>
+                <h5 class="font-outfit text-dark fw-bold mb-0">Team Performance Overview</h5>
+                <a href="{{ route('manager.teams.index') }}" class="btn btn-sm btn-light rounded-pill px-3 premium-shadow text-primary fw-semibold border-secondary-subtle hover-lift">View All Teams</a>
             </div>
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
+                <table class="table align-middle mb-0" style="border-collapse: separate; border-spacing: 0 8px;">
+                    <thead>
                         <tr>
-                            <th class="border-0 rounded-start-2 py-3 px-4 font-semibold text-secondary" style="font-size: 13px;">Team Name</th>
-                            <th class="border-0 py-3 px-4 font-semibold text-secondary" style="font-size: 13px;">Lead/Manager</th>
-                            <th class="border-0 py-3 px-4 font-semibold text-secondary" style="font-size: 13px;">Avg. Productivity</th>
-                            <th class="border-0 py-3 px-4 font-semibold text-secondary" style="font-size: 13px;">Task Completion</th>
-                            <th class="border-0 rounded-end-2 py-3 px-4 font-semibold text-secondary text-center" style="font-size: 13px;">Status</th>
+                            <th class="border-0 px-4 text-uppercase text-secondary fw-bold" style="font-size: 11px; letter-spacing: 0.5px;">Team Name</th>
+                            <th class="border-0 px-4 text-uppercase text-secondary fw-bold" style="font-size: 11px; letter-spacing: 0.5px;">Lead/Manager</th>
+                            <th class="border-0 px-4 text-uppercase text-secondary fw-bold" style="font-size: 11px; letter-spacing: 0.5px;">Avg. Productivity</th>
+                            <th class="border-0 px-4 text-uppercase text-secondary fw-bold" style="font-size: 11px; letter-spacing: 0.5px;">Task Completion</th>
+                            <th class="border-0 px-4 text-uppercase text-secondary fw-bold text-center" style="font-size: 11px; letter-spacing: 0.5px;">Status</th>
                         </tr>
                     </thead>
-                    <tbody class="border-top-0">
-                        <tr onclick="window.location='{{ route('manager.teams.show', 'frontend') }}'" style="cursor: pointer;" class="hover-light">
-                            <td class="px-4 py-3 border-secondary-subtle">
+                    <tbody>
+                        <tr onclick="window.location='{{ route('manager.teams.show', 'frontend') }}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-end-0 rounded-start-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm0 1h12a1 1 0 0 1 1 1v1H1V3a1 1 0 0 1 1-1zM1 6h14v7a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6zm2 2v2h2V8H3zm4 0v2h2V8H7z"/></svg>
+                                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-window-sidebar fs-5"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-0 text-dark" style="font-size: 14px;">Frontend Team</h6>
-                                        <span class="text-secondary" style="font-size: 12px;">5 Members</span>
+                                        <h6 class="mb-0 text-dark fw-bold" style="font-size: 15px;">Frontend Team</h6>
+                                        <span class="text-secondary fw-medium" style="font-size: 12px;">5 Members</span>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 border-secondary-subtle text-dark" style="font-size: 14px;">Rahul Sharma</td>
-                            <td class="px-4 py-3 border-secondary-subtle">
+                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">Rahul Sharma</td>
+                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle">
                                 <div class="d-flex align-items-center">
-                                    <span class="text-dark font-semibold me-2" style="font-size: 14px;">88%</span>
-                                    <div class="progress flex-grow-1" style="height: 6px;">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: 88%"></div>
+                                    <span class="text-dark fw-bolder me-3" style="font-size: 15px; width: 35px;">88%</span>
+                                    <div class="progress flex-grow-1 rounded-pill bg-success-subtle" style="height: 6px;">
+                                        <div class="progress-bar rounded-pill" role="progressbar" style="width: 88%; background: linear-gradient(90deg, #10b981, #34d399);"></div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 border-secondary-subtle text-dark" style="font-size: 14px;">92% <span class="text-secondary small">(115/125)</span></td>
-                            <td class="px-4 py-3 border-secondary-subtle text-center">
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-3 py-1">Excellent</span>
+                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">92% <span class="text-secondary small fw-normal ms-1">(115/125)</span></td>
+                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-start-0 rounded-end-4 text-center">
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-3 py-2 fw-semibold">Excellent</span>
                             </td>
                         </tr>
-                        <tr onclick="window.location='{{ route('manager.teams.show', 'backend') }}'" style="cursor: pointer;" class="hover-light">
-                            <td class="px-4 py-3 border-secondary-subtle">
+                        <tr onclick="window.location='{{ route('manager.teams.show', 'backend') }}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-end-0 rounded-start-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M4 11a1 1 0 1 1 2 0v1a1 1 0 1 1-2 0v-1zm5-4a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0V7zM4 3a1 1 0 1 1 2 0v3a1 1 0 1 1-2 0V3z"/><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/></svg>
+                                    <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-server fs-5"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-0 text-dark" style="font-size: 14px;">Backend Team</h6>
-                                        <span class="text-secondary" style="font-size: 12px;">7 Members</span>
+                                        <h6 class="mb-0 text-dark fw-bold" style="font-size: 15px;">Backend Team</h6>
+                                        <span class="text-secondary fw-medium" style="font-size: 12px;">7 Members</span>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 border-secondary-subtle text-dark" style="font-size: 14px;">Priya Desai</td>
-                            <td class="px-4 py-3 border-secondary-subtle">
+                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">Priya Desai</td>
+                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle">
                                 <div class="d-flex align-items-center">
-                                    <span class="text-dark font-semibold me-2" style="font-size: 14px;">76%</span>
-                                    <div class="progress flex-grow-1" style="height: 6px;">
-                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 76%"></div>
+                                    <span class="text-dark fw-bolder me-3" style="font-size: 15px; width: 35px;">76%</span>
+                                    <div class="progress flex-grow-1 rounded-pill bg-warning-subtle" style="height: 6px;">
+                                        <div class="progress-bar rounded-pill" role="progressbar" style="width: 76%; background: linear-gradient(90deg, #f59e0b, #fcd34d);"></div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 border-secondary-subtle text-dark" style="font-size: 14px;">78% <span class="text-secondary small">(85/109)</span></td>
-                            <td class="px-4 py-3 border-secondary-subtle text-center">
-                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 rounded-pill px-3 py-1">Good</span>
+                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">78% <span class="text-secondary small fw-normal ms-1">(85/109)</span></td>
+                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-start-0 rounded-end-4 text-center">
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 rounded-pill px-3 py-2 fw-semibold">Good</span>
                             </td>
                         </tr>
-                        <tr onclick="window.location='{{ route('manager.teams.show', 'qa') }}'" style="cursor: pointer;" class="hover-light">
-                            <td class="px-4 py-3 border-bottom-0">
+                        <tr onclick="window.location='{{ route('manager.teams.show', 'qa') }}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-end-0 rounded-start-4">
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-danger bg-opacity-10 text-danger rounded-3 d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/><path d="M6.854 4.646a.5.5 0 0 1 0 .708L5.207 7l1.647 1.646a.5.5 0 0 1-.708.708l-2-2a.5.5 0 0 1 0-.708l2-2a.5.5 0 0 1 .708 0zM9.146 4.646a.5.5 0 0 0 0 .708L10.793 7l-1.647 1.646a.5.5 0 0 0 .708.708l2-2a.5.5 0 0 0 0-.708l-2-2a.5.5 0 0 0-.708 0z"/></svg>
+                                    <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <i class="bi bi-bug fs-5"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-0 text-dark" style="font-size: 14px;">QA & Testing</h6>
-                                        <span class="text-secondary" style="font-size: 12px;">4 Members</span>
+                                        <h6 class="mb-0 text-dark fw-bold" style="font-size: 15px;">QA & Testing</h6>
+                                        <span class="text-secondary fw-medium" style="font-size: 12px;">4 Members</span>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 border-bottom-0 text-dark" style="font-size: 14px;">Amit Kumar</td>
-                            <td class="px-4 py-3 border-bottom-0">
+                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">Amit Kumar</td>
+                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle">
                                 <div class="d-flex align-items-center">
-                                    <span class="text-dark font-semibold me-2" style="font-size: 14px;">94%</span>
-                                    <div class="progress flex-grow-1" style="height: 6px;">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: 94%"></div>
+                                    <span class="text-dark fw-bolder me-3" style="font-size: 15px; width: 35px;">94%</span>
+                                    <div class="progress flex-grow-1 rounded-pill bg-success-subtle" style="height: 6px;">
+                                        <div class="progress-bar rounded-pill" role="progressbar" style="width: 94%; background: linear-gradient(90deg, #10b981, #34d399);"></div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3 border-bottom-0 text-dark" style="font-size: 14px;">98% <span class="text-secondary small">(210/215)</span></td>
-                            <td class="px-4 py-3 border-bottom-0 text-center">
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-3 py-1">Exceptional</span>
+                            <td class="px-4 py-3 bg-white border-top border-bottom border-secondary-subtle text-dark fw-medium" style="font-size: 14px;">98% <span class="text-secondary small fw-normal ms-1">(210/215)</span></td>
+                            <td class="px-4 py-3 bg-white border border-secondary-subtle border-start-0 rounded-end-4 text-center">
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-3 py-2 fw-semibold">Exceptional</span>
                             </td>
                         </tr>
                     </tbody>
@@ -547,6 +619,12 @@
         @endphp
 
         const trendCtx = document.getElementById('performanceTrendChart').getContext('2d');
+        
+        // Create Gradient
+        let gradient = trendCtx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+        gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
         trendChartInstance = new Chart(trendCtx, {
             type: 'line',
             data: {
@@ -554,39 +632,48 @@
                 datasets: [{
                     label: 'Productivity Score',
                     data: {!! json_encode($scores) !!},
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: '#6366f1',
+                    backgroundColor: gradient,
                     borderWidth: 3,
                     fill: true,
                     tension: 0.4,
                     pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#3b82f6',
+                    pointBorderColor: '#6366f1',
                     pointBorderWidth: 2,
-                    pointRadius: 4
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleColor: '#ffffff',
+                        bodyColor: '#e2e8f0',
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false
+                    }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
                         max: 100,
-                        grid: { borderDash: [5, 5], color: '#e2e8f0' },
-                        ticks: { color: '#64748b' }
+                        grid: { borderDash: [5, 5], color: '#f1f5f9' },
+                        ticks: { color: '#94a3b8', font: { size: 11 } }
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#64748b' }
+                        ticks: { color: '#94a3b8', font: { size: 11 } }
                     }
                 }
             }
         });
 
-        // Prepare data for Doughnut Chart (Mocked data for now, ideally fetched from DB)
+        // Prepare data for Doughnut Chart
         const workloadCtx = document.getElementById('workloadChart').getContext('2d');
         workloadChartInstance = new Chart(workloadCtx, {
             type: 'doughnut',
@@ -594,9 +681,9 @@
                 labels: {!! json_encode($workloadLabelsInit) !!},
                 datasets: [{
                     data: {!! json_encode($workloadDataInit) !!},
-                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#8b5cf6'],
+                    backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#3b82f6'],
                     borderWidth: 0,
-                    hoverOffset: 4
+                    hoverOffset: 6
                 }]
             },
             options: {
@@ -605,10 +692,15 @@
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { padding: 20, usePointStyle: true, color: '#64748b' }
+                        labels: { padding: 20, usePointStyle: true, pointStyle: 'circle', color: '#64748b', font: { size: 12 } }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        padding: 12,
+                        cornerRadius: 8
                     }
                 },
-                cutout: '70%'
+                cutout: '75%'
             }
         });
 
@@ -631,6 +723,75 @@
     });
     @endif
 
+    function submitReportForm(type, formId, btnElement = null) {
+        const btn = btnElement || document.getElementById(`btn-${type}`);
+        let originalText = '';
+        if (btn) {
+            originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Generating...`;
+            btn.disabled = true;
+        }
+
+        const form = document.getElementById(formId);
+        if (document.getElementById('reportType') && formId === 'reportForm') {
+            document.getElementById('reportType').value = type;
+            
+            // Sync date from the active filter so we don't generate report for the old date
+            const dateInput = form.querySelector('input[name="date"]');
+            const rangeTypeSelect = document.getElementById('rangeType');
+            if (dateInput) {
+                if (rangeTypeSelect && rangeTypeSelect.value === 'custom_range') {
+                    const endDate = document.getElementById('endDateFilter');
+                    if (endDate) dateInput.value = endDate.value;
+                } else {
+                    const quickDate = document.querySelector('#quickDateForm input[name="date"]');
+                    if (quickDate) dateInput.value = quickDate.value;
+                }
+            }
+        }
+        
+        const formData = new FormData(form);
+        if (formId === 'bottomReportForm') {
+            formData.append('type', type);
+        }
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok && response.status !== 500) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+            if(data.success) {
+                showToast(data.message || 'Report generated successfully!', 'success');
+                const activeFormId = (document.getElementById('rangeType') && document.getElementById('rangeType').value === 'date_wise') ? 'quickDateForm' : 'filterForm';
+                fetchDashboardData(activeFormId);
+            } else {
+                showToast(data.message || 'Error generating report.', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            if (btn) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+            showToast('Server error while generating report. Please ensure the backend is running.');
+        });
+    }
+
     function toggleCustomDates() {
         const select = document.getElementById('rangeType');
         const customContainer = document.getElementById('customDateContainer');
@@ -638,18 +799,18 @@
             customContainer.style.setProperty('display', 'flex', 'important');
         } else {
             customContainer.style.setProperty('display', 'none', 'important');
-            fetchDashboardData();
+            fetchDashboardData('filterForm');
         }
     }
 
-    function fetchDashboardData() {
+    function fetchDashboardData(formId = 'filterForm') {
         // Show Skeleton Loaders
         document.querySelectorAll('.kpi-card').forEach(el => el.classList.add('skeleton'));
         if (document.getElementById('performanceTrendChart')) {
             document.getElementById('performanceTrendChart').parentElement.classList.add('skeleton');
         }
 
-        const form = document.getElementById('filterForm');
+        const form = document.getElementById(formId);
         const url = new URL(form.action);
         const params = new URLSearchParams(new FormData(form));
 
@@ -695,6 +856,19 @@
                     workloadChartInstance.data.labels = data.workload.labels;
                     workloadChartInstance.data.datasets[0].data = data.workload.data;
                     workloadChartInstance.update();
+                }
+
+                if (data.attendance) {
+                    animateValue('attendance-present-val', data.attendance.present, true);
+                    animateValue('attendance-late-val', data.attendance.late, true);
+                    animateValue('attendance-absent-val', data.attendance.absent, true);
+                    
+                    const progressBars = document.querySelectorAll('.attendance-progress .progress-bar');
+                    if (progressBars.length >= 3) {
+                        progressBars[0].style.width = data.attendance.present + '%';
+                        progressBars[1].style.width = data.attendance.late + '%';
+                        progressBars[2].style.width = data.attendance.absent + '%';
+                    }
                 }
             } else {
                 throw new Error(data.message || 'Error parsing data');
@@ -750,12 +924,13 @@
         window.requestAnimationFrame(step);
     }
 
-    function showToast(message) {
+    function showToast(message, type = 'danger') {
+        const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
         const toastHtml = `
-            <div class="toast align-items-center text-white bg-danger border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast align-items-center text-white bg-${type} border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
               <div class="d-flex">
                 <div class="toast-body">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>${message}
+                    <i class="bi ${icon} me-2"></i>${message}
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
               </div>

@@ -18,13 +18,13 @@
         <!-- Custom Styles -->
         <style>
             :root {
-                --bg-color: #0f172a;
-                --card-bg: #1e293b;
-                --text-color: #ffffff;
-                --accent-color: #a855f7;
-                --accent-hover: #b55fe6;
-                --border-color: #334155;
-                --text-muted: #94a3b8;
+                --bg-color: #f8fafc;
+                --card-bg: #ffffff;
+                --text-color: #1e293b;
+                --accent-color: #4f46e5;
+                --accent-hover: #4338ca;
+                --border-color: #1e293b;
+                --text-muted: #64748b;
             }
 
             body {
@@ -40,7 +40,7 @@
 
             /* Header styling */
             .navbar {
-                background-color: rgba(15, 23, 42, 0.8) !important;
+                background-color: rgba(255, 255, 255, 0.8) !important;
                 backdrop-filter: blur(12px);
                 border-bottom: 1px solid var(--border-color);
                 padding: 1rem 0;
@@ -62,7 +62,7 @@
                 font-weight: 800;
                 font-size: 1.25rem;
                 letter-spacing: -0.02em;
-                color: #ffffff;
+                color: var(--text-color);
             }
 
             /* Hero Section */
@@ -76,10 +76,10 @@
                 display: inline-flex;
                 align-items: center;
                 padding: 0.5rem 1rem;
-                background-color: rgba(168, 85, 247, 0.1);
-                border: 1px solid rgba(168, 85, 247, 0.2);
+                background-color: rgba(99, 102, 241, 0.1);
+                border: 1px solid rgba(99, 102, 241, 0.2);
                 border-radius: 99px;
-                color: #d8b4fe;
+                color: var(--accent-hover);
                 font-size: 0.875rem;
                 font-weight: 600;
                 margin-bottom: 1.5rem;
@@ -91,7 +91,7 @@
                 line-height: 1.15;
                 letter-spacing: -0.025em;
                 margin-bottom: 1.5rem;
-                background: linear-gradient(to right, #ffffff, #e2e8f0);
+                background: linear-gradient(to right, #1e293b, #4f46e5);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
             }
@@ -124,7 +124,7 @@
 
             .btn-secondary-outline {
                 background-color: transparent;
-                color: #ffffff;
+                color: var(--text-color);
                 border: 1px solid var(--border-color);
                 font-weight: 600;
                 border-radius: 12px;
@@ -133,9 +133,9 @@
             }
 
             .btn-secondary-outline:hover {
-                background-color: rgba(255, 255, 255, 0.04);
+                background-color: rgba(0, 0, 0, 0.04);
                 border-color: var(--text-muted);
-                color: #ffffff;
+                color: var(--text-color);
                 transform: translateY(-2px);
             }
 
@@ -146,7 +146,7 @@
 
             .feature-card {
                 background-color: var(--card-bg);
-                border: 1px solid rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(0, 0, 0, 0.05);
                 border-radius: 20px;
                 padding: 2.5rem 2rem;
                 height: 100%;
@@ -173,7 +173,7 @@
 
             /* Mockup Chat Interface */
             .mockup-container {
-                background-color: #0b0f19;
+                background-color: #ffffff;
                 border: 1px solid var(--border-color);
                 border-radius: 24px;
                 box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
@@ -181,7 +181,7 @@
             }
 
             .mockup-header {
-                background-color: #0d1321;
+                background-color: #f8fafc;
                 border-bottom: 1px solid var(--border-color);
                 padding: 1rem 1.5rem;
                 display: flex;
@@ -213,9 +213,9 @@
             }
 
             .mock-bubble-ai {
-                background-color: #1e293b;
-                color: #e2e8f0;
-                border: 1px solid #334155;
+                background-color: #f1f5f9;
+                color: #1e293b;
+                border: 1px solid #e2e8f0;
                 padding: 0.75rem 1rem;
                 border-radius: 16px;
                 border-top-left-radius: 4px;
@@ -235,11 +235,11 @@
     <body>
 
         <!-- Navigation Bar -->
-        <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <nav class="navbar navbar-expand-lg navbar-light sticky-top">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center" href="/">
                     <div class="navbar-brand-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="text-white" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="text-dark" viewBox="0 0 16 16">
                             <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.7 4 5.65 5.5 5.65h5c1.5 0 2.5 1.05 2.5 2.412v3.838a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 3 11.9V8.062Zm2.5-.912C4.338 7.15 3.5 7.9 3.5 9v1.5a.5.5 0 0 0 1 0v-1.5c0-.276.224-.5.5-.5h5c.276 0 .5.224.5.5v1.5a.5.5 0 0 0 1 0v-1.5c0-1.1-.838-1.85-2-1.85h-5Z"/>
                             <path d="M8 2a3 3 0 0 0-3 3 .5.5 0 0 0 1 0 2 2 0 1 1 4 0 .5.5 0 0 0 1 0 3 3 0 0 0-3-3Z"/>
                         </svg>
@@ -320,7 +320,7 @@
         <section class="features-section">
             <div class="container">
                 <div class="text-center mb-5">
-                    <h3 class="h2 font-outfit text-white">Full-Suite Automated Workflow</h3>
+                    <h3 class="h2 font-outfit text-dark">Full-Suite Automated Workflow</h3>
                     <p class="text-secondary mx-auto" style="max-width: 500px;">Unlock insights about your engineers without reading endless chat channels or repository logs.</p>
                 </div>
                 
@@ -332,7 +332,7 @@
                                     <path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V2zM5 5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5zm-4 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V9z"/>
                                 </svg>
                             </div>
-                            <h4 class="h5 text-white font-outfit mb-3">Daily Performance Index</h4>
+                            <h4 class="h5 text-dark font-outfit mb-3">Daily Performance Index</h4>
                             <p class="text-secondary small mb-0">Calculates a composite team productivity percentage based on daily commit frequency, completed checklists, and attendance metrics.</p>
                         </div>
                     </div>
@@ -344,7 +344,7 @@
                                     <path d="M8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6-.097 1.016-.417 2.13-.771 2.966-.079.186.074.394.273.362 2.256-.37 3.597-.938 4.18-1.234A9.06 9.06 0 0 0 8 15Z"/>
                                 </svg>
                             </div>
-                            <h4 class="h5 text-white font-outfit mb-3">Interactive AI Chatbot</h4>
+                            <h4 class="h5 text-dark font-outfit mb-3">Interactive AI Chatbot</h4>
                             <p class="text-secondary small mb-0">Ask questions using natural language. The AI agent evaluates your active database logs instantly to retrieve accurate status sync summaries.</p>
                         </div>
                     </div>
@@ -356,7 +356,7 @@
                                     <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
                                 </svg>
                             </div>
-                            <h4 class="h5 text-white font-outfit mb-3">Evening Report Summaries</h4>
+                            <h4 class="h5 text-dark font-outfit mb-3">Evening Report Summaries</h4>
                             <p class="text-secondary small mb-0">Every day at 8:00 PM, a daily performance narrative review is automatically generated, identifying high-risk areas, blockers, and star performers.</p>
                         </div>
                     </div>
@@ -365,7 +365,7 @@
         </section>
 
         <!-- Footer -->
-        <footer class="footer-section text-center bg-slate-950/20">
+        <footer class="footer-section text-center bg-slate-50">
             <div class="container">
                 <p class="mb-0">&copy; {{ date('Y') }} Manager Agent. All rights reserved. Powered by AI.</p>
             </div>
@@ -375,3 +375,4 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     </body>
 </html>
+

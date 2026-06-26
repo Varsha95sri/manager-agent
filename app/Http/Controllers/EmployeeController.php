@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TeamMember;
+use App\Models\ProjectAllocation;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -33,6 +34,17 @@ class EmployeeController extends Controller
         $skills = \App\Models\Skill::orderBy('category')->orderBy('name')->get();
 
         return view('manager.employees', compact('employees', 'departments', 'skills'));
+    }
+
+    /**
+     * Display the specified employee profile.
+     */
+    public function show($id): View
+    {
+        $employee = TeamMember::with(['department', 'skills', 'projectAllocations.project', 'attendanceLogs'])->findOrFail($id);
+        $projects = \App\Models\Project::orderBy('name')->get();
+
+        return view('manager.employees-show', compact('employee', 'projects'));
     }
 
     /**
@@ -221,5 +233,37 @@ class EmployeeController extends Controller
         fclose($fileHandle);
 
         return redirect()->route('manager.employees.index')->with('success', "Successfully imported {$importedCount} employee records.");
+    }
+
+    /**
+     * Store a project allocation for an employee.
+     */
+    public function storeAllocation(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'team_member_id' => 'required|exists:team_members,id',
+            'project_id' => 'required|exists:projects,id',
+            'allocated_from' => 'required|date',
+            'role_on_project' => 'nullable|string|max:255',
+        ]);
+
+        ProjectAllocation::create($validated);
+        return back()->with('success', 'Project allocated successfully.');
+    }
+
+    /**
+     * Update/Roll-off a project allocation.
+     */
+    public function updateAllocation(Request $request, $id): RedirectResponse
+    {
+        $allocation = ProjectAllocation::findOrFail($id);
+        
+        $validated = $request->validate([
+            'status' => 'required|string|in:active,rolled_off',
+            'allocated_to' => 'nullable|date',
+        ]);
+
+        $allocation->update($validated);
+        return back()->with('success', 'Project allocation updated successfully.');
     }
 }

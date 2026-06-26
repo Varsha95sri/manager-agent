@@ -15,7 +15,7 @@
         @viteReactRefresh
         @vite(['resources/js/app.jsx'])
     </head>
-    <body class="font-sans antialiased text-slate-200 bg-slate-950">
+    <body class="font-sans antialiased text-slate-800 bg-white">
         <div id="app" data-page="{{ json_encode($page) }}"></div>
     </body>
 </html>

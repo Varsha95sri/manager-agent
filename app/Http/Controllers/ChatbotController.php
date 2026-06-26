@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ChatbotAgentService;
+use App\Models\AiInsight;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -24,7 +25,8 @@ class ChatbotController extends Controller
     {
         // Get conversation logs from the session, defaults to empty array
         $chatHistory = session('chat_history', []);
-        return view('manager.chatbot', compact('chatHistory'));
+        $insights = AiInsight::latest()->take(5)->get();
+        return view('manager.chatbot', compact('chatHistory', 'insights'));
     }
 
     /**

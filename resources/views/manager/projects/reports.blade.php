@@ -69,7 +69,7 @@
         <div class="card glass-card p-4 h-100 border-0">
             <h5 class="text-dark font-outfit mb-4">Active Projects Status</h5>
             @if($activeProjects->count() > 0)
-                <div class="list-group list-group-flush bg-transparent">
+                <div class="list-group list-group-flush bg-transparent" style="max-height: 500px; overflow-y: auto;">
                     @foreach($activeProjects as $project)
                         <div class="list-group-item bg-transparent border-secondary-subtle px-0 py-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">

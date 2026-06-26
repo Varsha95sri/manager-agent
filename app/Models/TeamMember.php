@@ -29,6 +29,7 @@ class TeamMember extends Model
         'performance_score',
         'performance_grade',
         'department_id',
+        'designation_id',
         'team_id',
     ];
 
@@ -92,5 +93,15 @@ class TeamMember extends Model
     public function team()
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function designation()
+    {
+        return $this->belongsTo(Designation::class);
+    }
+
+    public function projectAllocations(): HasMany
+    {
+        return $this->hasMany(ProjectAllocation::class);
     }
 }

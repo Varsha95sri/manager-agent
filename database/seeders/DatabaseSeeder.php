@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Varsha Srivastava',
                 'email' => 'test@example.com',
                 'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'role' => 'manager',
                 'email_verified_at' => now(),
             ]);
         }

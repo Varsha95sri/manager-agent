@@ -10,7 +10,7 @@
         <!-- Header area -->
         <div class="row g-4 align-items-center mb-4">
             <div class="col-12">
-                <h2 class="h3 font-outfit text-white mb-1">Account Settings</h2>
+                <h2 class="h3 font-outfit text-slate-900 mb-1">Account Settings</h2>
                 <p class="text-secondary small mb-0">Update your account profile information and security settings.</p>
             </div>
         </div>
@@ -42,8 +42,8 @@
         <div class="row g-4 mb-4">
             <!-- Left Card: Profile Information -->
             <div class="col-md-6">
-                <div class="card glass-card p-4 h-100 border border-slate-800">
-                    <h4 class="h5 font-outfit text-white mb-2">Profile Information</h4>
+                <div class="card glass-card p-4 h-100 border border-slate-300">
+                    <h4 class="h5 font-outfit text-slate-900 mb-2">Profile Information</h4>
                     <p class="text-secondary small mb-4">Update your account's profile name and email address.</p>
                     
                     <form method="POST" action="{{ route('profile.update') }}">
@@ -75,8 +75,8 @@
 
             <!-- Right Card: Update Password -->
             <div class="col-md-6">
-                <div class="card glass-card p-4 h-100 border border-slate-800">
-                    <h4 class="h5 font-outfit text-white mb-2">Update Password</h4>
+                <div class="card glass-card p-4 h-100 border border-slate-300">
+                    <h4 class="h5 font-outfit text-slate-900 mb-2">Update Password</h4>
                     <p class="text-secondary small mb-4">Ensure your account is using a secure password to stay protected.</p>
                     
                     <form method="POST" action="{{ route('password.update') }}">
@@ -117,7 +117,7 @@
 
         <!-- Danger Zone Card: Delete Account -->
         <div class="card glass-card p-4 border border-rose-950/40 bg-rose-950 bg-opacity-10 rounded-4">
-            <h4 class="h5 font-outfit text-white mb-2 d-flex align-items-center">
+            <h4 class="h5 font-outfit text-slate-900 mb-2 d-flex align-items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="text-danger me-2" viewBox="0 0 16 16">
                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                     <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
@@ -144,13 +144,13 @@
                 @csrf
                 @method('delete')
                 
-                <div class="modal-header border-bottom border-slate-800 p-4">
+                <div class="modal-header border-bottom border-slate-300 p-4">
                     <h5 class="modal-title font-outfit font-bold text-rose-400" id="confirmUserDeletionModalLabel">Are you sure you want to delete your account?</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 
                 <div class="modal-body p-4">
-                    <p class="text-slate-300 small mb-4">Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.</p>
+                    <p class="text-slate-700 small mb-4">Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.</p>
                     
                     <div class="mb-3">
                         <label for="delete_password" class="form-label">Password</label>
@@ -161,7 +161,7 @@
                     </div>
                 </div>
                 
-                <div class="modal-footer border-top border-slate-800 p-4">
+                <div class="modal-footer border-top border-slate-300 p-4">
                     <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger rounded-3 px-4">Delete Account</button>
                 </div>

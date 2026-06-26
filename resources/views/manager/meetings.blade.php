@@ -127,12 +127,33 @@
             <h4 class="h5 font-outfit text-dark mb-0">Meeting Notes Registry</h4>
             <p class="text-secondary small mb-0 mt-1">All recorded meetings — server-side Yajra DataTables</p>
         </div>
-        <button class="btn accent-btn d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addMeetingModal">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-            </svg>
-            Schedule Meeting
-        </button>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Date Picker UI -->
+            <form action="{{ route('manager.meetings.index') }}" method="GET" class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border border-secondary-subtle m-0 flex-grow-1 flex-md-grow-0" id="filterForm">
+                <i class="bi bi-funnel text-secondary"></i>
+                <select name="range_type" id="rangeType" class="form-select border-0 shadow-none bg-transparent fw-semibold text-dark p-0 pe-3" style="cursor: pointer; outline: none; min-width: 100px;" onchange="toggleCustomDates()">
+                    <option value="all_time" {{ (isset($rangeType) && $rangeType === 'all_time') ? 'selected' : '' }}>All Time</option>
+                    <option value="date_wise" {{ (isset($rangeType) && $rangeType === 'date_wise') ? 'selected' : '' }}>Daily</option>
+                    <option value="week_wise" {{ (isset($rangeType) && $rangeType === 'week_wise') ? 'selected' : '' }}>Weekly</option>
+                    <option value="month_wise" {{ (isset($rangeType) && $rangeType === 'month_wise') ? 'selected' : '' }}>Monthly</option>
+                    <option value="year_wise" {{ (isset($rangeType) && $rangeType === 'year_wise') ? 'selected' : '' }}>Yearly</option>
+                    <option value="custom_range" {{ (isset($rangeType) && $rangeType === 'custom_range') ? 'selected' : '' }}>Custom Range</option>
+                </select>
+                <div id="customDateRange" class="d-flex align-items-center gap-2 {{ (isset($rangeType) && $rangeType === 'custom_range') ? '' : 'd-none' }}">
+                    <input type="date" name="start_date" id="startDate" class="form-control form-control-sm border-secondary-subtle" value="{{ request('start_date') }}">
+                    <span class="text-secondary small">to</span>
+                    <input type="date" name="end_date" id="endDate" class="form-control form-control-sm border-secondary-subtle" value="{{ request('end_date') }}">
+                    <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">Apply</button>
+                </div>
+            </form>
+
+            <button class="btn btn-primary rounded-pill px-4 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addMeetingModal">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                </svg>
+                Schedule Meeting
+            </button>
+        </div>
     </div>
 
     <div class="table-responsive">
@@ -323,18 +344,39 @@
 <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
 
 <script>
-$(document).ready(function () {
-    var table = $('#meetingsTable').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: '{{ route('manager.meetings.index') }}',
-            dataSrc: function(json) {
-                // Update stats after data loads
-                updateStats(json.recordsTotal);
-                return json.data;
-            }
-        },
+    function toggleCustomDates() {
+        const type = document.getElementById('rangeType').value;
+        const customRange = document.getElementById('customDateRange');
+        
+        if (type === 'custom_range') {
+            customRange.classList.remove('d-none');
+        } else {
+            customRange.classList.add('d-none');
+            document.getElementById('filterForm').submit();
+        }
+    }
+
+    const currentRangeType = document.getElementById('rangeType') ? document.getElementById('rangeType').value : 'all_time';
+    const currentStartDate = document.getElementById('startDate') ? document.getElementById('startDate').value : '';
+    const currentEndDate = document.getElementById('endDate') ? document.getElementById('endDate').value : '';
+
+    $(document).ready(function () {
+        var table = $('#meetingsTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '{{ route('manager.meetings.index') }}',
+                data: function (d) {
+                    d.range_type = currentRangeType;
+                    d.start_date = currentStartDate;
+                    d.end_date = currentEndDate;
+                },
+                dataSrc: function(json) {
+                    // Update stats after data loads
+                    updateStats(json.recordsTotal);
+                    return json.data;
+                }
+            },
         order: [[2, 'desc'], [3, 'desc']],
         pageLength: 15,
         language: {

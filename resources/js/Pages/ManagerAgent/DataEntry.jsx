@@ -95,16 +95,16 @@ export default function DataEntry({ teamMembers = [] }) {
             <div class="space-y-6 max-w-4xl mx-auto animate-fade-in-up">
                 {/* Header */}
                 <div>
-                    <h1 class="text-3xl font-extrabold tracking-tight text-white font-outfit">
+                    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 font-outfit">
                         Manual Data Logger
                     </h1>
-                    <p class="text-sm text-slate-400 mt-1">
+                    <p class="text-sm text-slate-600 mt-1">
                         Log mock team details and activities to simulate the daily database states.
                     </p>
                 </div>
 
                 {/* Tab Navigation buttons */}
-                <div class="flex flex-wrap gap-2 border-b border-slate-800 pb-3">
+                <div class="flex flex-wrap gap-2 border-b border-slate-300 pb-3">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
@@ -112,7 +112,7 @@ export default function DataEntry({ teamMembers = [] }) {
                             class={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
                                 activeTab === tab.id
                                     ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                                    : 'text-slate-400 hover:text-slate-200 bg-slate-900/40 hover:bg-slate-800/40 border border-slate-800/60'
+                                    : 'text-slate-600 hover:text-slate-800 bg-white border-slate-200 hover:bg-slate-100/40 border border-slate-300/60'
                             }`}
                         >
                             {tab.label}
@@ -170,7 +170,7 @@ export default function DataEntry({ teamMembers = [] }) {
                                 <button
                                     type="submit"
                                     disabled={memberForm.processing}
-                                    class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                                    class="px-6 py-2.5 bg-slate-50 hover:bg-slate-100 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                                 >
                                     Add Member
                                 </button>
@@ -241,7 +241,7 @@ export default function DataEntry({ teamMembers = [] }) {
                                 <button
                                     type="submit"
                                     disabled={taskForm.processing}
-                                    class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                                    class="px-6 py-2.5 bg-slate-50 hover:bg-slate-100 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                                 >
                                     Log Task
                                 </button>
@@ -310,7 +310,7 @@ export default function DataEntry({ teamMembers = [] }) {
                                 <button
                                     type="submit"
                                     disabled={commitForm.processing}
-                                    class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                                    class="px-6 py-2.5 bg-slate-50 hover:bg-slate-100 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                                 >
                                     Log Commit
                                 </button>
@@ -380,7 +380,7 @@ export default function DataEntry({ teamMembers = [] }) {
                                 <button
                                     type="submit"
                                     disabled={attendanceForm.processing}
-                                    class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                                    class="px-6 py-2.5 bg-slate-50 hover:bg-slate-100 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                                 >
                                     Log Attendance
                                 </button>
@@ -432,7 +432,7 @@ export default function DataEntry({ teamMembers = [] }) {
                                 <button
                                     type="submit"
                                     disabled={meetingForm.processing}
-                                    class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                                    class="px-6 py-2.5 bg-slate-50 hover:bg-slate-100 text-white font-semibold rounded-xl text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                                 >
                                     Log Meeting Note
                                 </button>

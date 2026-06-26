@@ -80,4 +80,9 @@ class Project extends Model
     {
         return $this->hasMany(Commit::class);
     }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(ProjectAllocation::class);
+    }
 }

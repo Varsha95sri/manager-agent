@@ -187,11 +187,42 @@ class ManagerAgentService
             'today_meeting_notes' => $meetings,
         ];
 
+        // Calculate mathematical Productivity Index for evening reports
+        if ($reportType === 'evening') {
+            $totalTasks = max(1, $tasks['total_count']);
+            $taskScore = ($tasks['completed_count'] / $totalTasks) * 100;
+            
+            $targetCommits = 5; // Configurable expected daily commits
+            $commitScore = min(100, ($commits['total_count'] / $targetCommits) * 100);
+            
+            $totalMembers = TeamMember::count() ?: 1;
+            $presentCount = $attendance['present_count'];
+            $lateCount = $attendance['late_count'];
+            $attendanceScore = (($presentCount * 100) + ($lateCount * 80)) / $totalMembers;
+            
+            $productivityIndex = round(($attendanceScore * 0.3) + ($taskScore * 0.5) + ($commitScore * 0.2), 2);
+            
+            $dataContext['mathematical_productivity'] = [
+                'index' => $productivityIndex,
+                'formula' => 'Productivity Index = (Attendance Score * 30%) + (Task Score * 50%) + (Commit Score * 20%)',
+                'components' => [
+                    'attendance_score' => round($attendanceScore, 2),
+                    'task_score' => round($taskScore, 2),
+                    'commit_score' => round($commitScore, 2)
+                ]
+            ];
+        }
+
         $dataJson = json_encode($dataContext, JSON_PRETTY_PRINT);
 
         $prompt = "You are the Manager Agent, a production-grade AI system designed to analyze {$reportType} team activities, git commits, attendance logs, tasks, meeting notes, and historical performance reports.\n"
-            . "Your goal is to act as an objective, strategic manager. Evaluate the {$reportType} team metrics and produce a comprehensive, professional, and structured report.\n"
-            . "You must output ONLY a valid JSON object matching the requested schema. Do not output any Markdown wrapping, code block markers, or additional text. Ensure all JSON fields are populated correctly.\n\n"
+            . "Your goal is to act as an objective, strategic manager. Evaluate the {$reportType} team metrics and produce a comprehensive, professional, and structured report.\n";
+
+        if ($reportType === 'evening') {
+            $prompt .= "CRITICAL: You MUST use the pre-calculated `mathematical_productivity.index` provided in the Context as the `team_productivity` score in the JSON output. Explicitly mention the mathematical formula and its components in the `full_report`.\n";
+        }
+
+        $prompt .= "You must output ONLY a valid JSON object matching the requested schema. Do not output any Markdown wrapping, code block markers, or additional text. Ensure all JSON fields are populated correctly.\n\n"
             . "Requested JSON Schema:\n"
             . "{\n"
             . "  \"team_productivity\": (integer between 0 and 100, representing overall team productivity for the {$reportType}),\n"
@@ -423,6 +454,9 @@ class ManagerAgentService
             case 'executive':
                 $startDate = $startDateStr ? Carbon::parse($startDateStr) : clone $endDate;
                 break;
+            case 'evening':
+                $startDate = clone $endDate;
+                break;
             case 'daily':
             default:
                 $startDate = clone $endDate;
@@ -485,8 +519,16 @@ class ManagerAgentService
         // Task completion factor
         $taskScore = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 85;
 
-        $productivity = (int) (($attendanceScore * 0.4) + ($taskScore * 0.6));
-        if ($productivity < 10) $productivity = 82; // Fallback default
+        if ($reportType === 'evening') {
+            $taskScoreEvening = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 85;
+            $commitScoreEvening = min(100, ($commits['total_count'] / 5) * 100);
+            $lateCount = $attendance['late_count'];
+            $attendanceScoreEvening = (($presentCount * 100) + ($lateCount * 80)) / $totalMembers;
+            $productivity = (int) (($attendanceScoreEvening * 0.3) + ($taskScoreEvening * 0.5) + ($commitScoreEvening * 0.2));
+        } else {
+            $productivity = (int) (($attendanceScore * 0.4) + ($taskScore * 0.6));
+            if ($productivity < 10) $productivity = 82; // Fallback default
+        }
         if ($productivity > 100) $productivity = 100;
 
         // 2. Determine top performers based on commits and completed tasks in the samples
@@ -558,6 +600,11 @@ class ManagerAgentService
         $fullReport = "### Manager Agent {$reportType} Performance Report for {$formattedDate}\n\n";
         $fullReport .= "#### Executive Summary\n";
         $fullReport .= "Today, the team recorded a productivity index of **{$productivity}%**. ";
+        
+        if ($reportType === 'evening') {
+            $fullReport .= "(Calculated using the mathematical formula based on 30% Attendance, 50% Task Completion, and 20% Commits). ";
+        }
+        
         $fullReport .= "A total of **{$commitsCount} git commits** were pushed to the repository, and **{$completedTasks} / {$totalTasks} tasks** were completed.\n\n";
         
         $fullReport .= "#### Key Achievements\n";

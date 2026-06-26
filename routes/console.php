@@ -14,3 +14,5 @@ Schedule::call(function () {
     app(ManagerAgentService::class)->generateDailyReport();
 })->dailyAt('20:00');
 
+Schedule::command('app:generate-ai-insights')->dailyAt('08:00');
+

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Department;
 use App\Models\Skill;
+use App\Models\Designation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -14,7 +15,8 @@ class DepartmentController extends Controller
     {
         $departments = Department::orderBy('name')->get();
         $skills = Skill::orderBy('category')->orderBy('name')->get();
-        return view('manager.departments', compact('departments', 'skills'));
+        $designations = Designation::orderBy('level')->orderBy('name')->get();
+        return view('manager.departments', compact('departments', 'skills', 'designations'));
     }
 
     public function store(Request $request): RedirectResponse

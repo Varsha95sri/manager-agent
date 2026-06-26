@@ -99,7 +99,9 @@ class GitLabController extends Controller
 
         // When a filter is applied, we don't want to exclude people who have 0 commits but we DO want to order them properly. 
         // We'll keep the HAVING clause just so we don't show developers with absolutely zero activity in that period.
-        $developerContributions = $developerContributionsQuery->havingRaw('commits_count > 0 OR merge_requests_count > 0 OR issues_count > 0')
+        $developerContributions = $developerContributionsQuery
+            ->groupBy('team_members.id')
+            ->havingRaw('commits_count > 0 OR merge_requests_count > 0 OR issues_count > 0')
             ->orderByDesc('commits_count')
             ->take(10)
             ->get();

@@ -80,24 +80,45 @@ class GitLabService
                 continue;
             }
 
-            // Check if already exists
-            if (Commit::where('commit_sha', $sha)->exists()) {
-                continue;
-            }
+            // Check if already exists in primary Commit table
+            $commitExists = Commit::where('commit_sha', $sha)->exists();
 
             $authorEmail = $commitData['author_email'] ?? '';
+            $authorName = $commitData['author_name'] ?? 'GitLab User';
+            
             $employee = TeamMember::where('email', $authorEmail)->first();
+            
+            if (!$employee && !empty($authorEmail)) {
+                $employee = TeamMember::create([
+                    'name' => $authorName,
+                    'email' => $authorEmail,
+                    'role' => 'Developer'
+                ]);
+            }
 
-            Commit::create([
-                'project_id' => $project->id,
-                'employee_id' => $employee?->id,
-                'commit_sha' => $sha,
-                'message' => $commitData['message'] ?? '',
-                'commit_url' => $commitData['web_url'] ?? '',
-                'committed_at' => Carbon::parse($commitData['committed_date'] ?? $commitData['created_at'] ?? now()),
-            ]);
+            if (!$commitExists) {
+                Commit::create([
+                    'project_id' => $project->id,
+                    'employee_id' => $employee?->id,
+                    'commit_sha' => $sha,
+                    'message' => $commitData['message'] ?? '',
+                    'commit_url' => $commitData['web_url'] ?? '',
+                    'committed_at' => Carbon::parse($commitData['committed_date'] ?? $commitData['created_at'] ?? now()),
+                ]);
+                $importedCount++;
+            }
 
-            $importedCount++;
+            // Fix: Also ensure it exists in GitCommit so it appears in the 'Git Commits' dashboard list
+            if (!\App\Models\GitCommit::where('commit_hash', $sha)->exists()) {
+                \App\Models\GitCommit::create([
+                    'team_member_id' => $employee?->id,
+                    'repository_id' => null, 
+                    'commit_hash' => $sha,
+                    'message' => $commitData['message'] ?? '',
+                    'repository_name' => $project->name,
+                    'committed_at' => Carbon::parse($commitData['committed_date'] ?? $commitData['created_at'] ?? now()),
+                ]);
+            }
         }
 
         return $importedCount;

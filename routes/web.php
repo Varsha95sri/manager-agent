@@ -122,6 +122,12 @@ Route::middleware('auth')->group(function () {
     // Employee CRUD & Import/Export Routes
     Route::get('/manager-agent/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])->name('manager.employees.index');
     Route::post('/manager-agent/employees', [\App\Http\Controllers\EmployeeController::class, 'store'])->name('manager.employees.store');
+    Route::get('/manager-agent/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'show'])->name('manager.employees.show');
+    
+    // Project Allocations
+    Route::post('/manager-agent/project-allocations', [\App\Http\Controllers\EmployeeController::class, 'storeAllocation'])->name('manager.project-allocations.store');
+    Route::put('/manager-agent/project-allocations/{id}', [\App\Http\Controllers\EmployeeController::class, 'updateAllocation'])->name('manager.project-allocations.update');
+    
     Route::put('/manager-agent/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'update'])->name('manager.employees.update');
     Route::delete('/manager-agent/employees/{id}', [\App\Http\Controllers\EmployeeController::class, 'destroy'])->name('manager.employees.destroy')->middleware('role:admin,manager');
     Route::get('/manager-agent/employees-export', [\App\Http\Controllers\EmployeeController::class, 'export'])->name('manager.employees.export');
@@ -132,6 +138,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/manager-agent/departments', [\App\Http\Controllers\DepartmentController::class, 'store'])->name('manager.departments.store');
     Route::put('/manager-agent/departments/{id}', [\App\Http\Controllers\DepartmentController::class, 'update'])->name('manager.departments.update');
     Route::delete('/manager-agent/departments/{id}', [\App\Http\Controllers\DepartmentController::class, 'destroy'])->name('manager.departments.destroy')->middleware('role:admin,manager');
+
+    Route::post('/manager-agent/designations', [\App\Http\Controllers\DesignationController::class, 'store'])->name('manager.designations.store');
+    Route::put('/manager-agent/designations/{id}', [\App\Http\Controllers\DesignationController::class, 'update'])->name('manager.designations.update');
+    Route::delete('/manager-agent/designations/{id}', [\App\Http\Controllers\DesignationController::class, 'destroy'])->name('manager.designations.destroy')->middleware('role:admin,manager');
 
     Route::post('/manager-agent/skills', [\App\Http\Controllers\SkillController::class, 'store'])->name('manager.skills.store');
     Route::put('/manager-agent/skills/{id}', [\App\Http\Controllers\SkillController::class, 'update'])->name('manager.skills.update');

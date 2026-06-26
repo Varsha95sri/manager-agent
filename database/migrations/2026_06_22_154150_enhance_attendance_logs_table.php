@@ -16,8 +16,10 @@ return new class extends Migration
             $table->string('leave_type')->nullable()->after('status');
         });
 
-        // Use raw SQL to update the enum
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE attendance_logs MODIFY COLUMN status ENUM('present', 'absent', 'late', 'leave') NOT NULL");
+        if (config('database.default') !== 'sqlite') {
+            // Use raw SQL to update the enum
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE attendance_logs MODIFY COLUMN status ENUM('present', 'absent', 'late', 'leave') NOT NULL");
+        }
     }
 
     /**
@@ -25,8 +27,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Revert enum back
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE attendance_logs MODIFY COLUMN status ENUM('present', 'absent', 'late') NOT NULL");
+        if (config('database.default') !== 'sqlite') {
+            // Revert enum back
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE attendance_logs MODIFY COLUMN status ENUM('present', 'absent', 'late') NOT NULL");
+        }
 
         Schema::table('attendance_logs', function (Blueprint $table) {
             $table->dropColumn(['check_out', 'leave_type']);

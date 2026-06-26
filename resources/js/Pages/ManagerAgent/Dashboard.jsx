@@ -48,7 +48,7 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
         return (
             <ul class="space-y-3.5">
                 {list.map((item, idx) => (
-                    <li key={idx} class="flex items-start space-x-3 text-sm text-slate-300">
+                    <li key={idx} class="flex items-start space-x-3 text-sm text-slate-700">
                         {type === 'top' && (
                             <div class="flex-shrink-0 mt-0.5 flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
@@ -68,7 +68,7 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                         )}
                         
                         <div class="flex-1">
-                            <span class="font-medium text-slate-200">{item}</span>
+                            <span class="font-medium text-slate-800">{item}</span>
                             {type === 'top' && (
                                 <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-2.5 h-2.5 mr-0.5">
@@ -92,10 +92,10 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                 {/* Header Section */}
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
                     <div>
-                        <h1 class="text-3xl font-extrabold tracking-tight text-white font-outfit">
+                        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 font-outfit">
                             Performance Dashboard
                         </h1>
-                        <p class="text-sm text-slate-400 mt-1">
+                        <p class="text-sm text-slate-600 mt-1">
                             AI-generated insights and automated daily productivity reviews.
                         </p>
                     </div>
@@ -127,10 +127,10 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                 {/* Stats Row */}
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Stat Card 1 */}
-                    <div class="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 shadow-xl hover:border-slate-700/60 transition-all duration-300">
+                    <div class="backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-2xl p-5 shadow-xl hover:border-slate-300/60 transition-all duration-300">
                         <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Team Productivity</span>
                         <div class="flex items-baseline mt-2 space-x-1.5">
-                            <span class={`text-3xl font-bold ${latestReport ? getProductivityColor(pct).split(' ')[0] : 'text-slate-400'}`}>
+                            <span class={`text-3xl font-bold ${latestReport ? getProductivityColor(pct).split(' ')[0] : 'text-slate-600'}`}>
                                 {latestReport ? `${pct}%` : 'N/A'}
                             </span>
                         </div>
@@ -138,28 +138,28 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                     </div>
 
                     {/* Stat Card 2 */}
-                    <div class="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 shadow-xl hover:border-slate-700/60 transition-all duration-300">
+                    <div class="backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-2xl p-5 shadow-xl hover:border-slate-300/60 transition-all duration-300">
                         <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Members</span>
                         <div class="flex items-baseline mt-2">
-                            <span class="text-3xl font-bold text-slate-100">{totalMembers}</span>
+                            <span class="text-3xl font-bold text-slate-900">{totalMembers}</span>
                         </div>
                         <p class="text-[10px] text-slate-500 mt-2 font-medium">Active registered resources</p>
                     </div>
 
                     {/* Stat Card 3 */}
-                    <div class="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 shadow-xl hover:border-slate-700/60 transition-all duration-300">
+                    <div class="backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-2xl p-5 shadow-xl hover:border-slate-300/60 transition-all duration-300">
                         <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Reports Logged</span>
                         <div class="flex items-baseline mt-2">
-                            <span class="text-3xl font-bold text-slate-100">{totalReports}</span>
+                            <span class="text-3xl font-bold text-slate-900">{totalReports}</span>
                         </div>
                         <p class="text-[10px] text-slate-500 mt-2 font-medium">Archived historical data</p>
                     </div>
 
                     {/* Stat Card 4 */}
-                    <div class="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 shadow-xl hover:border-slate-700/60 transition-all duration-300">
+                    <div class="backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-2xl p-5 shadow-xl hover:border-slate-300/60 transition-all duration-300">
                         <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Last Sync Date</span>
                         <div class="flex items-baseline mt-2">
-                            <span class="text-lg font-bold text-slate-100 truncate w-full">
+                            <span class="text-lg font-bold text-slate-900 truncate w-full">
                                 {latestReport ? formatDate(latestReport.report_date) : 'No reports'}
                             </span>
                         </div>
@@ -172,14 +172,14 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                     <div class="space-y-6">
                         <div class="flex items-center space-x-2.5">
                             <div class="h-1.5 w-1.5 rounded-full bg-indigo-500"></div>
-                            <h2 class="text-xl font-bold text-white font-outfit">Latest AI Evaluation Insights</h2>
+                            <h2 class="text-xl font-bold text-slate-900 font-outfit">Latest AI Evaluation Insights</h2>
                         </div>
 
                         {/* Top layout: circular chart and performing grids */}
                         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                             {/* Productivity Gauge Card */}
-                            <div class="lg:col-span-4 backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 flex flex-col items-center justify-center shadow-xl">
-                                <span class="text-sm text-slate-400 font-semibold mb-6">Productivity Index</span>
+                            <div class="lg:col-span-4 backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-3xl p-6 flex flex-col items-center justify-center shadow-xl">
+                                <span class="text-sm text-slate-600 font-semibold mb-6">Productivity Index</span>
                                 
                                 <div class="relative w-44 h-44 flex items-center justify-center">
                                     {/* SVG Ring */}
@@ -208,11 +208,11 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                                     </svg>
                                     {/* Score Text */}
                                     <div class="absolute flex flex-col items-center justify-center">
-                                        <span class="text-4xl font-extrabold text-white font-outfit">{pct}%</span>
+                                        <span class="text-4xl font-extrabold text-slate-900 font-outfit">{pct}%</span>
                                         <span class="text-[10px] font-semibold tracking-wider text-slate-500 uppercase mt-0.5">Rating</span>
                                     </div>
                                 </div>
-                                <span class="text-xs text-slate-400 mt-6 font-medium text-center">
+                                <span class="text-xs text-slate-600 mt-6 font-medium text-center">
                                     {pct >= 80 ? '🟢 Strong Team Momentum' : pct >= 60 ? '🟡 Moderate Output' : '🔴 Alert: High Blockers Found'}
                                 </span>
                             </div>
@@ -220,8 +220,8 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                             {/* Top Performers and Attention Grids */}
                             <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Top Performers Card */}
-                                <div class="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl hover:border-slate-800 transition-all duration-300">
-                                    <h3 class="text-base font-bold text-white mb-4 flex items-center">
+                                <div class="backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-3xl p-6 shadow-xl hover:border-slate-300 transition-all duration-300">
+                                    <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center">
                                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 shadow-lg shadow-emerald-500/50"></span>
                                         Top Performers
                                     </h3>
@@ -231,8 +231,8 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                                 </div>
 
                                 {/* Attention Required Card */}
-                                <div class="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl hover:border-slate-800 transition-all duration-300">
-                                    <h3 class="text-base font-bold text-white mb-4 flex items-center">
+                                <div class="backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-3xl p-6 shadow-xl hover:border-slate-300 transition-all duration-300">
+                                    <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center">
                                         <span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-2 shadow-lg shadow-rose-500/50"></span>
                                         Attention Required
                                     </h3>
@@ -244,8 +244,8 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                         </div>
 
                         {/* Middle layout: Risks Card */}
-                        <div class="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl">
-                            <h3 class="text-base font-bold text-white mb-4 flex items-center">
+                        <div class="backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-3xl p-6 shadow-xl">
+                            <h3 class="text-base font-bold text-slate-900 mb-4 flex items-center">
                                 <span class="w-2.5 h-2.5 rounded-full bg-amber-500 mr-2 shadow-lg shadow-amber-500/50"></span>
                                 Identified Risks & Roadblocks
                             </h3>
@@ -255,8 +255,8 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                         </div>
 
                         {/* Full Narrative AI Report */}
-                        <div class="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl overflow-hidden">
-                            <div class="flex items-center justify-between pb-4 border-b border-slate-800/50">
+                        <div class="backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-3xl p-6 shadow-xl overflow-hidden">
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-300/50">
                                 <h3 class="text-base font-bold text-white flex items-center">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 mr-2 text-indigo-400">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -272,7 +272,7 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                             </div>
 
                             {reportExpanded && (
-                                <div class="mt-5 text-sm text-slate-300 leading-relaxed font-normal whitespace-pre-wrap max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                <div class="mt-5 text-sm text-slate-700 leading-relaxed font-normal whitespace-pre-wrap max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                                     {latestReport.full_report}
                                 </div>
                             )}
@@ -280,13 +280,13 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                     </div>
                 ) : (
                     /* Empty State when no reports logged */
-                    <div class="backdrop-blur-md bg-slate-900/20 border border-dashed border-slate-800 rounded-3xl py-20 flex flex-col items-center justify-center text-center shadow-xl">
-                        <div class="w-16 h-16 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center text-indigo-500 mb-5 shadow-lg shadow-indigo-500/5">
+                    <div class="backdrop-blur-md bg-white border-slate-200 border border-dashed border-slate-300 rounded-3xl py-20 flex flex-col items-center justify-center text-center shadow-xl">
+                        <div class="w-16 h-16 rounded-2xl bg-white border-slate-200 border border-slate-300 flex items-center justify-center text-indigo-500 mb-5 shadow-lg shadow-indigo-500/5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" />
                             </svg>
                         </div>
-                        <h3 class="text-lg font-bold text-slate-200">No Reports Logged Yet</h3>
+                        <h3 class="text-lg font-bold text-slate-800">No Reports Logged Yet</h3>
                         <p class="text-sm text-slate-500 max-w-sm mt-1.5">
                             Click the button in the top right to analyze recent tasks, git commits, and standup notes.
                         </p>
@@ -297,24 +297,24 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                 <div class="space-y-4">
                     <div class="flex items-center space-x-2.5">
                         <div class="h-1.5 w-1.5 rounded-full bg-indigo-500"></div>
-                        <h2 class="text-xl font-bold text-white font-outfit">Report History</h2>
+                        <h2 class="text-xl font-bold text-slate-900 font-outfit">Report History</h2>
                     </div>
 
-                    <div class="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-3xl overflow-hidden shadow-xl">
+                    <div class="backdrop-blur-md bg-white border-slate-200 border border-slate-300/80 rounded-3xl overflow-hidden shadow-xl">
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-slate-800/60">
-                                <thead class="bg-slate-900/60">
+                                <thead class="bg-white border-slate-200">
                                     <tr>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Report Date</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Productivity Index</th>
-                                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Report Date</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Productivity Index</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-800/40 bg-slate-950/20">
+                                <tbody class="divide-y divide-slate-800/40 bg-white border-slate-200">
                                     {reports.map((report, idx) => (
-                                        <tr key={report.id} class="hover:bg-slate-900/25 transition-colors">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-200">
+                                        <tr key={report.id} class="hover:bg-white border-slate-200 transition-colors">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-800">
                                                 {formatDate(report.report_date)}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
@@ -323,7 +323,7 @@ export default function Dashboard({ reports = [], totalMembers = 0 }) {
                                                         {report.team_productivity}%
                                                     </span>
                                                     {/* Small progress bar */}
-                                                    <div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden hidden sm:block">
+                                                    <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
                                                         <div
                                                             class={`h-full rounded-full ${
                                                                 report.team_productivity >= 80 ? 'bg-emerald-500' :

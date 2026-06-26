@@ -11,9 +11,30 @@
                 <h2 class="h3 font-outfit text-dark mb-1">Leave Management</h2>
                 <p class="text-secondary small mb-0">Track and manage employee leave requests.</p>
             </div>
-            <button class="btn btn-primary d-inline-flex align-items-center rounded-3 px-3 py-2" data-bs-toggle="modal" data-bs-target="#addLeaveModal">
-                <i class="bi bi-plus-lg me-2"></i> Record Leave
-            </button>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <!-- Date Picker UI -->
+                <form action="{{ route('manager.leaves.index') }}" method="GET" class="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border border-secondary-subtle m-0 flex-grow-1 flex-md-grow-0" id="filterForm">
+                    <i class="bi bi-funnel text-secondary"></i>
+                    <select name="range_type" id="rangeType" class="form-select border-0 shadow-none bg-transparent fw-semibold text-dark p-0 pe-3" style="cursor: pointer; outline: none; min-width: 100px;" onchange="toggleCustomDates()">
+                        <option value="all_time" {{ (isset($rangeType) && $rangeType === 'all_time') ? 'selected' : '' }}>All Time</option>
+                        <option value="date_wise" {{ (isset($rangeType) && $rangeType === 'date_wise') ? 'selected' : '' }}>Daily</option>
+                        <option value="week_wise" {{ (isset($rangeType) && $rangeType === 'week_wise') ? 'selected' : '' }}>Weekly</option>
+                        <option value="month_wise" {{ (isset($rangeType) && $rangeType === 'month_wise') ? 'selected' : '' }}>Monthly</option>
+                        <option value="year_wise" {{ (isset($rangeType) && $rangeType === 'year_wise') ? 'selected' : '' }}>Yearly</option>
+                        <option value="custom_range" {{ (isset($rangeType) && $rangeType === 'custom_range') ? 'selected' : '' }}>Custom Range</option>
+                    </select>
+                    <div id="customDateRange" class="d-flex align-items-center gap-2 {{ (isset($rangeType) && $rangeType === 'custom_range') ? '' : 'd-none' }}">
+                        <input type="date" name="start_date" id="startDate" class="form-control form-control-sm border-secondary-subtle" value="{{ request('start_date') }}">
+                        <span class="text-secondary small">to</span>
+                        <input type="date" name="end_date" id="endDate" class="form-control form-control-sm border-secondary-subtle" value="{{ request('end_date') }}">
+                        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">Apply</button>
+                    </div>
+                </form>
+
+                <button class="btn btn-primary d-inline-flex align-items-center rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#addLeaveModal">
+                    <i class="bi bi-plus-lg me-2"></i> Record Leave
+                </button>
+            </div>
         </div>
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
@@ -58,20 +79,29 @@
                                         <span class="badge rounded-pill bg-opacity-10 {{ $statusBadge }} text-capitalize px-2 py-1">{{ $leave->status }}</span>
                                     </td>
                                     <td class="text-end pe-4">
-                                        <form action="{{ route('manager.leaves.update', $leave->id) }}" method="POST" class="d-inline">
-                                            @csrf @method('PUT')
-                                            <input type="hidden" name="status" value="approved">
-                                            <button type="submit" class="btn btn-sm btn-light text-success py-0 px-2" title="Approve" {{ $leave->status === 'approved' ? 'disabled' : '' }}><i class="bi bi-check-lg"></i></button>
-                                        </form>
-                                        <form action="{{ route('manager.leaves.update', $leave->id) }}" method="POST" class="d-inline">
-                                            @csrf @method('PUT')
-                                            <input type="hidden" name="status" value="rejected">
-                                            <button type="submit" class="btn btn-sm btn-light text-danger py-0 px-2" title="Reject" {{ $leave->status === 'rejected' ? 'disabled' : '' }}><i class="bi bi-x-lg"></i></button>
-                                        </form>
-                                        <form action="{{ route('manager.leaves.destroy', $leave->id) }}" method="POST" class="d-inline ms-1" onsubmit="return confirm('Delete this leave record?')">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-light text-secondary py-0 px-2" title="Delete"><i class="bi bi-trash"></i></button>
-                                        </form>
+                                        <div class="d-flex justify-content-end align-items-center gap-2">
+                                            <form action="{{ route('manager.leaves.update', $leave->id) }}" method="POST" class="m-0">
+                                                @csrf @method('PUT')
+                                                <input type="hidden" name="status" value="approved">
+                                                <button type="submit" class="btn btn-sm {{ $leave->status === 'approved' ? 'btn-light text-muted' : 'btn-success shadow-sm' }} px-3 rounded-pill fw-semibold" title="Approve" {{ $leave->status === 'approved' ? 'disabled' : '' }}>
+                                                    <i class="bi bi-check-circle-fill me-1"></i>Approve
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('manager.leaves.update', $leave->id) }}" method="POST" class="m-0">
+                                                @csrf @method('PUT')
+                                                <input type="hidden" name="status" value="rejected">
+                                                <button type="submit" class="btn btn-sm {{ $leave->status === 'rejected' ? 'btn-light text-muted' : 'btn-danger shadow-sm' }} px-3 rounded-pill fw-semibold" title="Reject" {{ $leave->status === 'rejected' ? 'disabled' : '' }}>
+                                                    <i class="bi bi-x-circle-fill me-1"></i>Reject
+                                                </button>
+                                            </form>
+                                            <div class="vr mx-1 text-secondary opacity-25"></div>
+                                            <form action="{{ route('manager.leaves.destroy', $leave->id) }}" method="POST" class="m-0" onsubmit="return confirm('Delete this leave record?')">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="btn btn-light text-danger shadow-sm rounded-circle d-inline-flex align-items-center justify-content-center hover-lift" style="width: 32px; height: 32px; padding: 0;" title="Delete">
+                                                    <i class="bi bi-trash3-fill" style="font-size: 14px;"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -150,14 +180,28 @@
 
 @section('scripts')
 <script>
-function calculateDays() {
-    const start = document.getElementById('start_date').value;
-    const end = document.getElementById('end_date').value;
-    if(start && end) {
-        const diffTime = Math.abs(new Date(end) - new Date(start));
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        document.getElementById('days').value = diffDays;
+    function toggleCustomDates() {
+        const type = document.getElementById('rangeType').value;
+        const customRange = document.getElementById('customDateRange');
+        
+        if (type === 'custom_range') {
+            customRange.classList.remove('d-none');
+        } else {
+            customRange.classList.add('d-none');
+            document.getElementById('filterForm').submit();
+        }
     }
-}
+    
+    function calculateDays() {
+        const start = document.getElementById('start_date').value;
+        const end = document.getElementById('end_date').value;
+        if(start && end) {
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            const diffTime = Math.abs(endDate - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            document.getElementById('days').value = diffDays > 0 ? diffDays : 1;
+        }
+    }
 </script>
 @endsection

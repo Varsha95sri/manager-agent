@@ -190,7 +190,13 @@
                                     @endif
                                 </td>
                                 <td class="py-3 text-end">
-                                    <div class="d-flex justify-content-end gap-1">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{{ route('manager.employees.show', $employee->id) }}" class="btn btn-sm btn-light text-success border-secondary-subtle px-2 py-1 shadow-sm/50" title="View Profile">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                                                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+                                            </svg>
+                                        </a>
                                         <!-- Edit Action -->
                                         <button type="button" class="btn btn-sm btn-outline-info rounded-3 py-1.5 px-2.5 font-medium" onclick="editEmployee({{ json_encode($employee) }})">
                                             Edit

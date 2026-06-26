@@ -237,7 +237,7 @@
                         </li>
                         @for ($i = 1; $i <= $highRiskProjects->lastPage(); $i++)
                             <li class="page-item {{ $highRiskProjects->currentPage() == $i ? 'active' : '' }}">
-                                <a class="page-link {{ $highRiskProjects->currentPage() == $i ? 'text-white' : 'text-secondary border-secondary-subtle' }}" 
+                                <a class="page-link {{ $highRiskProjects->currentPage() == $i ? 'text-slate-900' : 'text-secondary border-secondary-subtle' }}" 
                                    href="{{ $highRiskProjects->url($i) }}&time_filter={{ $timeFilter ?? 'all_time' }}" 
                                    @if($highRiskProjects->currentPage() == $i) style="background-color: #4f46e5; border-color: #4f46e5;" @endif>
                                    {{ $i }}

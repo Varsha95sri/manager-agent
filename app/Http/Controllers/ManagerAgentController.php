@@ -104,7 +104,17 @@ class ManagerAgentController extends Controller
             $latePct = 0;
             $absentPct = 0;
             
-            $daysInRange = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+            $attendanceStartDate = $startDate;
+            if ($rangeType === 'all_time') {
+                $firstLog = AttendanceLog::orderBy('date', 'asc')->first();
+                if ($firstLog) {
+                    $attendanceStartDate = $firstLog->date;
+                } else {
+                    $attendanceStartDate = $endDate;
+                }
+            }
+            
+            $daysInRange = Carbon::parse($attendanceStartDate)->diffInDays(Carbon::parse($endDate)) + 1;
             $totalPossibleAttendances = $totalMembers * $daysInRange;
             
             if ($totalPossibleAttendances > 0) {
@@ -398,12 +408,12 @@ class ManagerAgentController extends Controller
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date') ?: $request->input('date');
 
-            $this->agentService->generateReport($type, $startDate, $endDate);
+            $reportData = $this->agentService->generateReport($type, $startDate, $endDate);
 
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => ucfirst($type) . ' performance report generated successfully!']);
+                return response()->json(['success' => true, 'message' => ucfirst($type) . ' performance report generated successfully!', 'redirect_url' => route('manager.report-detail', $reportData['id'])]);
             }
-            return redirect()->route('manager.dashboard')->with('success', ucfirst($type) . ' performance report generated successfully!');
+            return redirect()->route('manager.report-detail', $reportData['id'])->with('success', ucfirst($type) . ' performance report generated successfully! It includes the productivity index and AI insights.');
         } catch (\Throwable $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -448,7 +458,7 @@ class ManagerAgentController extends Controller
     }
 
     /**
-     * Display details of a specific report.
+     * Display single historical report details.
      */
     public function detail($id): View
     {
@@ -466,8 +476,18 @@ class ManagerAgentController extends Controller
         $tasks = Task::with('teamMember')
             ->whereDate('due_date', $report->report_date)
             ->get();
+            
+        // Get commits for this report's date
+        $commits = GitCommit::with('teamMember')
+            ->whereDate('committed_at', $report->report_date)
+            ->get();
+            
+        // Get attendance for this report's date
+        $attendanceLogs = AttendanceLog::with('teamMember')
+            ->whereDate('date', $report->report_date)
+            ->get();
 
-        return view('manager.report-detail', compact('report', 'prevReport', 'nextReport', 'tasks'));
+        return view('manager.report-detail', compact('report', 'prevReport', 'nextReport', 'tasks', 'commits', 'attendanceLogs'));
     }
 
     /**
@@ -518,9 +538,15 @@ class ManagerAgentController extends Controller
         $delayedTasks = $completedDelayed + $pendingDelayed;
 
         // Calculate average completion hours in database
-        $avgHoursRaw = (clone $tasksQuery)->where('status', 'completed')
-            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, COALESCE(completed_at, updated_at))) as avg_hours')
-            ->value('avg_hours');
+        if (config('database.default') === 'sqlite') {
+            $avgHoursRaw = (clone $tasksQuery)->where('status', 'completed')
+                ->selectRaw('AVG((julianday(COALESCE(completed_at, updated_at)) - julianday(created_at)) * 24) as avg_hours')
+                ->value('avg_hours');
+        } else {
+            $avgHoursRaw = (clone $tasksQuery)->where('status', 'completed')
+                ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, COALESCE(completed_at, updated_at))) as avg_hours')
+                ->value('avg_hours');
+        }
         $avgCompletionHours = round((float)$avgHoursRaw, 1);
         
         // Productivity Score: Heavy weight on completing on time, slight penalty for delayed
@@ -752,8 +778,38 @@ class ManagerAgentController extends Controller
      */
     public function meetingsList(Request $request)
     {
+        $rangeType = $request->input('range_type', 'all_time');
+
         if ($request->ajax()) {
             $query = MeetingNote::withCount('teamMembers');
+            
+            if ($rangeType !== 'all_time') {
+                $baseDate = Carbon::parse($request->input('date', Carbon::today()->toDateString()));
+                $today = Carbon::today();
+                
+                $startDate = $baseDate->copy()->toDateString();
+                $endDate = $baseDate->copy()->toDateString();
+                
+                if ($rangeType === 'date_wise') {
+                    $startDate = $baseDate->toDateString();
+                    $endDate = $startDate;
+                } elseif ($rangeType === 'week_wise') {
+                    $startDate = $baseDate->copy()->startOfWeek()->toDateString();
+                    $endDate = $baseDate->copy()->endOfWeek()->toDateString();
+                } elseif ($rangeType === 'month_wise') {
+                    $startDate = $baseDate->copy()->startOfMonth()->toDateString();
+                    $endDate = $baseDate->copy()->endOfMonth()->toDateString();
+                } elseif ($rangeType === 'year_wise') {
+                    $startDate = $baseDate->copy()->startOfYear()->toDateString();
+                    $endDate = $baseDate->copy()->endOfYear()->toDateString();
+                } elseif ($rangeType === 'custom_range') {
+                    $startDate = $request->input('start_date', $today->toDateString());
+                    $endDate = $request->input('end_date', $today->toDateString());
+                }
+                
+                $query->whereBetween('meeting_date', [$startDate, $endDate]);
+            }
+
             return DataTables::eloquent($query)
                 ->editColumn('meeting_date', fn($m) => Carbon::parse($m->meeting_date)->format('M d, Y'))
                 ->editColumn('meeting_time', fn($m) => $m->meeting_time ? Carbon::parse($m->meeting_time)->format('h:i A') : '—')
@@ -764,7 +820,7 @@ class ManagerAgentController extends Controller
                 ->make(true);
         }
         $teamMembers = TeamMember::orderBy('name')->select('id', 'name', 'email')->take(500)->get();
-        return view('manager.meetings', compact('teamMembers'));
+        return view('manager.meetings', compact('teamMembers', 'rangeType'));
     }
 
     /**

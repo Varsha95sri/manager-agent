@@ -71,11 +71,26 @@ class ChatbotAgentService
      */
     protected function buildDatabaseContext(string $question = ''): string
     {
-        $todayStr = Carbon::today()->toDateString();
         $q = strtolower($question);
-        $contextText = "LIVE DATABASE TEAM CONTEXT (As of " . Carbon::now()->toDateTimeString() . "):\n\n";
+        
+        // 1. Custom Date Parsing
+        $targetDate = Carbon::today();
+        $dateLabel = "Today";
+        if (str_contains($q, 'yesterday')) {
+            $targetDate = Carbon::yesterday();
+            $dateLabel = "Yesterday";
+        } elseif (str_contains($q, 'last week')) {
+            $targetDate = Carbon::now()->subWeek();
+            $dateLabel = "Last Week";
+        } elseif (str_contains($q, 'last month')) {
+            $targetDate = Carbon::now()->subMonth();
+            $dateLabel = "Last Month";
+        }
+        
+        $targetDateStr = $targetDate->toDateString();
+        $contextText = "LIVE DATABASE TEAM CONTEXT (As of " . Carbon::now()->toDateTimeString() . ", Target Date: {$dateLabel} {$targetDateStr}):\n\n";
 
-        // 1. Team Members & Role/Team Aggregation
+        // 2. Team Members & Role/Team Aggregation
         $members = TeamMember::orderBy('name')->get();
         $totalMembersCount = $members->count();
         $roleStats = [];
@@ -147,15 +162,15 @@ class ChatbotAgentService
             }
         }
 
-        // 4. Today's Commits & Attendance
-        $commitsCount = GitCommit::whereDate('committed_at', $todayStr)->count();
-        $attendance = AttendanceLog::with('teamMember')->whereDate('date', $todayStr)->get();
+        // 4. Target Date Commits & Attendance
+        $commitsCount = GitCommit::whereDate('committed_at', $targetDateStr)->count();
+        $attendance = AttendanceLog::with('teamMember')->whereDate('date', $targetDateStr)->get();
         $presentCount = $attendance->where('status', 'present')->count();
         $lateCount = $attendance->where('status', 'late')->count();
         $absentCount = $attendance->where('status', 'absent')->count();
         
-        $dailyText = "=== TODAY'S OPERATIONS ===\n"
-            . "Total Git Commits Today: {$commitsCount}\n"
+        $dailyText = "=== {$dateLabel}'S OPERATIONS ===\n"
+            . "Total Git Commits {$dateLabel}: {$commitsCount}\n"
             . "Attendance Summary -> Present: {$presentCount}, Late: {$lateCount}, Absent: {$absentCount}\n";
         $absentMembers = $attendance->where('status', 'absent');
         if ($absentMembers->isNotEmpty()) {
@@ -175,7 +190,14 @@ class ChatbotAgentService
             $projectsText .= "No active projects found.\n";
         }
 
-        // 6. Latest Performance Report (For direct daily summaries)
+        // 6. GitLab Issues & Tech Debt
+        $issues = \App\Models\GitLabIssue::all();
+        $issueCount = $issues->count();
+        $openIssues = $issues->where('state', 'opened')->count();
+        $gitlabText = "=== GITLAB ISSUES ===\n";
+        $gitlabText .= "Total Issues: {$issueCount} | Open: {$openIssues}\n";
+
+        // 7. Latest Performance Report
         $latestReport = PerformanceReport::latest()->first();
         $reportText = "=== LATEST EVALUATED REPORT ===\nNo performance reports found in database yet.\n";
         if ($latestReport) {
@@ -193,6 +215,7 @@ class ChatbotAgentService
             . "{$trendText}\n"
             . "{$dailyText}\n"
             . "{$projectsText}\n"
+            . "{$gitlabText}\n"
             . "{$reportText}\n";
 
         // Dynamic Context Expansion (RAG-lite)
@@ -219,7 +242,9 @@ class ChatbotAgentService
         $mentionedMembers = [];
         foreach ($allMembers as $member) {
             $firstName = strtolower(explode(' ', $member->name)[0]);
-            if (str_contains($q, strtolower($member->name)) || (strlen($firstName) > 2 && str_contains($q, $firstName))) {
+            $memberNameLower = strtolower($member->name);
+            if (preg_match("/\b" . preg_quote($memberNameLower, '/') . "\b/i", $q) || 
+               (strlen($firstName) > 2 && preg_match("/\b" . preg_quote($firstName, '/') . "\b/i", $q))) {
                 $mentionedMembers[] = $member;
             }
         }
@@ -458,7 +483,8 @@ class ChatbotAgentService
         foreach ($allMembers as $member) {
             $memberNameLower = strtolower($member->name);
             $firstName = strtolower(explode(' ', $member->name)[0]);
-            if (str_contains($q, $memberNameLower) || (strlen($firstName) > 2 && str_contains($q, $firstName))) {
+            if (preg_match("/\b" . preg_quote($memberNameLower, '/') . "\b/i", $q) || 
+               (strlen($firstName) > 2 && preg_match("/\b" . preg_quote($firstName, '/') . "\b/i", $q))) {
                 $empTodayStr = Carbon::today()->toDateString();
                 $empAttendance = AttendanceLog::where('team_member_id', $member->id)
                     ->whereDate('date', $empTodayStr)
@@ -486,6 +512,22 @@ class ChatbotAgentService
                 }
                 return $res;
             }
+        }
+
+        // Leaderboard / Top Contributors rule
+        if (str_contains($q, 'top') || str_contains($q, 'best') || str_contains($q, 'contributor') || str_contains($q, 'perform')) {
+            $topMembers = TeamMember::orderBy('performance_score', 'desc')->take(5)->get();
+            if ($topMembers->isEmpty()) {
+                return "No performance data is available to determine top contributors.";
+            }
+            $res = "Here are the top contributors based on performance scores [Offline Mode]:\n\n";
+            foreach ($topMembers as $idx => $m) {
+                $rank = $idx + 1;
+                $score = $m->performance_score ?? 'N/A';
+                $grade = $m->performance_grade ?? 'N/A';
+                $res .= "{$rank}. **{$m->name}** - Score: {$score} (Grade: {$grade})\n";
+            }
+            return $res;
         }
 
         if (str_contains($q, 'absent')) {

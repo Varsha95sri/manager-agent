@@ -44,11 +44,12 @@
             </x-primary-button>
         </div>
 
-        <div class="mt-4 pt-4 border-t border-slate-700 text-center text-sm text-slate-400">
+        <div class="mt-4 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
             Don't have an account? 
-            <a href="{{ route('register') }}" class="font-semibold text-purple-400 hover:text-purple-300 ms-1">
+            <a href="{{ route('register') }}" class="font-semibold text-indigo-600 hover:text-indigo-500 ms-1">
                 Register here
             </a>
         </div>
     </form>
 </x-guest-layout>
+
