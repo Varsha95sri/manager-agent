@@ -93,4 +93,68 @@ class ChatbotController extends Controller
 
         return redirect()->route('manager.chatbot')->with('success', 'Conversation history cleared successfully!');
     }
+
+    /**
+     * Post a question to the AI chatbot for an employee.
+     */
+    public function userAsk(Request $request)
+    {
+        @set_time_limit(180);
+        @ini_set('max_execution_time', '180');
+
+        $request->validate([
+            'question' => 'required|string|max:1000',
+        ]);
+
+        $question = $request->input('question');
+        
+        $employeeEmail = auth()->user()->email;
+        $employee = \App\Models\TeamMember::where('email', $employeeEmail)->first();
+        
+        if (!$employee) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your profile is not linked to any employee record.',
+            ], 403);
+        }
+
+        $chatHistory = session('user_chat_history', []);
+
+        $answer = $this->chatbotService->answerEmployeeQuestion($question, $employee, $chatHistory);
+
+        $chatHistory = session('user_chat_history', []);
+        $userMsg = [
+            'role' => 'user',
+            'text' => $question,
+            'time' => now()->format('h:i A'),
+        ];
+        $assistantMsg = [
+            'role' => 'assistant',
+            'text' => $answer,
+            'time' => now()->format('h:i A'),
+        ];
+        $chatHistory[] = $userMsg;
+        $chatHistory[] = $assistantMsg;
+
+        session(['user_chat_history' => $chatHistory]);
+
+        return response()->json([
+            'success' => true,
+            'user' => $userMsg,
+            'assistant' => $assistantMsg,
+        ]);
+    }
+
+    /**
+     * Clear the employee chatbot conversation history.
+     */
+    public function userClear(Request $request)
+    {
+        session()->forget('user_chat_history');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Conversation history cleared successfully!'
+        ]);
+    }
 }

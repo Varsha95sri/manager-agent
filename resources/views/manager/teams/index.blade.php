@@ -19,7 +19,12 @@
             </div>
 
             <div class="row g-4">
-                @foreach($teams as $team)
+                @forelse($teams as $team)
+                @php
+                    $totalAssigned = $team->teamMembers->sum('total_tasks_count');
+                    $totalCompleted = $team->teamMembers->sum('tasks_count');
+                    $productivity = $totalAssigned > 0 ? round(($totalCompleted / $totalAssigned) * 100) : 0;
+                @endphp
                 <div class="col-md-4">
                     <a href="{{ route('manager.teams.show', $team->slug) }}" class="text-decoration-none">
                         <div class="card bg-light border-secondary-subtle rounded-4 h-100 p-4 hover-card" style="transition: all 0.3s; border: 1px solid #e2e8f0;">
@@ -39,6 +44,19 @@
                                 </div>
                             </div>
                             
+                            <!-- Team members list -->
+                            <div class="mb-3">
+                                <div class="d-flex flex-wrap gap-1">
+                                    @forelse($team->teamMembers->take(4) as $member)
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-20 fw-normal" style="font-size: 11px;">{{ $member->name }}</span>
+                                    @empty
+                                        <span class="text-muted small italic" style="font-size: 11px;">No members assigned</span>
+                                    @endforelse
+                                    @if($team->teamMembers->count() > 4)
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-20 fw-normal" style="font-size: 11px;">+{{ $team->teamMembers->count() - 4 }} more</span>
+                                    @endif
+                                </div>
+                            </div>
                             <div class="mb-3">
                                 <span class="text-dark small font-semibold">Lead:</span>
                                 <span class="text-secondary small">{{ $team->lead_id ? 'Assigned' : 'Unassigned' }}</span>
@@ -47,21 +65,29 @@
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between mb-1">
                                     <span class="text-secondary small">Productivity</span>
-                                    <span class="text-dark font-semibold small">N/A</span>
+                                    <span class="text-dark font-semibold small">{{ $productivity }}%</span>
                                 </div>
                                 <div class="progress" style="height: 6px;">
-                                    <div class="progress-bar bg-{{ $team->status_color }}" role="progressbar" style="width: 0%"></div>
+                                    <div class="progress-bar bg-{{ $team->status_color }}" role="progressbar" style="width: {{ $productivity }}%"></div>
                                 </div>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top border-secondary-subtle">
-                                <span class="text-secondary small">Tasks: <span class="text-dark font-semibold">N/A</span></span>
+                                <span class="text-secondary small">Tasks: <span class="text-dark font-semibold">{{ $totalAssigned }}</span></span>
                                 <span class="badge bg-{{ $team->status_color }} bg-opacity-10 text-{{ $team->status_color }} border border-{{ $team->status_color }} border-opacity-20 rounded-pill px-3">{{ $team->status }}</span>
                             </div>
                         </div>
                     </a>
                 </div>
-                @endforeach
+                @empty
+                <div class="col-12 text-center py-5">
+                    <div class="mb-3 text-secondary">
+                        <i class="fa-solid fa-people-group fa-3x"></i>
+                    </div>
+                    <h5 class="text-dark font-outfit">0 Teams Created</h5>
+                    <p class="text-secondary small">You haven't created any teams yet. Click "Create New Team" to get started.</p>
+                </div>
+                @endforelse
             </div>
         </div>
     </div>

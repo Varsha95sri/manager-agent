@@ -5,7 +5,7 @@
 
 @section('content')
 <div class="mb-4 d-flex align-items-center">
-    <a href="{{ route('manager.teams.index') }}" class="btn btn-outline-secondary btn-sm me-3 d-flex align-items-center rounded-circle p-2" style="width: 32px; height: 32px;">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm me-3 d-flex align-items-center rounded-circle p-2" style="width: 32px; height: 32px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/></svg>
     </a>
     <h4 class="mb-0 font-outfit text-dark">{{ $team->name }}</h4>
@@ -41,16 +41,16 @@
                 <div class="col-md-6 mb-3 mb-md-0">
                     <span class="text-secondary small d-block mb-2">Team Productivity Rating</span>
                     <div class="d-flex align-items-center">
-                        <h3 class="font-outfit text-dark mb-0 me-3">N/A</h3>
+                        <h3 class="font-outfit text-dark mb-0 me-3">{{ $productivityRating }}%</h3>
                         <div class="progress flex-grow-1" style="height: 8px;">
-                            <div class="progress-bar bg-{{ $team->status_color }}" role="progressbar" style="width: 0%"></div>
+                            <div class="progress-bar bg-{{ $team->status_color }}" role="progressbar" style="width: {{ $productivityRating }}%"></div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6 border-start border-secondary-subtle ps-md-4">
                     <span class="text-secondary small d-block mb-2">Tasks Completed vs Assigned</span>
                     <div class="d-flex align-items-center">
-                        <h3 class="font-outfit text-dark mb-0 me-3">N/A</h3>
+                        <h3 class="font-outfit text-dark mb-0 me-3">{{ $totalCompletedTasks }} / {{ $totalAssignedTasks }}</h3>
                         <span class="text-secondary font-semibold"></span>
                     </div>
                 </div>
@@ -72,6 +72,8 @@
                         <tr>
                             <th class="border-0 rounded-start-2 py-3 px-4 text-secondary font-semibold" style="font-size: 13px;">Name</th>
                             <th class="border-0 py-3 px-4 text-secondary font-semibold" style="font-size: 13px;">Role</th>
+                            <th class="border-0 py-3 px-4 text-secondary font-semibold" style="font-size: 13px;">Project Role</th>
+                            <th class="border-0 py-3 px-4 text-secondary font-semibold" style="font-size: 13px;">Work Completed</th>
                             <th class="border-0 rounded-end-2 py-3 px-4 text-secondary font-semibold text-center" style="font-size: 13px;">Action</th>
                         </tr>
                     </thead>
@@ -79,16 +81,33 @@
                         @foreach($team->teamMembers as $member)
                         <tr>
                             <td class="px-4 py-3 border-secondary-subtle">
-                                <div class="d-flex align-items-center">
-                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center me-3 font-semibold" style="width: 36px; height: 36px;">
-                                        {{ substr($member->name, 0, 1) }}
+                                <a href="{{ route('manager.employees.show', $member->id) }}" class="text-decoration-none">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center me-3 font-semibold" style="width: 36px; height: 36px;">
+                                            {{ substr($member->name, 0, 1) }}
+                                        </div>
+                                        <span class="text-dark font-medium hover-primary">{{ $member->name }}</span>
                                     </div>
-                                    <span class="text-dark font-medium">{{ $member->name }}</span>
-                                </div>
+                                </a>
                             </td>
                             <td class="px-4 py-3 border-secondary-subtle text-secondary small">{{ $member->role }}</td>
+                            <td class="px-4 py-3 border-secondary-subtle text-secondary small">
+                                @if($member->projectAllocations->count() > 0)
+                                    @foreach($member->projectAllocations as $alloc)
+                                        <div class="mb-1 text-truncate" style="max-width: 150px;" title="{{ $alloc->project->name ?? 'Project' }}: {{ $alloc->role_on_project ?: 'Member' }}">
+                                            <strong>{{ $alloc->project->name ?? 'Project' }}:</strong> {{ $alloc->role_on_project ?: 'Member' }}
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted fst-italic">No active project</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 border-secondary-subtle text-secondary small">
+                                <div class="mb-1"><i class="fas fa-check-circle text-success me-1"></i>{{ $member->tasks_count ?? 0 }} Tasks</div>
+                                <div><i class="fab fa-gitlab text-warning me-1"></i>{{ $member->commits_count ?? 0 }} Commits</div>
+                            </td>
                             <td class="px-4 py-3 border-secondary-subtle text-center">
-                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#viewProfileModal{{ $loop->index }}">View Profile</button>
+                                <a href="{{ route('manager.employees.show', $member->id) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">View Profile</a>
                             </td>
                         </tr>
                         @endforeach

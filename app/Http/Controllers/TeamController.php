@@ -11,7 +11,14 @@ class TeamController extends Controller
 {
     public function index()
     {
-        $teams = Team::withCount('teamMembers')->get();
+        $teams = Team::with(['teamMembers' => function($q) {
+            $q->withCount([
+                'tasks' => function ($q2) {
+                    $q2->whereIn('status', ['Completed', 'completed']);
+                },
+                'tasks as total_tasks_count'
+            ]);
+        }])->withCount('teamMembers')->get();
         
         $latestReportsWithRisks = PerformanceReport::orderBy('report_date', 'desc')->take(5)->get();
         $allRisks = [];
@@ -62,8 +69,25 @@ class TeamController extends Controller
 
     public function show($slug)
     {
-        $team = Team::where('slug', $slug)->with('teamMembers')->firstOrFail();
+        $team = Team::where('slug', $slug)->with(['teamMembers' => function($query) {
+            $query->withCount([
+                'tasks' => function ($q) {
+                    $q->whereIn('status', ['Completed', 'completed']);
+                },
+                'tasks as total_tasks_count',
+                'commits'
+            ])->with(['projectAllocations' => function($q) {
+                $q->where('status', 'active')->with('project');
+            }]);
+        }])->firstOrFail();
         
+        $totalAssignedTasks = $team->teamMembers->sum('total_tasks_count');
+        $totalCompletedTasks = $team->teamMembers->sum('tasks_count');
+
+        $productivityRating = $totalAssignedTasks > 0 
+            ? round(($totalCompletedTasks / $totalAssignedTasks) * 100) 
+            : 0;
+
         $latestReportsWithRisks = PerformanceReport::where('team_id', $team->id)->orderBy('report_date', 'desc')->take(5)->get();
         $allRisks = [];
         foreach ($latestReportsWithRisks as $report) {
@@ -82,7 +106,7 @@ class TeamController extends Controller
         }
         $riskCount = count($allRisks);
 
-        return view('manager.teams.show', compact('team', 'riskCount', 'allRisks'));
+        return view('manager.teams.show', compact('team', 'riskCount', 'allRisks', 'totalAssignedTasks', 'totalCompletedTasks', 'productivityRating'));
     }
 
     public function addMember(Request $request, $slug)

@@ -66,6 +66,47 @@ class ChatbotAgentService
     }
 
     /**
+     * Answer employee question using database context restricted to the employee and Claude API.
+     */
+    public function answerEmployeeQuestion(string $question, TeamMember $employee, array $chatHistory = []): string
+    {
+        $context = $this->buildEmployeeDatabaseContext($employee, $question);
+
+        try {
+            // Format chat history
+            $historyText = "";
+            if (!empty($chatHistory)) {
+                $historyText = "=== PREVIOUS CONVERSATION HISTORY ===\n";
+                $recentHistory = array_slice($chatHistory, -6);
+                foreach ($recentHistory as $msg) {
+                    $role = $msg['role'] === 'user' ? 'Employee' : 'Assistant';
+                    $historyText .= "{$role}: {$msg['text']}\n";
+                }
+                $historyText .= "=====================================\n\n";
+            }
+
+            $prompt = "You are an Employee Assistant AI. You only have access to information about {$employee->name}. Answer questions based on their commits, tasks, productivity, and attendance. Do not answer questions about other employees. You must refuse to provide data on other team members.\n\n"
+                . $context . "\n\n"
+                . $historyText
+                . "Use this information to answer the employee's question accurately. Be helpful and encouraging.\n"
+                . "Employee Question: " . $question;
+
+            Log::info("Employee AI Chatbot Prompt:\n" . $prompt);
+
+            $answer = $this->queryOllama($context, $question, $historyText, true);
+            
+            Log::info("Employee AI Chatbot Response:\n" . $answer);
+            return $answer;
+        } catch (\Throwable $e) {
+            $msg = $e->getMessage();
+            Log::error("ChatbotAgentService (Employee) Error: " . $msg);
+
+            // Fallback response
+            return "I am currently operating in offline mode because the AI service is unavailable. However, I can confirm you have " . $employee->tasks()->count() . " total tasks assigned.";
+        }
+    }
+
+    /**
      * Compile comprehensive database tables and aggregates into a single context text block.
      * @param string $question The manager's question for dynamic context retrieval
      */
@@ -274,19 +315,72 @@ class ChatbotAgentService
     }
 
     /**
+     * Compile context only for a specific employee.
+     */
+    protected function buildEmployeeDatabaseContext(TeamMember $employee, string $question = ''): string
+    {
+        $targetDateStr = Carbon::today()->toDateString();
+        $contextText = "LIVE EMPLOYEE CONTEXT (As of " . Carbon::now()->toDateTimeString() . "):\n\n";
+        
+        $contextText .= "Employee Details:\n";
+        $contextText .= "- Name: {$employee->name}\n";
+        $contextText .= "- Role/Team: {$employee->role}\n";
+        $contextText .= "- Performance Score: " . ($employee->performance_score ?? 'N/A') . "\n";
+        $contextText .= "- Grade: " . ($employee->performance_grade ?? 'N/A') . "\n\n";
+
+        // Tasks
+        $tasks = Task::where('team_member_id', $employee->id)->get();
+        $completed = $tasks->where('status', 'completed')->count();
+        $pending = $tasks->where('status', 'pending')->count();
+        $inProgress = $tasks->where('status', 'in_progress')->count();
+        
+        $contextText .= "Tasks Summary: {$completed} Completed, {$inProgress} In Progress, {$pending} Pending\n";
+        if ($tasks->where('status', '!=', 'completed')->isNotEmpty()) {
+            $contextText .= "Pending/Active Tasks:\n";
+            foreach ($tasks->where('status', '!=', 'completed') as $t) {
+                $contextText .= "- \"{$t->title}\" (Due: {$t->due_date}, Status: {$t->status})\n";
+            }
+        }
+        $contextText .= "\n";
+
+        // Commits
+        $recentCommits = GitCommit::where('team_member_id', $employee->id)->orderBy('committed_at', 'desc')->take(10)->get();
+        $contextText .= "Recent Git Commits: " . $recentCommits->count() . " found\n";
+        foreach ($recentCommits as $c) {
+            $contextText .= "- {$c->message} (Date: {$c->committed_at})\n";
+        }
+        $contextText .= "\n";
+
+        // Attendance
+        $attendance = AttendanceLog::where('team_member_id', $employee->id)->orderBy('date', 'desc')->take(5)->get();
+        $contextText .= "Recent Attendance:\n";
+        foreach ($attendance as $att) {
+            $contextText .= "- {$att->date}: {$att->status} (Check-in: " . ($att->check_in ?: 'N/A') . ")\n";
+        }
+
+        return $contextText;
+    }
+
+    /**
      * Query local Ollama API.
      */
-    protected function queryOllama(string $context, string $question, string $historyText = ""): string
+    protected function queryOllama(string $context, string $question, string $historyText = "", bool $isEmployee = false): string
     {
-        $prompt = "You are an Executive AI Assistant for managers. You have access to the following real-time database snapshot:\n\n"
+        $persona = $isEmployee 
+            ? "You are an Employee Assistant AI. You only have access to information about the logged-in employee."
+            : "You are an Executive AI Assistant for managers.";
+            
+        $rules = $isEmployee
+            ? "1. Always base your answers on the employee's personal data.\n2. Do NOT provide data about other employees.\n3. Be helpful, direct, and encouraging."
+            : "1. Always justify your answers with the provided data metrics (Attendance, GitLab, Tasks, Performance Scores).\n2. If the manager asks about specific employees, summarize their tasks, commits, attendance, and contribution.\n3. If the database snapshot does not contain enough information to answer, state 'Data not available' honestly. Do not hallucinate.";
+
+        $prompt = "{$persona} You have access to the following real-time database snapshot:\n\n"
             . $context . "\n\n"
             . $historyText
-            . "Use this information to answer the manager's question accurately. Keep answers professional, insightful, and concise.\n"
+            . "Use this information to answer the question accurately. Keep answers professional and concise.\n"
             . "MANDATORY BEHAVIOR:\n"
-            . "1. Always justify your answers with the provided data metrics (Attendance, GitLab, Tasks, Performance Scores).\n"
-            . "2. If the manager asks about specific employees, summarize their tasks, commits, attendance, and contribution.\n"
-            . "3. If the database snapshot does not contain enough information to answer, state 'Data not available' honestly. Do not hallucinate.\n\n"
-            . "Manager Question: " . $question;
+            . "{$rules}\n\n"
+            . "Question: " . $question;
 
         return $this->callLLM($prompt);
     }

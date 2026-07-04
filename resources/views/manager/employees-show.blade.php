@@ -6,7 +6,7 @@
 @section('content')
 <div class="mb-4 d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center">
-        <a href="{{ route('manager.employees.index') }}" class="btn btn-outline-secondary btn-sm me-3 rounded-circle p-2 d-flex align-items-center" style="width:32px; height:32px;">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm me-3 rounded-circle p-2 d-flex align-items-center" style="width:32px; height:32px;">
             <i class="fa-solid fa-arrow-left"></i>
         </a>
         <h4 class="mb-0 font-outfit text-slate-900">{{ $employee->name }}'s Profile</h4>
@@ -53,16 +53,34 @@
 
                 <h6 class="small text-secondary mb-3">Performance Overview</h6>
                 <div class="row text-center">
-                    <div class="col-6 col-md-3 mb-3">
-                        <div class="p-3 border rounded-3 bg-light">
-                            <h4 class="mb-0 text-slate-900">{{ $employee->performance_score ?? 'N/A' }}</h4>
-                            <small class="text-secondary">Score</small>
+                    <div class="col-6 col-md-4 mb-3">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h4 class="mb-0 text-slate-900">{{ number_format($employee->calculated_score) }}</h4>
+                            <small class="text-secondary">Leaderboard Score</small>
                         </div>
                     </div>
-                    <div class="col-6 col-md-3 mb-3">
-                        <div class="p-3 border rounded-3 bg-light">
-                            <h4 class="mb-0 text-slate-900">{{ $employee->performance_grade ?? 'N/A' }}</h4>
-                            <small class="text-secondary">Grade</small>
+                    <div class="col-6 col-md-4 mb-3">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h4 class="mb-0 text-slate-900">{{ $employee->tasks_count }}</h4>
+                            <small class="text-secondary">Tasks Completed</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 mb-3">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h4 class="mb-0 text-slate-900">{{ $employee->commits_count }}</h4>
+                            <small class="text-secondary">Total Commits</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-6 mb-3">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h4 class="mb-0 text-slate-900">{{ $employee->present_days }}</h4>
+                            <small class="text-secondary">Days Present</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-6 mb-3">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h4 class="mb-0 text-slate-900">{{ min(100, round(($employee->tasks_count * 5 + $employee->commits_count * 2))) }}%</h4>
+                            <small class="text-secondary">Productivity Est.</small>
                         </div>
                     </div>
                 </div>

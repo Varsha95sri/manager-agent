@@ -253,7 +253,9 @@ function toggleCustomDates() {
                                     <div class="d-flex align-items-center gap-3">
                                         <img src="https://ui-avatars.com/api/?name={{ urlencode($employee->name) }}&background=1e293b&color=fff" class="rounded-circle" width="40" height="40">
                                         <div>
-                                            <strong class="text-dark d-block">{{ $employee->name }}</strong>
+                                            <a href="{{ route('manager.employees.show', $employee->id) }}" class="text-decoration-none">
+                                                <strong class="text-dark d-block hover-primary">{{ $employee->name }}</strong>
+                                            </a>
                                             <span class="text-secondary small">{{ $employee->role ?? 'Employee' }}</span>
                                         </div>
                                     </div>
@@ -292,7 +294,13 @@ function toggleCustomDates() {
                             <i class="fas fa-users fs-4"></i>
                         </div>
                         <div>
-                            <h4 class="mb-0 fw-bold text-dark">{{ $team->name }}</h4>
+                            @if($team->slug)
+                                <a href="{{ route('manager.teams.show', $team->slug) }}" class="text-decoration-none hover-primary stretched-link">
+                                    <h4 class="mb-0 fw-bold text-dark hover-primary">{{ $team->name }}</h4>
+                                </a>
+                            @else
+                                <h4 class="mb-0 fw-bold text-dark">{{ $team->name }}</h4>
+                            @endif
                             <span class="text-secondary small">{{ $team->member_count }} Members</span>
                         </div>
                     </div>
@@ -337,7 +345,9 @@ function toggleCustomDates() {
                             <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
                                 <div class="d-flex align-items-center gap-2">
                                     <img src="https://ui-avatars.com/api/?name={{ urlencode($emp->name) }}&background=1e293b&color=fff" class="rounded-circle" width="30" height="30">
-                                    <span class="fw-medium text-dark">{{ $emp->name }}</span>
+                                    <a href="{{ route('manager.employees.show', $emp->id) }}" class="text-decoration-none">
+                                        <span class="fw-medium text-dark hover-primary">{{ $emp->name }}</span>
+                                    </a>
                                 </div>
                                 <span class="badge bg-primary rounded-pill">{{ number_format($emp->score) }} pts</span>
                             </li>
@@ -356,7 +366,13 @@ function toggleCustomDates() {
                         <ul class="list-group list-group-flush bg-transparent">
                             @foreach($orgLeaderboard->top_teams as $team)
                             <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center px-0">
-                                <span class="fw-medium text-dark">{{ $team->name }}</span>
+                                @if($team->slug)
+                                    <a href="{{ route('manager.teams.show', $team->slug) }}" class="text-decoration-none">
+                                        <span class="fw-medium text-dark hover-primary">{{ $team->name }}</span>
+                                    </a>
+                                @else
+                                    <span class="fw-medium text-dark">{{ $team->name }}</span>
+                                @endif
                                 <span class="badge bg-success rounded-pill">{{ number_format($team->score) }} pts</span>
                             </li>
                             @endforeach
@@ -375,7 +391,9 @@ function toggleCustomDates() {
                             @foreach($orgLeaderboard->top_contributors as $contributor)
                             <div class="col text-center">
                                 <img src="https://ui-avatars.com/api/?name={{ urlencode($contributor->name) }}&background=ef4444&color=fff" class="rounded-circle mb-2" width="60" height="60">
-                                <div class="fw-bold text-dark text-truncate">{{ $contributor->name }}</div>
+                                <a href="{{ route('manager.employees.show', $contributor->id) }}" class="text-decoration-none">
+                                    <div class="fw-bold text-dark text-truncate hover-primary">{{ $contributor->name }}</div>
+                                </a>
                                 <div class="small text-muted">{{ $contributor->commits_count }} Commits</div>
                             </div>
                             @endforeach

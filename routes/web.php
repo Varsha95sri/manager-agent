@@ -8,8 +8,34 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+    if (auth()->check() && auth()->user()->role === 'employee') {
+        return redirect()->route('user.dashboard');
+    }
     return redirect()->route('manager.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware(['auth', 'role:employee'])->prefix('user')->name('user.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\UserDashboardController::class, 'index'])->name('dashboard');
+    Route::post('/leaves', [\App\Http\Controllers\UserDashboardController::class, 'storeLeave'])->name('leaves.store');
+    
+    // New User Panel Routes
+    Route::get('/tasks', [\App\Http\Controllers\UserDashboardController::class, 'tasks'])->name('tasks.index');
+    Route::put('/tasks/{id}', [\App\Http\Controllers\UserDashboardController::class, 'updateTask'])->name('tasks.update');
+    
+    Route::get('/projects', [\App\Http\Controllers\UserDashboardController::class, 'projects'])->name('projects.index');
+    
+    Route::get('/commits', [\App\Http\Controllers\UserDashboardController::class, 'commits'])->name('commits.index');
+    
+    Route::get('/leaderboard', [\App\Http\Controllers\UserDashboardController::class, 'leaderboard'])->name('leaderboard');
+    
+    Route::get('/attendance', [\App\Http\Controllers\UserDashboardController::class, 'attendance'])->name('attendance.index');
+    
+    Route::get('/team-members/{id}', [\App\Http\Controllers\UserDashboardController::class, 'showTeamMember'])->name('team-members.show');
+    
+    // Employee AI Chatbot Routes
+    Route::post('/chatbot/ask', [\App\Http\Controllers\ChatbotController::class, 'userAsk'])->name('chatbot.ask');
+    Route::post('/chatbot/clear', [\App\Http\Controllers\ChatbotController::class, 'userClear'])->name('chatbot.clear');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -41,7 +41,7 @@ class LeaderboardController extends Controller
         }
 
         // --- 1. Individual Leaderboard ---
-        $employees = TeamMember::withCount([
+        $employees = TeamMember::with('team')->withCount([
             'commits' => function ($query) use ($startDate, $endDate) {
                 if ($startDate) $query->whereBetween('created_at', [$startDate, $endDate]);
             },
@@ -88,13 +88,13 @@ class LeaderboardController extends Controller
 
         $individualLeaderboard = $employees->sortByDesc('score')->take(100)->values();
 
-        // --- 2. Team Leaderboard (Group by Role) ---
+        // --- 2. Team Leaderboard (Group by Actual Team) ---
         $teams = $employees->groupBy(function($item) {
-            return $item->role ? ucfirst($item->role) : 'General';
+            return $item->team ? $item->team->name : 'Unassigned';
         });
 
         $teamLeaderboard = collect();
-        foreach ($teams as $role => $members) {
+        foreach ($teams as $teamName => $members) {
             $totalTasks = $members->sum('tasks_count');
             $totalCommits = $members->sum('commits_count');
             $totalAttendance = $members->sum('attendance_logs_count');
@@ -110,8 +110,10 @@ class LeaderboardController extends Controller
             $totalScore = $teamProductivityScore + $teamDeliveryScore + $teamAttendanceScore + $teamCodeQualityScore + $teamCollaborationScore;
 
             if ($totalScore > 0 || $memberCount > 0) {
+                $teamSlug = $members->first()->team ? $members->first()->team->slug : null;
                 $teamLeaderboard->push((object)[
-                    'name' => $role . ' Team',
+                    'name' => $teamName,
+                    'slug' => $teamSlug,
                     'member_count' => $memberCount,
                     'score' => $totalScore,
                     'score_details' => [

@@ -352,7 +352,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($dashboardTeams ?? [] as $team)
+                        @forelse(collect($dashboardTeams ?? [])->take(3) as $team)
                             <tr onclick="window.location='{{ route('manager.teams.show', $team->slug) }}'" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.01)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.05)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
                                 <td class="px-4 py-3 bg-white border border-secondary-subtle border-end-0 rounded-start-4">
                                     <div class="d-flex align-items-center">
@@ -897,6 +897,24 @@
         }
         container.innerHTML = toastHtml;
         setTimeout(() => { container.innerHTML = ''; }, 4000);
+    }
+    function toggleTeams() {
+        const hiddenRows = document.querySelectorAll('.hidden-team');
+        const btn = document.getElementById('toggleTeamsBtn');
+        
+        hiddenRows.forEach(row => {
+            if (row.classList.contains('d-none')) {
+                row.classList.remove('d-none');
+            } else {
+                row.classList.add('d-none');
+            }
+        });
+        
+        if (btn.innerText.includes('View All Teams')) {
+            btn.innerText = 'View Less Teams';
+        } else {
+            btn.innerText = 'View All Teams';
+        }
     }
 </script>
 @endsection

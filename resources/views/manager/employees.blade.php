@@ -96,7 +96,7 @@
                             <tr>
                                 <td class="py-3 text-secondary" style="font-size: 13px;">{{ ($employees->currentPage() - 1) * $employees->perPage() + $loop->iteration }}</td>
                                 <td class="py-3">
-                                    <div class="font-semibold text-dark" style="font-size: 14px;">{{ $employee->name }}</div>
+                                    <a href="{{ route('manager.employees.show', $employee->id) }}" class="text-decoration-none font-semibold text-dark hover-primary" style="font-size: 14px;">{{ $employee->name }}</a>
                                     <div class="text-secondary small mt-0.5 d-flex flex-wrap align-items-center gap-2" style="font-size: 11px;">
                                         <span>{{ $employee->role }}</span>
                                         @if($employee->department)

@@ -41,8 +41,29 @@ class EmployeeController extends Controller
      */
     public function show($id): View
     {
-        $employee = TeamMember::with(['department', 'skills', 'projectAllocations.project', 'attendanceLogs'])->findOrFail($id);
+        $employee = TeamMember::with(['department', 'skills', 'projectAllocations.project', 'attendanceLogs'])
+            ->withCount([
+                'commits',
+                'tasks' => function ($query) {
+                    $query->whereIn('status', ['Completed', 'completed']);
+                },
+                'attendanceLogs as present_days' => function ($query) {
+                    $query->whereIn('status', ['Present', 'present']);
+                }
+            ])
+            ->findOrFail($id);
+            
         $projects = \App\Models\Project::orderBy('name')->get();
+
+        // Calculate Leaderboard Score dynamically
+        $taskCompletionScore = $employee->tasks_count * 50;
+        $taskQualityScore = $employee->tasks_count * 15;
+        $attendanceScore = $employee->present_days * 20;
+        $gitlabScore = $employee->commits_count * 10;
+        $codeQualityScore = $employee->commits_count * 5;
+        $projectContributionScore = ($employee->tasks_count > 0 || $employee->commits_count > 0) ? 50 : 0;
+
+        $employee->calculated_score = $taskCompletionScore + $taskQualityScore + $attendanceScore + $gitlabScore + $codeQualityScore + $projectContributionScore;
 
         return view('manager.employees-show', compact('employee', 'projects'));
     }

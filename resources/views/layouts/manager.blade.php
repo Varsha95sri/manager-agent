@@ -454,7 +454,88 @@
             <span>AI Manager <span style="color: #c084fc;">✨</span></span>
         </div>
         <ul class="sidebar-nav">
-            <li class="sidebar-heading">Overview</li>
+            @if(auth()->check() && auth()->user()->role === 'employee')
+                <!-- Employee Sidebar -->
+                @php
+                    $tm = \App\Models\TeamMember::withCount([
+                        'commits',
+                        'tasks' => function ($query) {
+                            $query->whereIn('status', ['Completed', 'completed']);
+                        },
+                        'attendanceLogs' => function ($query) {
+                            $query->whereIn('status', ['Present', 'present']);
+                        }
+                    ])->where('email', auth()->user()->email)->first();
+                    $userScore = 0;
+                    if ($tm) {
+                        $taskScore = $tm->tasks_count * 65;
+                        $attendanceScore = $tm->attendance_logs_count * 20;
+                        $gitlabScore = $tm->commits_count * 15;
+                        $projectScore = ($tm->tasks_count > 0 || $tm->commits_count > 0) ? 50 : 0;
+                        $userScore = $taskScore + $attendanceScore + $gitlabScore + $projectScore;
+                    }
+                @endphp
+                <li class="sidebar-heading">Employee Panel</li>
+                <li class="sidebar-nav-item">
+                    <a href="{{ route('user.dashboard') }}" class="sidebar-nav-link {{ request()->routeIs('user.dashboard') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+                        </svg>
+                        My Dashboard
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a href="{{ route('user.tasks.index') }}" class="sidebar-nav-link {{ request()->routeIs('user.tasks.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-list-check" style="width:18px; margin-right:12px;"></i>
+                        My Tasks
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a href="{{ route('user.projects.index') }}" class="sidebar-nav-link {{ request()->routeIs('user.projects.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-diagram-project" style="width:18px; margin-right:12px;"></i>
+                        My Projects
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a href="{{ route('user.commits.index') }}" class="sidebar-nav-link {{ request()->routeIs('user.commits.*') ? 'active' : '' }}">
+                        <i class="fa-brands fa-gitlab" style="width:18px; margin-right:12px;"></i>
+                        My Commits
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a href="{{ route('user.attendance.index') }}" class="sidebar-nav-link {{ request()->routeIs('user.attendance.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-calendar-check" style="width:18px; margin-right:12px;"></i>
+                        My Attendance
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a href="{{ route('user.leaderboard') }}" class="sidebar-nav-link {{ request()->routeIs('user.leaderboard') ? 'active' : '' }}">
+                        <i class="fa-solid fa-trophy" style="width:18px; margin-right:12px; color: #f59e0b;"></i>
+                        Leaderboard
+                        <span class="badge ms-auto rounded-pill" style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white;">{{ $userScore }} Pts</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a href="{{ route('profile.edit') }}" class="sidebar-nav-link {{ request()->routeIs('profile.edit') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        My Profile
+                    </a>
+                </li>
+                <li class="sidebar-nav-item mt-4 pt-4 border-top border-secondary-subtle">
+                    <form method="POST" action="{{ route('logout') }}" id="logout-form-employee" class="d-none">
+                        @csrf
+                    </form>
+                    <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form-employee').submit();" class="sidebar-nav-link text-danger">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Log Out
+                    </a>
+                </li>
+            @else
+                <li class="sidebar-heading">Overview</li>
             <li class="sidebar-nav-item">
                 <a href="{{ route('manager.dashboard') }}" class="sidebar-nav-link {{ request()->routeIs('manager.dashboard') ? 'active' : '' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -495,6 +576,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                     Departments & Skills
+                </a>
+            </li>
+            <li class="sidebar-nav-item">
+                <a href="{{ route('manager.teams.index') }}" class="sidebar-nav-link {{ request()->routeIs('manager.teams.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-people-group" style="width:18px; margin-right:12px;"></i>
+                    Teams
                 </a>
             </li>
             <li class="sidebar-nav-item">
@@ -616,6 +703,7 @@
                     Log Out
                 </a>
             </li>
+            @endif
         </ul>
     </div>
 
@@ -720,7 +808,7 @@
                                     <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
                                 </svg>
                             </div>
-                            <div class="text-secondary small mt-0.5" style="font-size: 10px; font-weight: 500;">Project Manager</div>
+                            <div class="text-secondary small mt-0.5" style="font-size: 10px; font-weight: 500;">My Account</div>
                         </div>
 
                         <!-- Circular Avatar -->
@@ -730,7 +818,7 @@
                     </div>
                     <ul class="dropdown-menu dropdown-menu-end p-0 border-secondary-subtle shadow-xl dropdown-menu-custom" aria-labelledby="profileDropdown" style="background-color: #ffffff; min-width: 260px; border: 1px solid var(--border-color); border-radius: 12px;">
                         <li class="p-3 border-bottom border-secondary-subtle">
-                            <h6 class="m-0 text-dark font-outfit font-semibold" style="font-size: 14px;">Admin Details</h6>
+                            <h6 class="m-0 text-dark font-outfit font-semibold" style="font-size: 14px;">Account Details</h6>
                             <div class="text-secondary small mt-2">
                                 <div class="d-flex justify-content-between mb-1.5">
                                     <span class="text-secondary">Name:</span>
@@ -877,14 +965,23 @@
 
         <!-- Chat Body -->
         <div class="floating-chat-body" id="floatingChatBody">
+            @php
+                $isEmployee = auth()->check() && auth()->user()->role === 'employee';
+                $chatAskRoute = $isEmployee ? route('user.chatbot.ask') : route('manager.chatbot.ask');
+                $chatClearRoute = $isEmployee ? route('user.chatbot.clear') : route('manager.chatbot.clear');
+                $chatHistorySession = $isEmployee ? session('user_chat_history', []) : session('chat_history', []);
+                $welcomeMessage = $isEmployee 
+                    ? "Hello! I am your AI Employee Assistant. Ask me about your tasks, commits, or attendance."
+                    : "Hello! I am your AI Manager Agent assistant. Ask me anything about employee records, daily attendance logs, productivity analytics, or task details!";
+            @endphp
             <div class="chat-message assistant mb-3">
                 <div class="message-bubble">
-                    Hello! I am your AI Manager Agent assistant. Ask me anything about employee records, daily attendance logs, productivity analytics, or task details!
+                    {{ $welcomeMessage }}
                 </div>
                 <div class="message-time">Now</div>
             </div>
 
-            @foreach(session('chat_history', []) as $msg)
+            @foreach($chatHistorySession as $msg)
                 <div class="chat-message {{ $msg['role'] === 'user' ? 'user' : 'assistant' }} mb-3">
                     <div class="message-bubble">
                         {{ $msg['text'] }}
@@ -966,7 +1063,7 @@
             scrollChatToBottom();
 
             // Send network request
-            fetch("{{ route('manager.chatbot.ask') }}", {
+            fetch("{{ $chatAskRoute }}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1030,7 +1127,7 @@
         function clearFloatingChatHistory() {
             if (!confirm('Are you sure you want to clear the conversation logs?')) return;
 
-            fetch("{{ route('manager.chatbot.clear') }}", {
+            fetch("{{ $chatClearRoute }}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1047,7 +1144,7 @@
                     chatBody.innerHTML = `
                         <div class="chat-message assistant mb-3">
                             <div class="message-bubble">
-                                Hello! I am your AI Manager Agent assistant. Ask me anything about employee records, daily attendance logs, productivity analytics, or task details!
+                                {{ $welcomeMessage }}
                             </div>
                             <div class="message-time">Now</div>
                         </div>
